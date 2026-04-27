@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FSAE EV Endurance Telemetry ? BIC ? EMRAX 228 / Molicel P45B 120S3P</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@300;400;600;700&display=swap');
+
+:root {
+  --bg:       #06080d;
+  --bg-el:   #0c1220;
+  --bg-el-2: #131b2f;
+  --panel:   #0e1627;
+  --line:    #1c2a46;
+  --line-hi: #2b3e64;
+  --mute:    #5a7090;
+  --text:    #d8e4f0;
+  --text-dim:#97a9c0;
+  --acc:     #00e0ff;
+  --acc-2:   #ff9500;
+  --acc-3:   #8cff4d;
+  --warn:    #ffcc00;
+  --danger:  #ff3355;
+  --regen:   #40e0d0;
+  --mono:    'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --head:    'Oswald', ui-sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--head); font-weight: 400; letter-spacing: 0.02em;
+  min-height: 100vh; overflow-x: hidden;
+}
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(0,224,255,0.06) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 80%, rgba(255,149,0,0.04) 0%, transparent 45%);
+  z-index: 0;
+}
+
+/* HEADER */
+header {
+  position: sticky; top:0; z-index: 50;
+  background: linear-gradient(180deg, rgba(8,11,20,0.97) 0%, rgba(8,11,20,0.85) 100%);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  padding: 9px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand { display:flex; align-items:center; gap: 14px; }
+.brand .logo {
+  width: 38px; height: 38px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--acc) 0%, var(--acc-2) 100%);
+  position: relative; display:flex; align-items:center; justify-content:center;
+}
+.brand .logo::before {
+  content:''; position:absolute; inset:2px; border-radius:4px; background: var(--bg); z-index:0;
+}
+.brand .logo span { position: relative; z-index:1; color: var(--acc); font-size: 13px; font-weight:700; letter-spacing:0.05em;}
+.brand .title { display:flex; flex-direction: column; line-height: 1; gap: 3px; }
+.brand .title h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.brand .title small { color: var(--text-dim); font-family: var(--mono); font-size: 10px; }
+.hdr-right { display:flex; align-items: center; gap:16px; }
+.status-pill {
+  display: flex; align-items:center; gap:7px;
+  padding: 5px 12px; border: 1px solid var(--line); border-radius: 100px;
+  font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+}
+.status-pill.danger { border-color: var(--danger); color: var(--danger);}
+.status-pill .dot { width:6px; height:6px; border-radius:50%; background: var(--acc-3); box-shadow:0 0 6px var(--acc-3); animation: pulse 2s infinite; }
+.status-pill.danger .dot { background: var(--danger); box-shadow:0 0 6px var(--danger);}
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.playback { display:flex; align-items: center; gap:6px; }
+.playback button {
+  background: var(--bg-el); border: 1px solid var(--line); color: var(--text);
+  font-family: var(--head); font-weight: 600; font-size: 11px;
+  padding: 6px 12px; border-radius: 4px; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  transition: all 0.15s ease;
+}
+.playback button:hover { background: var(--bg-el-2); border-color: var(--acc); color: var(--acc); }
+.playback button.active { background: var(--acc); color: #021021; border-color: var(--acc); }
+
+/* GRID */
+main {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 12px; padding: 12px;
+  max-width: 1800px; margin: 0 auto;
+}
+.card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 10px 12px;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content:''; position: absolute; top:0; left:0; height: 2px; width: 40px;
+  background: var(--acc); box-shadow: 0 0 6px var(--acc);
+}
+.card h3 {
+  font-size: 10px; font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.18em;
+  padding-bottom: 7px; margin-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+  display:flex; align-items:center; justify-content: space-between;
+}
+.card h3 .badge {
+  font-family: var(--mono); font-size: 9px; font-weight: 400;
+  color: var(--acc); padding: 2px 6px; border: 1px solid var(--line-hi); border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+/* Track map */
+.track-card { grid-column: 1 / 2; grid-row: 1 / 3; min-height: 520px; display:flex; flex-direction: column;}
+.track-wrap { flex:1; position: relative; min-height: 420px; }
+#trackSvg { width: 100%; height: 100%; display:block; cursor: crosshair; }
+#trackSvg .track-bg { fill: none; stroke: var(--line-hi); stroke-width: 16; stroke-linejoin:round; stroke-linecap:round;}
+#trackSvg .track-fg { fill:none; stroke-width: 11; stroke-linejoin:round; stroke-linecap:round; }
+#trackSvg .selected-pt { fill: var(--acc-2); stroke: #fff; stroke-width: 1.5; filter: drop-shadow(0 0 6px var(--acc-2));}
+#trackSvg .sector-label { fill: var(--text-dim); font-family: var(--mono); font-size: 10px; font-weight: 600; text-anchor:middle; letter-spacing: 0.1em;}
+.track-legend { display:flex; gap: 12px; padding: 5px 0 0; font-family: var(--mono); font-size: 9px; color: var(--text-dim); flex-wrap: wrap;}
+.track-legend span { display:inline-flex; align-items:center; gap:4px;}
+.track-legend i { display:inline-block; width: 12px; height: 3px; border-radius: 2px;}
+
+/* Instant metrics */
+.instant-card { grid-column: 2 / 4; grid-row: 1 / 2; }
+.instant-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.metric {
+  background: var(--bg-el); border: 1px solid var(--line);
+  padding: 9px 11px; border-radius: 4px; position: relative; overflow: hidden;
+  min-height: 74px; display:flex; flex-direction: column; justify-content: space-between;
+}
+.metric::after {
+  content:''; position: absolute; bottom: 0; left: 0; height: 2px;
+  background: var(--acc); width: 0%; opacity: 0.4; transition: width 0.2s ease;
+}
+.metric.warn::after { background: var(--warn); }
+.metric.hot::after { background: var(--danger); }
+.metric .label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.15em; font-weight: 400; }
+.metric .value { font-family: var(--mono); font-weight: 700; font-size: 22px; color: var(--text); line-height: 1; letter-spacing: -0.02em; }
+.metric .value small { color: var(--text-dim); font-size: 10px; font-weight: 400; margin-left: 2px; }
+.metric .sub { font-family: var(--mono); font-size: 9px; color: var(--mute); }
+.metric.accent .value { color: var(--acc); }
+.metric.warn .value { color: var(--warn); }
+.metric.hot .value { color: var(--danger); }
+.metric.regen .value { color: var(--regen); }
+
+/* Gauges */
+.gauge-card { grid-column: 2 / 4; grid-row: 2 / 3; }
+.gauge-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.gauge {
+  background: var(--bg-el); border: 1px solid var(--line);
+  padding: 9px; border-radius: 4px;
+  display:flex; flex-direction:column; align-items:center; gap: 4px; min-height: 145px;
+}
+.gauge svg { width: 110px; height: 70px; }
+.gauge .label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.15em;}
+.gauge .val { font-family: var(--mono); font-weight: 700; font-size: 18px; color: var(--text);}
+.gauge .val small { font-size: 10px; color: var(--text-dim);}
+.gauge .bar-wrap { width: 100%; height: 5px; background: var(--bg-el-2); border-radius: 3px; overflow: hidden; margin-top: 2px;}
+.gauge .bar { height: 100%; background: linear-gradient(90deg, var(--acc-3), var(--acc)); transition: width 0.2s; width:0%;}
+.gauge .bar.warn { background: var(--warn); }
+.gauge .bar.hot { background: var(--danger); }
+
+/* Charts ? CRITICAL: bounded height, short & readable */
+.chart-card {
+  min-height: 0;
+  display: flex; flex-direction: column;
+}
+.chart-wrap {
+  position: relative;
+  height: 170px !important;    /* fixed short height */
+  width: 100%;
+}
+.chart-wrap canvas {
+  position: absolute !important;
+  top: 0; left: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.scrubber-card { grid-column: 1 / 4; padding: 9px 12px; }
+.scrubber-wrap { position: relative; padding: 8px 0; }
+.scrubber { width: 100%; height: 6px; background: var(--bg-el-2); border-radius: 3px; position: relative; cursor: pointer; border: 1px solid var(--line);}
+.scrubber .progress { height: 100%; background: linear-gradient(90deg, var(--acc), var(--acc-2)); border-radius: 3px; width: 0%; position: relative;}
+.scrubber .thumb {
+  position: absolute; top: 50%; transform: translate(50%, -50%); right: 0;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--acc); box-shadow: 0 0 6px var(--acc);
+  pointer-events: none;
+}
+.scrub-meta {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 9px; color: var(--text-dim);
+  padding: 5px 0 0;
+}
+
+.alert-row {
+  grid-column: 1 / 4;
+  display: flex; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px;
+  background: linear-gradient(90deg, rgba(255,51,85,0.05) 0%, rgba(255,204,0,0.05) 100%);
+  border: 1px solid var(--line); border-radius: 6px;
+  position: relative; overflow: hidden;
+}
+.alert-row::before {
+  content:''; position: absolute; top:0; left:0; height: 2px; width: 60px;
+  background: var(--warn); box-shadow: 0 0 8px var(--warn);
+}
+.alert-row h3 { margin-right: 10px; color: var(--warn); padding: 0 10px 0 0; border-right: 1px solid var(--line); border-bottom: none;}
+.alert { font-family: var(--mono); font-size: 10px; padding: 4px 9px; border-radius: 3px; border: 1px solid var(--line-hi); color: var(--text-dim);}
+.alert.warn { border-color: var(--warn); color: var(--warn);}
+.alert.hot { border-color: var(--danger); color: var(--danger);}
+
+/* ===== BMS Policy card ===== */
+.bms-card { grid-column: 1 / 4; }
+.bms-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.bms-block { background: var(--bg-el); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px;}
+.bms-block h4 {
+  font-size: 10px; color: var(--text-dim); text-transform: uppercase;
+  letter-spacing: 0.15em; padding-bottom: 6px; margin-bottom: 8px;
+  border-bottom: 1px solid var(--line); font-weight: 600;
+  display:flex; align-items:center; justify-content: space-between;
+}
+.bms-block h4 .chip { font-family: var(--mono); font-size:9px; padding: 2px 6px; border:1px solid var(--line-hi); border-radius: 3px; color: var(--acc);}
+.bms-table { width: 100%; font-family: var(--mono); font-size: 11px; border-collapse: collapse;}
+.bms-table td { padding: 5px 4px; border-bottom: 1px dashed rgba(28,42,70,0.5); }
+.bms-table td:first-child { color: var(--text-dim); }
+.bms-table td:last-child  { color: var(--text); font-weight: 500; text-align: right;}
+.bms-table tr.active td { background: rgba(255,149,0,0.12); color: var(--acc-2) !important; }
+.bms-table tr.active td:last-child { color: var(--acc-2) !important;}
+.bms-status {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px;
+  padding: 8px 10px; border-radius: 4px;
+  background: var(--bg-el-2); border: 1px solid var(--line-hi);
+  margin-top: 8px; gap: 8px;
+}
+.bms-status.ok   { border-color: var(--acc-3); color: var(--acc-3);}
+.bms-status.warn { border-color: var(--warn);  color: var(--warn);}
+.bms-status.hot  { border-color: var(--danger);color: var(--danger);}
+.bms-status b { color: inherit; }
+
+.sector-card { grid-column: 1 / 4; }
+.sector-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;}
+.sector-chip {
+  background: var(--bg-el); border: 1px solid var(--line);
+  padding: 10px; border-radius: 4px;
+  cursor: pointer; transition: all 0.15s;
+}
+.sector-chip:hover { border-color: var(--acc); }
+.sector-chip.active { border-color: var(--acc-2); box-shadow: 0 0 12px rgba(255,149,0,0.15); }
+.sector-chip .name { font-size: 9px; color: var(--acc-2); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 5px;}
+.sector-chip .stat { font-family: var(--mono); font-size: 10px; color: var(--text-dim); display:flex; justify-content: space-between; padding: 2px 0;}
+.sector-chip .stat b { color: var(--text); font-weight: 500;}
+
+.end-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;}
+.end-grid .cell { background: var(--bg-el); border: 1px solid var(--line); padding: 7px 9px; border-radius: 3px;}
+.end-grid .cell .k { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.12em;}
+.end-grid .cell .v { font-family: var(--mono); font-size: 13px; color: var(--text); font-weight: 700;}
+.lap-summary-card { grid-column: 1 / 4; }
+
+footer { padding: 22px 24px; text-align:center; color: var(--mute); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;}
+
+@media (max-width: 1200px) {
+  main { grid-template-columns: 1fr 1fr; }
+  .track-card { grid-column: 1 / 3; grid-row: auto; min-height: 450px;}
+  .instant-card, .gauge-card, .bms-card { grid-column: 1 / 3; }
+  .sector-grid { grid-template-columns: repeat(3, 1fr); }
+  .bms-grid { grid-template-columns: 1fr;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo"><span>EV</span></div>
+    <div class="title">
+      <h1>Endurance Telemetry ? BIC</h1>
+      <small>EMRAX 228 ? 60 kW / 120 A ? 120S3P ? Buddh International Circuit</small>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="status-pill" id="sysPill"><span class="dot"></span> <span id="sysPillText">SYSTEM NOMINAL</span></div>
+    <div class="playback">
+      <button id="btnRewind">?</button>
+      <button id="btnPlay" class="active">? PLAY</button>
+      <button id="btnSpeed">1?</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- TRACK MAP -->
+  <div class="card track-card">
+    <h3>Track Map ? Click Any Point <span class="badge" id="trackBadge">sample 0 / 0</span></h3>
+    <div class="track-wrap">
+      <svg id="trackSvg" viewBox="0 0 600 420" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="track-legend">
+      <span><i style="background:#1d2840;"></i>Track</span>
+      <span><i style="background:#00e0ff;"></i>Full Throttle</span>
+      <span><i style="background:#40e0d0;"></i>Regen</span>
+      <span><i style="background:#ff9500;"></i>Braking</span>
+      <span><i style="background:#ff3355;"></i>TCS / Corner</span>
+    </div>
+  </div>
+
+  <!-- INSTANT -->
+  <div class="card instant-card">
+    <h3>Instantaneous Values <span class="badge" id="tBadge">t = 0.00 s ? d = 0 m</span></h3>
+    <div class="instant-grid">
+      <div class="metric accent"><div class="label">Vehicle Speed</div><div class="value" id="mSpeed">?<small>km/h</small></div><div class="sub" id="mSpeedMs">?</div></div>
+      <div class="metric"><div class="label">Motor RPM</div><div class="value" id="mRpm">?</div><div class="sub" id="mRpmPct">?</div></div>
+      <div class="metric"><div class="label">Shaft Torque</div><div class="value" id="mTq">?<small>Nm</small></div><div class="sub">cap 90 Nm ? 60 kW</div></div>
+      <div class="metric"><div class="label">Bus Power</div><div class="value" id="mPwr">?<small>kW</small></div><div class="sub" id="mPwrPct">?</div></div>
+      <div class="metric"><div class="label">Throttle</div><div class="value" id="mThr">?<small>%</small></div><div class="sub" id="mThrTcs">TCS ?</div></div>
+      <div class="metric"><div class="label">Brake</div><div class="value" id="mBrk">?<small>%</small></div><div class="sub" id="mBrkRegen">regen ?</div></div>
+      <div class="metric"><div class="label">Lat / Long g</div><div class="value" id="mG">?</div><div class="sub" id="mCorner">R ?</div></div>
+      <div class="metric accent"><div class="label">Sector</div><div class="value" id="mSec">?</div><div class="sub" id="mSecName">?</div></div>
+    </div>
+  </div>
+
+  <!-- GAUGES -->
+  <div class="card gauge-card">
+    <h3>Powertrain Health <span class="badge">LIVE</span></h3>
+    <div class="gauge-row">
+      <div class="gauge">
+        <svg viewBox="0 0 130 70">
+          <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#1c2a46" stroke-width="9"/>
+          <path id="socArc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#8cff4d" stroke-width="9" stroke-dasharray="172 172" stroke-dashoffset="172"/>
+          <text x="65" y="52" fill="#d8e4f0" font-family="JetBrains Mono" font-size="13" font-weight="700" text-anchor="middle" id="socText">?</text>
+          <text x="65" y="66" fill="#5a7090" font-family="Oswald" font-size="8" font-weight="600" text-anchor="middle" letter-spacing="0.15em">SOC %</text>
+        </svg>
+        <div class="label">Pack SOC</div>
+        <div class="val" id="gSoc">?<small>%</small></div>
+        <div class="bar-wrap"><div class="bar" id="gSocBar"></div></div>
+      </div>
+      <div class="gauge">
+        <svg viewBox="0 0 130 70">
+          <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#1c2a46" stroke-width="9"/>
+          <path id="tcArc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#00e0ff" stroke-width="9" stroke-dasharray="172 172" stroke-dashoffset="172"/>
+          <text x="65" y="52" fill="#d8e4f0" font-family="JetBrains Mono" font-size="13" font-weight="700" text-anchor="middle" id="tcText">?</text>
+          <text x="65" y="66" fill="#5a7090" font-family="Oswald" font-size="8" font-weight="600" text-anchor="middle" letter-spacing="0.15em">CELL ?C</text>
+        </svg>
+        <div class="label">Cell Temp</div>
+        <div class="val" id="gTc">?<small>?C</small></div>
+        <div class="bar-wrap"><div class="bar" id="gTcBar"></div></div>
+      </div>
+      <div class="gauge">
+        <svg viewBox="0 0 130 70">
+          <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#1c2a46" stroke-width="9"/>
+          <path id="tmArc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#ff9500" stroke-width="9" stroke-dasharray="172 172" stroke-dashoffset="172"/>
+          <text x="65" y="52" fill="#d8e4f0" font-family="JetBrains Mono" font-size="13" font-weight="700" text-anchor="middle" id="tmText">?</text>
+          <text x="65" y="66" fill="#5a7090" font-family="Oswald" font-size="8" font-weight="600" text-anchor="middle" letter-spacing="0.15em">MOTOR ?C</text>
+        </svg>
+        <div class="label">Motor Temp</div>
+        <div class="val" id="gTm">?<small>?C</small></div>
+        <div class="bar-wrap"><div class="bar" id="gTmBar"></div></div>
+      </div>
+      <div class="gauge">
+        <svg viewBox="0 0 130 70">
+          <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#1c2a46" stroke-width="9"/>
+          <path id="tiArc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#8cff4d" stroke-width="9" stroke-dasharray="172 172" stroke-dashoffset="172"/>
+          <text x="65" y="52" fill="#d8e4f0" font-family="JetBrains Mono" font-size="13" font-weight="700" text-anchor="middle" id="tiText">?</text>
+          <text x="65" y="66" fill="#5a7090" font-family="Oswald" font-size="8" font-weight="600" text-anchor="middle" letter-spacing="0.15em">INV ?C</text>
+        </svg>
+        <div class="label">Inverter Temp</div>
+        <div class="val" id="gTi">?<small>?C</small></div>
+        <div class="bar-wrap"><div class="bar" id="gTiBar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRUBBER -->
+  <div class="card scrubber-card">
+    <h3>Lap Timeline</h3>
+    <div class="scrubber-wrap">
+      <div class="scrubber" id="scrubber"><div class="progress" id="scrubProg"><div class="thumb"></div></div></div>
+      <div class="scrub-meta"><span>0.00 s</span><span id="scrubMid">?</span><span>229.6 s</span></div>
+    </div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="alert-row">
+    <h3>System Check</h3>
+    <div id="alertList" style="display:flex; gap:8px; flex-wrap:wrap; flex:1;"></div>
+  </div>
+
+  <!-- ============  BMS POLICY ============ -->
+  <div class="card bms-card">
+    <h3>BMS Derate Policy ? Live Application</h3>
+    <div class="bms-grid">
+      <div class="bms-block">
+        <h4>SOC Power Cap <span class="chip" id="socChip">? kW</span></h4>
+        <table class="bms-table" id="socTable">
+          <tr data-hi="0"><td>SOC &gt; 80 %</td><td>60 kW <span style="color:var(--mute);font-size:9px;">(HW cap)</span></td></tr>
+          <tr data-hi="1"><td>80 % ? 50 %</td><td>60 kW <span style="color:var(--mute);font-size:9px;">(HW cap)</span></td></tr>
+          <tr data-hi="2"><td>50 % ? 30 %</td><td>60 kW</td></tr>
+          <tr data-hi="3"><td>30 % ? 10 %</td><td>50 kW</td></tr>
+          <tr data-hi="4"><td>&le; 10 % (floor)</td><td>0 kW ? OPEN</td></tr>
+        </table>
+      </div>
+      <div class="bms-block">
+        <h4>Cell Temp Action <span class="chip" id="tempChip">NORMAL</span></h4>
+        <table class="bms-table" id="tempTable">
+          <tr data-hi="0"><td>T &lt; 50 ?C</td><td>full power</td></tr>
+          <tr data-hi="1"><td>50 ? 60 ?C</td><td>reduce current (1 ? 0.7?)</td></tr>
+          <tr data-hi="2"><td>60 ? 70 ?C</td><td>aggressive derate (0.7 ? 0.25?)</td></tr>
+          <tr data-hi="3"><td>&gt; 70 ?C</td><td>limp mode (0.1?)</td></tr>
+        </table>
+      </div>
+      <div class="bms-block">
+        <h4>Effective Limits <span class="chip" id="effChip">?</span></h4>
+        <div style="font-family:var(--mono); font-size:11px; color: var(--text-dim); line-height: 1.8;">
+          <div>SOC cap:&nbsp;&nbsp;<span style="color:var(--text)" id="effSocCap">? kW</span></div>
+          <div>Temp derate:&nbsp;&nbsp;<span style="color:var(--text)" id="effTempD">??</span></div>
+          <div>Effective cap:&nbsp;&nbsp;<span style="color:var(--acc-2)" id="effCap">? kW</span></div>
+          <div>Current demand:&nbsp;&nbsp;<span style="color:var(--text)" id="effDemand">? kW</span></div>
+          <div>Delivered:&nbsp;&nbsp;<span style="color:var(--acc)" id="effDelivered">? kW</span></div>
+        </div>
+        <div class="bms-status ok" id="bmsStatus"><b>?</b> BMS: all limits clear</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CHARTS (short & readable) ============ -->
+  <div class="card chart-card" style="grid-column: 1/3;">
+    <h3>Lap Trace ? Speed & Power</h3>
+    <div class="chart-wrap"><canvas id="chTrace"></canvas></div>
+  </div>
+
+  <div class="card chart-card" style="grid-column: 3/4;">
+    <h3>Pack V & I (Lap 1)</h3>
+    <div class="chart-wrap"><canvas id="chVI"></canvas></div>
+  </div>
+
+  <div class="card chart-card" style="grid-column: 1/2;">
+    <h3>SOC ? 22 Laps</h3>
+    <div class="chart-wrap"><canvas id="chSoc"></canvas></div>
+  </div>
+
+  <div class="card chart-card" style="grid-column: 2/3;">
+    <h3>Thermal Trend ? 22 Laps</h3>
+    <div class="chart-wrap"><canvas id="chTherm"></canvas></div>
+  </div>
+
+  <div class="card chart-card" style="grid-column: 3/4;">
+    <h3>Energy / Lap</h3>
+    <div class="chart-wrap"><canvas id="chLap"></canvas></div>
+  </div>
+
+  <!-- SECTORS -->
+  <div class="card sector-card">
+    <h3>Sector Breakdown <span class="badge">CLICK TO JUMP</span></h3>
+    <div class="sector-grid" id="sectorGrid"></div>
+  </div>
+
+  <!-- ENDURANCE SUMMARY -->
+  <div class="card lap-summary-card">
+    <h3>Endurance Totals <span class="badge" id="endBadge">22 LAPS / 112 km TARGET</span></h3>
+    <div class="end-grid" id="endGrid"></div>
+  </div>
+
+</main>
+
+<footer>
+  <div>FSAE EV Dashboard - BIC ? datasheet-first physics ? BMS rules per 2026 policy table</div>
+  <div style="margin-top:5px; opacity:0.6;">RWD ? FDR 4.0 ? 300 kg kerb ? 22 ? 5.10 km endurance (target 112 km) ? max 60 kW ? I_max 120 A ? 120S3P @ 432 V</div>
+</footer>
+
+<script>
+
+const RAW = JSON.parse('{"summary":{"lap_time_s":229.59254923460756,"lap_dist_m":5095.54305555556,"n_points":5096,"E_lap_Wh":477.8178965953671,"E_total_Wh":4980.314048965991,"E_regen_Wh":19.113348416588526,"regen_pct":0.38377797521738266,"avg_power_kW":7.099189267735329,"I_peak":120.0,"I_rms":17.989020274462227,"SOC_end":9.998259372795662,"T_cell_max":37.31230425712148,"T_motor_max":46.007578275332705,"T_inv_max":39.422792502716796,"Ah_used":11.52850474297683,"E_per_km":88.85330134530844,"range_km":56.00577423812557,"laps_done":11,"bms_shutdown_t":2389.4136040827216,"V_pack_nom":432.0,"V_pack_max":504.0,"V_pack_min":336.0,"E_pack_Wh":5832.0,"Q_pack_Ah":13.5,"R_pack":0.7,"Ns":120,"Np":3,"v_max_kmh":80.0,"I_max_A":120.0,"P_max_kW":60.0,"v_avg_kmh":79.89786721900592,"track_name":"Buddh International Circuit","total_distance_km":56.05097361111116},"sectors":[{"start":0,"end":917.1977500000008,"name":"S1: Start/Pit + T1-T3"},{"start":917.1977500000008,"end":1528.662916666668,"name":"S2: Long Back Straight"},{"start":1528.662916666668,"end":2292.994375000002,"name":"S3: T4 Hairpin"},{"start":2292.994375000002,"end":3159.2366944444475,"name":"S4: Mid-Section Esses"},{"start":3159.2366944444475,"end":4076.4344444444487,"name":"S5: Parabolic + T10-T12"},{"start":4076.4344444444487,"end":5096.54305555556,"name":"S6: Final Sector + Pit Approach"}],"lap":[{"t":0.045,"d":1.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":0.0,"lo":0.0,"x":-0.24,"y":0.97,"cr":0.0,"rg":false,"prg":0.0,"em":80.8,"s":1},{"t":0.945,"d":21.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-5.24,"y":20.65,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":1.845,"d":41.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-10.24,"y":40.33,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":2.745,"d":61.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-15.25,"y":60.01,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":3.645,"d":81.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-20.25,"y":79.7,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":4.545,"d":101.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-25.25,"y":99.38,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":5.445,"d":121.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-30.25,"y":119.06,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":6.345,"d":141.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-35.25,"y":138.74,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":7.245,"d":161.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-40.25,"y":158.42,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":8.145,"d":181.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-45.25,"y":178.1,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":9.045,"d":201.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-50.25,"y":197.79,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":9.945,"d":221.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-55.25,"y":217.47,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":10.845,"d":241.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-60.26,"y":237.15,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":11.745,"d":261.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-65.26,"y":256.83,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":12.645,"d":281.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-70.26,"y":276.51,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":13.545,"d":301.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-75.26,"y":296.19,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":14.445,"d":321.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-80.26,"y":315.88,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":15.345,"d":341.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-85.26,"y":335.56,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":16.245,"d":361.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-90.26,"y":355.24,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":17.145,"d":381.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-95.26,"y":374.92,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":18.045,"d":401.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-100.27,"y":394.6,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":18.945,"d":421.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-105.27,"y":414.28,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":19.845,"d":441.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":-2.29,"lo":0.0,"x":-110.32,"y":434.25,"cr":-618.7,"rg":false,"prg":0.0,"em":80.8,"s":1},{"t":20.745,"d":461.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":-10.41,"lo":0.0,"x":-114.49,"y":454.43,"cr":-72.5,"rg":false,"prg":0.0,"em":80.8,"s":1},{"t":21.645,"d":481.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-14.65,"lo":0.0,"x":-112.75,"y":474.48,"cr":-40.8,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":22.545,"d":501.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-12.25,"lo":0.0,"x":-102.25,"y":491.58,"cr":-57.1,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":23.445,"d":521.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-14.39,"lo":0.0,"x":-86.3,"y":503.66,"cr":-55.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":24.345,"d":541.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-4.83,"lo":0.0,"x":-67.27,"y":509.85,"cr":-180.3,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":25.245,"d":561.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":8.82,"lo":0.0,"x":-47.5,"y":513.13,"cr":109.0,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":26.145,"d":581.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":9.3,"lo":0.0,"x":-28.35,"y":517.88,"cr":112.6,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":27.045,"d":601.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":8.74,"lo":0.0,"x":-10.28,"y":525.93,"cr":128.5,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":27.945,"d":621.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":8.31,"lo":0.0,"x":6.34,"y":536.7,"cr":142.8,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":28.845,"d":641.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":8.58,"lo":0.0,"x":21.34,"y":549.71,"cr":144.2,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":29.745,"d":661.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":8.56,"lo":0.0,"x":34.45,"y":564.66,"cr":149.3,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":30.645,"d":681.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":6.85,"lo":0.0,"x":45.51,"y":581.21,"cr":191.7,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":31.545,"d":701.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":4.8,"lo":0.0,"x":54.76,"y":598.78,"cr":279.1,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":32.445,"d":721.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":3.66,"lo":0.0,"x":62.68,"y":616.87,"cr":372.1,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":33.345,"d":741.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":2.72,"lo":0.0,"x":69.6,"y":635.24,"cr":507.3,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":34.245,"d":761.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.67,"lo":0.0,"x":75.7,"y":653.55,"cr":837.4,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":35.145,"d":781.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.59,"lo":0.0,"x":81.28,"y":671.79,"cr":885.7,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":36.045,"d":801.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.77,"lo":0.0,"x":86.49,"y":690.16,"cr":802.5,"rg":false,"prg":0.0,"em":90.8,"s":1},{"t":36.945,"d":821.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":0.95,"lo":0.0,"x":91.25,"y":708.48,"cr":1105.9,"rg":false,"prg":0.0,"em":80.8,"s":1},{"t":37.855,"d":841.0,"v":72.87,"r":3376.0,"q":15.3,"p":6.05,"th":10.0,"bk":0,"la":-15.7,"lo":0.0,"x":96.29,"y":727.46,"cr":-26.1,"rg":false,"prg":0.0,"em":92.1,"s":1},{"t":38.85,"d":861.0,"v":72.62,"r":3365.0,"q":44.5,"p":17.25,"th":29.0,"bk":0,"la":-15.32,"lo":1.35,"x":108.96,"y":742.52,"cr":-26.6,"rg":false,"prg":0.0,"em":93.7,"s":1},{"t":39.86,"d":881.0,"v":71.6,"r":3317.0,"q":31.4,"p":12.08,"th":20.0,"bk":0,"la":-15.33,"lo":0.76,"x":128.23,"y":744.45,"cr":-25.8,"rg":false,"prg":0.0,"em":93.2,"s":1},{"t":40.836,"d":901.0,"v":78.04,"r":3616.0,"q":86.7,"p":37.02,"th":62.0,"bk":0,"la":-11.87,"lo":3.21,"x":143.34,"y":732.38,"cr":-39.6,"rg":false,"prg":0.0,"em":91.4,"s":1},{"t":41.738,"d":921.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-5.09,"lo":0.0,"x":150.65,"y":714.08,"cr":-116.5,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":42.638,"d":941.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.37,"lo":0.0,"x":154.0,"y":694.83,"cr":516.7,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":43.538,"d":961.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":156.92,"y":675.59,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":44.438,"d":981.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":159.93,"y":656.12,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":45.338,"d":1001.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":162.63,"y":638.99,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":46.238,"d":1021.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":165.8,"y":619.54,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":47.138,"d":1041.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":168.97,"y":600.09,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":48.038,"d":1061.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":172.13,"y":580.65,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":48.938,"d":1081.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":175.3,"y":561.2,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":49.838,"d":1101.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":178.47,"y":541.76,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":50.738,"d":1121.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":181.64,"y":522.31,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":51.638,"d":1141.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":184.8,"y":502.87,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":52.538,"d":1161.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":187.97,"y":483.42,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":53.438,"d":1181.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":191.14,"y":463.98,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":54.338,"d":1201.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":194.3,"y":444.53,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":55.238,"d":1221.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":197.47,"y":425.09,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":56.138,"d":1241.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":200.64,"y":405.64,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":57.038,"d":1261.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":203.8,"y":386.2,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":57.938,"d":1281.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":206.97,"y":366.75,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":58.838,"d":1301.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":210.14,"y":347.31,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":59.738,"d":1321.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":213.3,"y":327.86,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":60.638,"d":1341.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":216.47,"y":308.42,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":61.538,"d":1361.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":219.64,"y":288.97,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":62.438,"d":1381.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":222.81,"y":269.53,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":63.338,"d":1401.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":225.97,"y":250.08,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":64.238,"d":1421.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":229.14,"y":230.64,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":65.138,"d":1441.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":232.31,"y":211.19,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":66.038,"d":1461.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":235.47,"y":191.74,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":66.938,"d":1481.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":238.64,"y":172.3,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":67.838,"d":1501.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":241.81,"y":152.85,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":68.738,"d":1521.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":244.97,"y":133.41,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":2},{"t":69.638,"d":1541.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":248.14,"y":113.96,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":70.538,"d":1561.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":251.31,"y":94.52,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":71.438,"d":1581.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":254.47,"y":75.07,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":72.338,"d":1601.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":257.64,"y":55.63,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":73.238,"d":1621.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":260.81,"y":36.18,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":74.138,"d":1641.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":263.98,"y":16.74,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":75.038,"d":1661.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":267.14,"y":-2.71,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":75.938,"d":1681.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":270.31,"y":-22.15,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":76.838,"d":1701.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":273.48,"y":-41.6,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":77.738,"d":1721.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":276.64,"y":-61.04,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":78.638,"d":1741.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":279.81,"y":-80.49,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":79.538,"d":1761.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":282.98,"y":-99.93,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":80.438,"d":1781.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":286.14,"y":-119.38,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":81.338,"d":1801.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":289.31,"y":-138.82,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":82.238,"d":1821.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":292.48,"y":-158.27,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":83.138,"d":1841.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":295.64,"y":-177.71,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":84.038,"d":1861.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":298.81,"y":-197.16,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":84.938,"d":1881.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":301.98,"y":-216.61,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":85.838,"d":1901.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":305.15,"y":-236.05,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":86.738,"d":1921.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":308.31,"y":-255.5,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":87.638,"d":1941.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":311.48,"y":-274.94,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":88.538,"d":1961.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":314.65,"y":-294.39,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":89.438,"d":1981.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":317.81,"y":-313.83,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":90.338,"d":2001.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":320.98,"y":-333.28,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":91.238,"d":2021.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":324.15,"y":-352.72,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":92.138,"d":2041.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":327.31,"y":-372.17,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":93.038,"d":2061.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":330.48,"y":-391.61,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":93.938,"d":2081.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":333.65,"y":-411.06,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":94.838,"d":2101.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":0.0,"lo":0.0,"x":336.82,"y":-430.5,"cr":0.0,"rg":false,"prg":0.0,"em":80.8,"s":3},{"t":95.738,"d":2121.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":-14.89,"lo":0.0,"x":339.1,"y":-450.3,"cr":-39.2,"rg":false,"prg":0.0,"em":80.8,"s":3},{"t":96.638,"d":2141.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.08,"lo":0.0,"x":333.04,"y":-468.93,"cr":-38.3,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":97.538,"d":2161.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-14.7,"lo":0.0,"x":318.31,"y":-482.13,"cr":-42.5,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":98.438,"d":2181.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-14.45,"lo":0.0,"x":298.97,"y":-487.06,"cr":-44.8,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":99.338,"d":2201.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-13.05,"lo":0.0,"x":279.15,"y":-483.39,"cr":-57.4,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":100.238,"d":2221.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-4.01,"lo":0.0,"x":260.86,"y":-474.21,"cr":-212.1,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":101.138,"d":2241.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.05,"lo":0.0,"x":244.13,"y":-463.86,"cr":897.6,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":102.038,"d":2261.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":227.0,"y":-453.33,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":102.938,"d":2281.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":209.72,"y":-442.71,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":3},{"t":103.838,"d":2301.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":192.44,"y":-432.09,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":104.738,"d":2321.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":175.16,"y":-421.47,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":105.638,"d":2341.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":157.88,"y":-410.86,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":106.538,"d":2361.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":140.59,"y":-400.24,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":107.438,"d":2381.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":123.31,"y":-389.62,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":108.338,"d":2401.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":106.03,"y":-379.0,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":109.238,"d":2421.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":88.75,"y":-368.39,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":110.138,"d":2441.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":71.47,"y":-357.77,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":111.038,"d":2461.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":54.19,"y":-347.15,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":111.938,"d":2481.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":36.91,"y":-336.53,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":112.838,"d":2501.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":19.63,"y":-325.92,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":113.738,"d":2521.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":2.34,"y":-315.3,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":114.638,"d":2541.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-14.94,"y":-304.68,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":115.538,"d":2561.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-32.22,"y":-294.06,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":116.438,"d":2581.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-49.5,"y":-283.45,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":117.338,"d":2601.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-66.78,"y":-272.83,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":118.238,"d":2621.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-84.06,"y":-262.21,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":119.138,"d":2641.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.9,"lo":0.0,"x":-101.16,"y":-251.71,"cr":1619.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":120.038,"d":2661.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":4.52,"lo":0.0,"x":-117.46,"y":-241.87,"cr":321.7,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":120.938,"d":2681.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":15.7,"lo":0.0,"x":-135.18,"y":-232.56,"cr":78.2,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":121.838,"d":2701.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":15.24,"lo":0.0,"x":-154.43,"y":-226.84,"cr":77.6,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":122.738,"d":2721.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":14.25,"lo":0.0,"x":-174.43,"y":-226.11,"cr":82.6,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":123.638,"d":2741.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":9.4,"lo":0.0,"x":-193.98,"y":-229.99,"cr":130.3,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":124.538,"d":2761.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":11.16,"lo":0.0,"x":-212.52,"y":-237.12,"cr":113.7,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":125.438,"d":2781.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":13.41,"lo":0.0,"x":-229.52,"y":-247.32,"cr":97.3,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":126.338,"d":2801.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":15.07,"lo":0.0,"x":-244.03,"y":-260.75,"cr":72.3,"rg":false,"prg":0.0,"em":80.8,"s":4},{"t":127.238,"d":2821.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":15.64,"lo":0.0,"x":-254.3,"y":-277.54,"cr":59.3,"rg":false,"prg":0.0,"em":80.8,"s":4},{"t":128.138,"d":2841.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":14.86,"lo":0.0,"x":-258.42,"y":-296.69,"cr":56.2,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":129.038,"d":2861.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":12.25,"lo":0.0,"x":-255.92,"y":-316.07,"cr":75.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":129.938,"d":2881.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-5.73,"lo":0.0,"x":-249.01,"y":-334.58,"cr":-175.7,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":130.838,"d":2901.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-4.25,"lo":0.0,"x":-243.27,"y":-353.69,"cr":-256.1,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":131.738,"d":2921.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-5.25,"lo":0.0,"x":-239.23,"y":-373.3,"cr":-220.6,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":132.638,"d":2941.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-2.17,"lo":0.0,"x":-236.69,"y":-393.37,"cr":-558.4,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":133.538,"d":2961.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-1.78,"lo":0.0,"x":-234.96,"y":-413.86,"cr":-707.6,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":134.438,"d":2981.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-3.23,"lo":0.0,"x":-233.92,"y":-434.28,"cr":-402.0,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":135.338,"d":3001.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-7.03,"lo":0.0,"x":-233.96,"y":-454.37,"cr":-188.9,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":136.238,"d":3021.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-11.63,"lo":0.0,"x":-236.06,"y":-474.19,"cr":-116.3,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":137.138,"d":3041.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":-15.67,"lo":0.0,"x":-241.63,"y":-493.25,"cr":-80.6,"rg":false,"prg":0.0,"em":80.8,"s":4},{"t":138.038,"d":3061.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-12.63,"lo":0.0,"x":-251.63,"y":-510.46,"cr":-99.1,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":138.938,"d":3081.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-8.97,"lo":0.0,"x":-264.97,"y":-525.43,"cr":-143.9,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":139.838,"d":3101.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":6.14,"lo":0.0,"x":-279.92,"y":-538.47,"cr":215.2,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":140.738,"d":3121.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":15.37,"lo":0.0,"x":-293.66,"y":-552.64,"cr":83.6,"rg":false,"prg":0.0,"em":80.8,"s":4},{"t":141.638,"d":3141.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":11.79,"lo":0.0,"x":-303.84,"y":-569.48,"cr":105.5,"rg":false,"prg":0.0,"em":90.8,"s":4},{"t":142.538,"d":3161.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":6.89,"lo":0.0,"x":-310.62,"y":-587.86,"cr":186.5,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":143.438,"d":3181.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":7.76,"lo":0.0,"x":-315.14,"y":-606.85,"cr":169.8,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":144.338,"d":3201.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":6.72,"lo":0.0,"x":-317.5,"y":-626.2,"cr":199.8,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":145.238,"d":3221.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":3.9,"lo":0.0,"x":-317.99,"y":-645.55,"cr":350.2,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":146.138,"d":3241.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":3.69,"lo":0.0,"x":-317.3,"y":-664.76,"cr":375.2,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":147.038,"d":3261.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-315.81,"y":-684.29,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":147.938,"d":3281.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-2.29,"lo":0.0,"x":-314.35,"y":-704.47,"cr":-616.4,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":148.838,"d":3301.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-2.36,"lo":0.0,"x":-313.51,"y":-725.0,"cr":-601.8,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":149.738,"d":3321.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-2.9,"lo":0.0,"x":-313.39,"y":-745.46,"cr":-492.6,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":150.638,"d":3341.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-4.84,"lo":0.0,"x":-314.16,"y":-765.69,"cr":-296.2,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":151.538,"d":3361.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-11.28,"lo":0.0,"x":-316.4,"y":-785.55,"cr":-127.6,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":152.438,"d":3381.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-12.8,"lo":0.0,"x":-321.53,"y":-804.78,"cr":-112.8,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":153.338,"d":3401.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-11.02,"lo":0.0,"x":-329.95,"y":-822.88,"cr":-131.4,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":154.238,"d":3421.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-11.32,"lo":0.0,"x":-341.12,"y":-839.48,"cr":-128.1,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":155.138,"d":3441.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-13.68,"lo":0.0,"x":-354.82,"y":-854.11,"cr":-106.2,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":156.038,"d":3461.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.66,"lo":0.0,"x":-371.08,"y":-865.85,"cr":-83.3,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":156.938,"d":3481.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.69,"lo":0.0,"x":-389.68,"y":-873.44,"cr":-77.2,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":157.838,"d":3501.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.28,"lo":0.0,"x":-409.68,"y":-876.04,"cr":-74.6,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":158.738,"d":3521.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-13.6,"lo":0.0,"x":-429.74,"y":-873.3,"cr":-84.4,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":159.638,"d":3541.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-12.22,"lo":0.0,"x":-448.66,"y":-865.88,"cr":-98.7,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":160.538,"d":3561.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-9.74,"lo":0.0,"x":-465.8,"y":-854.8,"cr":-128.7,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":161.438,"d":3581.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-8.65,"lo":0.0,"x":-481.02,"y":-841.11,"cr":-149.3,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":162.338,"d":3601.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-8.04,"lo":0.0,"x":-494.3,"y":-825.47,"cr":-164.6,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":163.238,"d":3621.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-8.68,"lo":0.0,"x":-505.57,"y":-808.32,"cr":-155.3,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":164.138,"d":3641.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-12.63,"lo":0.0,"x":-514.43,"y":-789.87,"cr":-108.4,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":165.038,"d":3661.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":-15.35,"lo":0.0,"x":-519.81,"y":-770.19,"cr":-87.3,"rg":false,"prg":0.0,"em":80.8,"s":5},{"t":165.938,"d":3681.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.4,"lo":0.0,"x":-520.69,"y":-749.87,"cr":-80.8,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":166.838,"d":3701.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-12.8,"lo":0.0,"x":-516.86,"y":-729.91,"cr":-99.5,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":167.738,"d":3721.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-14.57,"lo":0.0,"x":-509.04,"y":-711.2,"cr":-89.0,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":168.638,"d":3741.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-12.87,"lo":0.0,"x":-497.36,"y":-694.71,"cr":-102.2,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":169.538,"d":3761.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-6.39,"lo":0.0,"x":-482.81,"y":-680.6,"cr":-209.9,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":170.438,"d":3781.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.84,"lo":0.0,"x":-467.02,"y":-668.26,"cr":742.4,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":171.338,"d":3801.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":7.77,"lo":0.0,"x":-451.52,"y":-656.34,"cr":177.8,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":172.238,"d":3821.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":3.54,"lo":0.0,"x":-437.04,"y":-642.91,"cr":395.1,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":173.138,"d":3841.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.6,"lo":0.0,"x":-423.81,"y":-629.1,"cr":882.2,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":174.038,"d":3861.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.79,"lo":0.0,"x":-410.98,"y":-615.06,"cr":793.0,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":174.938,"d":3881.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.43,"lo":0.0,"x":-398.55,"y":-600.83,"cr":996.2,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":175.838,"d":3901.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.56,"lo":0.0,"x":-386.45,"y":-586.39,"cr":918.1,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":176.738,"d":3921.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.08,"lo":0.0,"x":-374.75,"y":-571.88,"cr":1335.4,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":177.638,"d":3941.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.18,"lo":0.0,"x":-363.47,"y":-557.46,"cr":1224.0,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":178.538,"d":3961.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.6,"lo":0.0,"x":-352.14,"y":-542.54,"cr":906.1,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":179.438,"d":3981.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":2.51,"lo":0.0,"x":-340.89,"y":-527.07,"cr":578.5,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":180.338,"d":4001.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":7.34,"lo":0.0,"x":-329.91,"y":-510.79,"cr":197.9,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":181.238,"d":4021.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":15.59,"lo":0.0,"x":-320.62,"y":-493.09,"cr":92.3,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":182.138,"d":4041.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":15.44,"lo":0.0,"x":-315.1,"y":-473.81,"cr":89.3,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":183.038,"d":4061.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":14.42,"lo":0.0,"x":-313.89,"y":-453.74,"cr":92.5,"rg":false,"prg":0.0,"em":90.8,"s":5},{"t":183.938,"d":4081.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":11.21,"lo":0.0,"x":-316.88,"y":-433.84,"cr":120.9,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":184.838,"d":4101.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":8.67,"lo":0.0,"x":-323.09,"y":-414.71,"cr":158.7,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":185.738,"d":4121.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-331.71,"y":-396.54,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":186.638,"d":4141.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-9.74,"lo":0.0,"x":-341.53,"y":-378.74,"cr":-144.2,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":187.538,"d":4161.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.01,"lo":0.0,"x":-349.97,"y":-360.12,"cr":-93.9,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":188.438,"d":4181.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-9.23,"lo":0.0,"x":-354.88,"y":-340.27,"cr":-153.5,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":189.338,"d":4201.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-5.38,"lo":0.0,"x":-357.18,"y":-319.84,"cr":-265.2,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":190.238,"d":4221.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-4.56,"lo":0.0,"x":-357.81,"y":-299.19,"cr":-314.3,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":191.138,"d":4241.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-3.81,"lo":0.0,"x":-357.11,"y":-278.47,"cr":-377.7,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":192.038,"d":4261.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-3.72,"lo":0.0,"x":-355.27,"y":-257.79,"cr":-387.3,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":192.938,"d":4281.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-352.63,"y":-237.55,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":193.838,"d":4301.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-349.95,"y":-217.48,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":194.738,"d":4321.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-347.26,"y":-197.41,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":195.638,"d":4341.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-344.58,"y":-177.34,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":196.538,"d":4361.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-2.12,"lo":0.0,"x":-341.89,"y":-157.22,"cr":-687.8,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":197.438,"d":4381.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-9.22,"lo":0.0,"x":-338.68,"y":-136.73,"cr":-158.1,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":198.338,"d":4401.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":-15.12,"lo":0.0,"x":-333.12,"y":-117.17,"cr":-87.1,"rg":false,"prg":0.0,"em":80.8,"s":6},{"t":199.238,"d":4421.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.6,"lo":0.0,"x":-323.44,"y":-99.42,"cr":-75.8,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":200.138,"d":4441.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.06,"lo":0.0,"x":-309.57,"y":-84.85,"cr":-75.9,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":201.038,"d":4461.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.58,"lo":0.0,"x":-292.36,"y":-74.61,"cr":-63.5,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":201.938,"d":4481.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-15.56,"lo":0.0,"x":-272.97,"y":-70.18,"cr":-60.5,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":202.838,"d":4501.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-10.79,"lo":0.0,"x":-253.26,"y":-72.22,"cr":-89.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":203.738,"d":4521.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-9.56,"lo":0.0,"x":-234.6,"y":-79.03,"cr":-109.2,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":204.638,"d":4541.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-4.63,"lo":0.0,"x":-217.28,"y":-88.92,"cr":-242.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":205.538,"d":4561.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.42,"lo":0.0,"x":-201.13,"y":-100.28,"cr":833.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":206.438,"d":4581.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.1,"lo":0.0,"x":-186.19,"y":-111.16,"cr":1121.5,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":207.338,"d":4601.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.73,"lo":0.0,"x":-171.71,"y":-121.32,"cr":1751.8,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":208.238,"d":4621.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-1.37,"lo":0.0,"x":-156.8,"y":-131.56,"cr":-957.6,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":209.138,"d":4641.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-0.78,"lo":0.0,"x":-139.15,"y":-143.94,"cr":-1706.7,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":210.038,"d":4661.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-0.8,"lo":0.0,"x":-121.35,"y":-156.81,"cr":-1706.7,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":210.938,"d":4681.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-105.38,"y":-168.54,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":211.838,"d":4701.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-89.5,"y":-180.2,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":212.738,"d":4721.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-73.61,"y":-191.87,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":213.638,"d":4741.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-57.73,"y":-203.53,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":214.538,"d":4761.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.82,"lo":0.0,"x":-42.32,"y":-214.84,"cr":1730.1,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":215.438,"d":4781.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":1.39,"lo":0.0,"x":-27.86,"y":-225.26,"cr":1031.1,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":216.338,"d":4801.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":5.65,"lo":0.0,"x":-12.19,"y":-236.04,"cr":168.4,"rg":false,"prg":0.0,"em":80.8,"s":6},{"t":217.238,"d":4821.0,"v":80.0,"r":3707.0,"q":0,"p":0.0,"th":0,"bk":0,"la":15.67,"lo":0.0,"x":5.56,"y":-244.22,"cr":35.7,"rg":false,"prg":0.0,"em":80.8,"s":6},{"t":218.138,"d":4841.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":14.63,"lo":0.0,"x":25.04,"y":-242.71,"cr":36.8,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":219.038,"d":4861.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":15.59,"lo":0.0,"x":40.86,"y":-230.94,"cr":35.1,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":219.938,"d":4881.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":11.63,"lo":0.0,"x":48.32,"y":-212.47,"cr":52.2,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":220.838,"d":4901.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":6.32,"lo":0.0,"x":48.28,"y":-192.36,"cr":114.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":221.738,"d":4921.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":44.35,"y":-172.6,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":222.638,"d":4941.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":39.12,"y":-152.98,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":223.538,"d":4961.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":-0.61,"lo":0.0,"x":33.61,"y":-132.18,"cr":-1660.2,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":224.438,"d":4981.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":28.4,"y":-111.76,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":225.338,"d":5001.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":23.4,"y":-92.07,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":226.238,"d":5021.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":18.4,"y":-72.39,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":227.138,"d":5041.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":13.4,"y":-52.71,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":228.038,"d":5061.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":8.4,"y":-33.03,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":228.938,"d":5081.0,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":3.4,"y":-13.35,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6},{"t":229.593,"d":5095.5,"v":80.0,"r":3707.0,"q":17.7,"p":7.81,"th":13.0,"bk":0,"la":0.0,"lo":0.0,"x":-0.24,"y":0.97,"cr":0.0,"rg":false,"prg":0.0,"em":90.8,"s":6}],"endurance":[{"l":1,"t":229.6,"soc":87.64,"tc":36.09,"tm":44.98,"ti":39.24,"e":477.8,"er":1.8,"el":477.82},{"l":2,"t":459.2,"soc":80.14,"tc":36.46,"tm":45.91,"ti":39.42,"e":955.6,"er":3.6,"el":477.82},{"l":3,"t":688.8,"soc":72.48,"tc":36.62,"tm":46.0,"ti":39.42,"e":1433.5,"er":5.4,"el":477.82},{"l":4,"t":918.4,"soc":64.66,"tc":36.71,"tm":46.01,"ti":39.42,"e":1911.3,"er":7.2,"el":477.82},{"l":5,"t":1148.0,"soc":56.71,"tc":36.78,"tm":46.01,"ti":39.42,"e":2389.1,"er":9.0,"el":477.82},{"l":6,"t":1377.6,"soc":48.61,"tc":36.85,"tm":46.01,"ti":39.42,"e":2866.9,"er":10.7,"el":477.82},{"l":7,"t":1607.1,"soc":40.33,"tc":36.93,"tm":46.01,"ti":39.42,"e":3344.7,"er":12.4,"el":477.82},{"l":8,"t":1836.7,"soc":31.84,"tc":37.03,"tm":46.01,"ti":39.42,"e":3822.5,"er":14.2,"el":477.82},{"l":9,"t":2066.3,"soc":23.11,"tc":37.14,"tm":46.01,"ti":39.42,"e":4300.4,"er":15.8,"el":477.82},{"l":10,"t":2295.9,"soc":14.02,"tc":37.31,"tm":46.01,"ti":39.42,"e":4778.2,"er":17.5,"el":477.82},{"l":11,"t":2525.5,"soc":10.0,"tc":36.28,"tm":37.77,"ti":35.7,"e":4980.3,"er":19.1,"el":202.14}]}');
+const LAP = RAW.lap;
+const END = RAW.endurance;
+const SUM = RAW.summary;
+const SECTORS = RAW.sectors;
+
+// -------- sector aggregation --------
+const sectorStats = SECTORS.map((s, si) => {
+  const pts = LAP.filter(p => p.s === si+1);
+  if (pts.length === 0) return {...s, avgV:0,maxV:0,minV:0,avgP:0,maxP:0,time:0,energy:0};
+  const vMax = Math.max(...pts.map(p=>p.v));
+  const vMin = Math.min(...pts.map(p=>p.v));
+  const vAvg = pts.reduce((a,p)=>a+p.v,0)/pts.length;
+  const pMax = Math.max(...pts.map(p=>p.p));
+  const pAvg = pts.reduce((a,p)=>a+p.p,0)/pts.length;
+  const t = pts[pts.length-1].t - pts[0].t;
+  let E = 0;
+  for (let i=1;i<pts.length;i++){const dt=pts[i].t-pts[i-1].t; E+=Math.max(0,pts[i].p)*dt;}
+  E = E/3.6;
+  return {...s, avgV:vAvg, maxV:vMax, minV:vMin, avgP:pAvg, maxP:pMax, time:t, energy:E};
+});
+
+// -------- Track SVG --------
+const svg = document.getElementById('trackSvg');
+const xs = LAP.map(p=>p.x), ys = LAP.map(p=>p.y);
+const xMin=Math.min(...xs), xMax=Math.max(...xs);
+const yMin=Math.min(...ys), yMax=Math.max(...ys);
+const xSpan=xMax-xMin, ySpan=yMax-yMin;
+const pad = 28;
+const svgW=600, svgH=420;
+function mapXY(x,y){
+  const fx=(x-xMin)/xSpan, fy=(y-yMin)/ySpan;
+  return [pad + fx*(svgW-2*pad), svgH - (pad + fy*(svgH-2*pad))];
+}
+// Background trace
+const bgPath = LAP.map((p,i)=>{const [X,Y]=mapXY(p.x,p.y); return (i===0?'M':'L')+X.toFixed(1)+','+Y.toFixed(1);}).join(' ')+' Z';
+svg.insertAdjacentHTML('beforeend', `<path class="track-bg" d="${bgPath}"/>`);
+
+// Coloured segments
+function segColor(p){
+  if(p.rg) return '#40e0d0';
+  if(p.bk>30) return '#ff9500';
+  if(p.tcs>50) return '#ff3355';
+  if(p.th>80) return '#00e0ff';
+  return '#7f9dbf';
+}
+for(let i=0;i<LAP.length-1;i++){
+  const p1=LAP[i], p2=LAP[i+1];
+  const [X1,Y1]=mapXY(p1.x,p1.y), [X2,Y2]=mapXY(p2.x,p2.y);
+  svg.insertAdjacentHTML('beforeend', `<path class="track-fg" d="M${X1.toFixed(1)},${Y1.toFixed(1)} L${X2.toFixed(1)},${Y2.toFixed(1)}" stroke="${segColor(p1)}"/>`);
+}
+sectorStats.forEach((s,si)=>{
+  const midD = (s.start+s.end)/2;
+  let bestI=0, bestD=Infinity;
+  for(let i=0;i<LAP.length;i++){const dd=Math.abs(LAP[i].d-midD); if(dd<bestD){bestD=dd; bestI=i;}}
+  const [X,Y]=mapXY(LAP[bestI].x, LAP[bestI].y);
+  svg.insertAdjacentHTML('beforeend', `<text class="sector-label" x="${X.toFixed(0)}" y="${(Y-16).toFixed(0)}">S${si+1}</text>`);
+});
+const selectDot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+selectDot.setAttribute('class','selected-pt'); selectDot.setAttribute('r','6');
+svg.appendChild(selectDot);
+
+// click
+svg.addEventListener('click',(e)=>{
+  isPlaying=false;
+  const bp=document.getElementById('btnPlay');
+  bp.textContent='? PLAY'; bp.classList.remove('active');
+  const rect=svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  const scale = Math.min(rect.width/vb.width, rect.height/vb.height);
+  const offX = (rect.width - vb.width*scale)/2;
+  const offY = (rect.height - vb.height*scale)/2;
+  const cx = (e.clientX - rect.left - offX)/scale;
+  const cy = (e.clientY - rect.top - offY)/scale;
+  let bestI=0, bestD=Infinity;
+  for(let i=0;i<LAP.length;i++){const [X,Y]=mapXY(LAP[i].x,LAP[i].y); const d=(X-cx)**2+(Y-cy)**2; if(d<bestD){bestD=d; bestI=i;}}
+  setCurrentIdx(bestI);
+});
+
+// -------- helpers --------
+const $ = id => document.getElementById(id);
+const PP = {Ns: SUM.Ns, R: SUM.R_pack};
+const SOC_PTS=[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0];
+const OCV_PTS=[2.50,3.18,3.40,3.52,3.62,3.72,3.80,3.88,3.98,4.08,4.20];
+function ocv(s){
+  s=Math.max(0,Math.min(1,s));
+  for(let i=0;i<SOC_PTS.length-1;i++){
+    if(SOC_PTS[i]<=s && s<=SOC_PTS[i+1]){const f=(s-SOC_PTS[i])/(SOC_PTS[i+1]-SOC_PTS[i]); return OCV_PTS[i]+f*(OCV_PTS[i+1]-OCV_PTS[i]);}
+  } return OCV_PTS[OCV_PTS.length-1];
+}
+
+// ----- NEW: SOC cap & temp derate (match sim) -----
+function socPowerCap(soc){ // returns kW (HW-capped at 60)
+  if(soc>80) return 60;
+  if(soc>50) return 60;
+  if(soc>30) return 60;
+  if(soc>10) return 50;
+  return 0;
+}
+function socRow(soc){
+  if(soc>80) return 0; if(soc>50) return 1; if(soc>30) return 2; if(soc>10) return 3; return 4;
+}
+function tempDerate(T){
+  if(T<50) return 1.00;
+  if(T<60) return 1.00 - (T-50)/10*0.30;
+  if(T<70) return 0.70 - (T-60)/10*0.45;
+  return 0.10;
+}
+function tempRow(T){
+  if(T<50) return 0; if(T<60) return 1; if(T<70) return 2; return 3;
+}
+function tempLabel(T){
+  if(T<50) return 'NORMAL';
+  if(T<60) return 'REDUCE';
+  if(T<70) return 'AGGRESSIVE';
+  return 'LIMP';
+}
+
+function getStateAt(tLapSec, lapIdx){
+  const fLap = tLapSec/SUM.lap_time_s;
+  const prev = lapIdx===1 ? {soc:95,tc:35,tm:35,ti:35,e:0} : END[lapIdx-2];
+  const curr = END[Math.min(lapIdx-1, END.length-1)];
+  return {
+    SOC: prev.soc + (curr.soc-prev.soc)*fLap,
+    Tc:  prev.tc  + (curr.tc -prev.tc )*fLap,
+    Tm:  prev.tm  + (curr.tm -prev.tm )*fLap,
+    Ti:  prev.ti  + (curr.ti -prev.ti )*fLap,
+    E:   prev.e   + (curr.e  -prev.e  )*fLap
+  };
+}
+
+function fmt(v,d=1){ return v.toFixed(d); }
+
+function setGauge(arcId,textId,valId,barId,val,min,max,unit,inv=false){
+  const frac = Math.max(0,Math.min(1,(val-min)/(max-min)));
+  const arcLen = 172;
+  $(arcId).setAttribute('stroke-dashoffset', arcLen*(1-frac));
+  $(textId).textContent = fmt(val,1);
+  $(valId).innerHTML = fmt(val,1) + `<small>${unit}</small>`;
+  const bar = $(barId);
+  bar.style.width = (frac*100)+'%';
+  bar.classList.remove('warn','hot');
+  if(inv){ if(frac<0.2) bar.classList.add('hot'); else if(frac<0.4) bar.classList.add('warn'); }
+  else { if(frac>0.85) bar.classList.add('hot'); else if(frac>0.65) bar.classList.add('warn'); }
+}
+
+let currentIdx=0, currentLap=1;
+
+function setCurrentIdx(i){
+  currentIdx = Math.max(0, Math.min(LAP.length-1, i));
+  const p = LAP[currentIdx];
+  const [X,Y]=mapXY(p.x,p.y);
+  selectDot.setAttribute('cx',X); selectDot.setAttribute('cy',Y);
+  $('trackBadge').textContent = `sample ${currentIdx+1} / ${LAP.length}`;
+  $('tBadge').textContent = `t = ${fmt(p.t,2)} s ? d = ${fmt(p.d,0)} m`;
+
+  $('mSpeed').innerHTML = fmt(p.v,1) + '<small>km/h</small>';
+  $('mSpeedMs').textContent = fmt(p.v/3.6,2) + ' m/s';
+  $('mRpm').textContent = fmt(p.r,0);
+  $('mRpmPct').textContent = fmt(100*p.r/5000,0) + '% of 5000';
+  $('mTq').innerHTML = fmt(p.q,1) + '<small>Nm</small>';
+  $('mPwr').innerHTML = fmt(p.p,1) + '<small>kW</small>';
+  $('mPwrPct').textContent = fmt(100*p.p/60,0) + '% of 60kW';
+  $('mThr').innerHTML = fmt(p.th,0) + '<small>%</small>';
+  $('mThrTcs').textContent = 'TCS ' + (p.tcs>50 ? 'ON '+fmt(p.tcs,0)+'%' : 'off');
+  $('mBrk').innerHTML = fmt(p.bk,0) + '<small>%</small>';
+  $('mBrkRegen').textContent = p.rg ? 'regen '+fmt(p.prg,1)+' kW' : 'regen ?';
+  $('mG').textContent = fmt(p.la/9.81,2)+' / '+fmt(p.lo/9.81,2)+' g';
+  $('mCorner').textContent = 'R ' + (p.cr===0 || Math.abs(p.cr)>500 ? '?' : fmt(p.cr,0)+' m');
+  $('mSec').textContent = 'S'+p.s;
+  $('mSecName').textContent = sectorStats[p.s-1] ? sectorStats[p.s-1].name : '?';
+
+  // metric color reset + conditionals
+  document.querySelectorAll('.metric').forEach(m=>m.classList.remove('warn','hot','regen'));
+  const mArr = document.querySelectorAll('.metric');
+  if(p.rg) mArr[5].classList.add('regen');
+  if(p.tcs>50) mArr[4].classList.add('warn');
+  if(p.p>40) mArr[3].classList.add('warn');
+  if(p.p>55) mArr[3].classList.add('hot');
+
+  // Endurance state
+  const st = getStateAt(p.t, currentLap);
+  setGauge('socArc','socText','gSoc','gSocBar', st.SOC, 0, 100, '%', true);
+  setGauge('tcArc','tcText','gTc','gTcBar', st.Tc, 25, 75, '?C');
+  setGauge('tmArc','tmText','gTm','gTmBar', st.Tm, 25, 120, '?C');
+  setGauge('tiArc','tiText','gTi','gTiBar', st.Ti, 25, 90, '?C');
+
+  // V, I  (for cursor markers)
+  const Voc = PP.Ns * ocv(st.SOC/100);
+  let I=0, Vbus=Voc;
+  if(p.p>0){
+    const Pw = p.p*1000;
+    const disc = Voc*Voc - 4*PP.R*Pw;
+    if(disc>=0){I=(Voc-Math.sqrt(disc))/(2*PP.R); Vbus=Voc-I*PP.R;}
+  } else if(p.rg){
+    const Pr = p.prg*1000;
+    const Imag = (-Voc+Math.sqrt(Voc*Voc+4*PP.R*Pr))/(2*PP.R);
+    I = -Math.min(Imag, 40.5); Vbus = Voc+Math.abs(I)*PP.R;
+  }
+
+  // Scrubber
+  const frac = currentIdx/(LAP.length-1);
+  $('scrubProg').style.width = (frac*100)+'%';
+  $('scrubMid').textContent = `${fmt(p.t,2)} s ? ${fmt(p.d,0)} m ? lap ${currentLap}`;
+
+  // Charts cursor
+  if(chTrace){
+    chTrace.options.plugins.annotation?.annotations && ((chTrace.options.plugins.annotation.annotations.cursor.xMin=p.t),
+    (chTrace.options.plugins.annotation.annotations.cursor.xMax=p.t));
+    chTrace.update('none');
+  }
+  if(chVI){
+    chVI.data.datasets[2].data=[{x:p.t,y:Vbus}];
+    chVI.data.datasets[3].data=[{x:p.t,y:I}];
+    chVI.update('none');
+  }
+
+  // ===== BMS POLICY PANEL =====
+  const pCapKW = socPowerCap(st.SOC);
+  const tDer = tempDerate(st.Tc);
+  const effCapKW = pCapKW * tDer;
+  const demand = Math.max(0, p.p);
+  const delivered = Math.min(demand, effCapKW);
+
+  // Highlight active rows
+  document.querySelectorAll('#socTable tr').forEach(tr=>tr.classList.remove('active'));
+  document.querySelectorAll('#socTable tr')[socRow(st.SOC)].classList.add('active');
+  document.querySelectorAll('#tempTable tr').forEach(tr=>tr.classList.remove('active'));
+  document.querySelectorAll('#tempTable tr')[tempRow(st.Tc)].classList.add('active');
+
+  $('socChip').textContent = fmt(pCapKW,0) + ' kW';
+  $('tempChip').textContent = tempLabel(st.Tc);
+  $('effChip').textContent = fmt(effCapKW,1)+' kW';
+  $('effSocCap').textContent = fmt(pCapKW,0)+' kW';
+  $('effTempD').textContent = fmt(tDer,2)+'?';
+  $('effCap').textContent = fmt(effCapKW,1)+' kW';
+  $('effDemand').textContent = fmt(demand,1)+' kW';
+  $('effDelivered').textContent = fmt(delivered,1)+' kW';
+
+  // BMS status tile ? based on whether limit is ACTUALLY engaged
+  const bs = $('bmsStatus');
+  bs.classList.remove('ok','warn','hot');
+  const actuallyLimited = (delivered < demand - 0.5) && demand > 0;
+  if (st.SOC<=10){
+    bs.classList.add('hot');
+    bs.innerHTML = '<b>?</b> BMS: CONTACTOR OPEN ? SOC floor';
+  } else if (st.Tc>=70){
+    bs.classList.add('hot');
+    bs.innerHTML = '<b>?</b> BMS: LIMP MODE ? cell &gt; 70 ?C';
+  } else if (st.Tc>=60){
+    bs.classList.add('hot');
+    bs.innerHTML = '<b>?</b> BMS: aggressive temp derate (60?70 ?C)';
+  } else if (st.Tc>=50){
+    bs.classList.add('warn');
+    bs.innerHTML = '<b>?</b> BMS: reducing current (cell 50?60 ?C)';
+  } else if (actuallyLimited){
+    bs.classList.add('warn');
+    bs.innerHTML = `<b>?</b> BMS: capping at ${fmt(delivered,1)} kW (demand ${fmt(demand,1)})`;
+  } else if (st.SOC<30){
+    bs.classList.add('ok');
+    bs.innerHTML = '<b>?</b> BMS: low-SOC cap armed (50 kW) ? not engaged';
+  } else {
+    bs.classList.add('ok');
+    bs.innerHTML = '<b>?</b> BMS: all limits clear';
+  }
+
+  // top header pill
+  const sp = $('sysPill'); const spt = $('sysPillText');
+  sp.classList.remove('danger');
+  if (st.SOC<=10 || st.Tc>=70) { sp.classList.add('danger'); spt.textContent = 'BMS FAULT ? LIMP/OPEN'; }
+  else if (delivered < demand - 0.5){ sp.classList.add('danger'); spt.textContent = `DERATED ? cap ${fmt(effCapKW,0)} kW`; }
+  else spt.textContent = 'SYSTEM NOMINAL';
+
+  // Alerts
+  updateAlerts(p, st, pCapKW, tDer, demand, delivered);
+  highlightSector(p.s);
+}
+
+function updateAlerts(p, st, pCapKW, tDer, demand, delivered){
+  const al = $('alertList');
+  const alerts=[];
+  if (st.SOC<=10) alerts.push({cls:'hot', msg:'SOC FLOOR ? contactor open'});
+  else if (st.SOC<15) alerts.push({cls:'hot', msg:`SOC ${fmt(st.SOC,1)}% ? critical`});
+  else if (st.SOC<30) alerts.push({cls:'warn', msg:`SOC ${fmt(st.SOC,1)}% ? 50 kW cap`});
+  else if (st.SOC<50) alerts.push({cls:'warn', msg:`SOC ${fmt(st.SOC,1)}% ? 60 kW cap`});
+
+  if (st.Tc>=70) alerts.push({cls:'hot', msg:`T_cell ${fmt(st.Tc,1)}?C ? LIMP`});
+  else if (st.Tc>=60) alerts.push({cls:'hot', msg:`T_cell ${fmt(st.Tc,1)}?C ? aggressive derate`});
+  else if (st.Tc>=50) alerts.push({cls:'warn', msg:`T_cell ${fmt(st.Tc,1)}?C ? current limit`});
+
+  if (delivered < demand - 0.5) alerts.push({cls:'warn', msg:`DERATED: ${fmt(delivered,1)}/${fmt(demand,1)} kW`});
+  if (p.p>50 && demand <= Math.min(60, pCapKW*tDer) + 0.5) alerts.push({cls:'warn', msg:'near 60 kW cap'});
+
+  if (alerts.length===0) alerts.push({cls:'', msg:'All systems nominal'});
+  al.innerHTML = alerts.map(a=>`<span class="alert ${a.cls}">${a.msg}</span>`).join('');
+}
+
+// -------- Sector chips --------
+const sg = $('sectorGrid');
+sectorStats.forEach((s,si)=>{
+  sg.insertAdjacentHTML('beforeend', `
+    <div class="sector-chip" data-sec="${si+1}">
+      <div class="name">S${si+1} ? ${s.name}</div>
+      <div class="stat"><span>length</span><b>${fmt(s.end-s.start,0)} m</b></div>
+      <div class="stat"><span>time</span><b>${fmt(s.time,2)} s</b></div>
+      <div class="stat"><span>v avg</span><b>${fmt(s.avgV,1)} km/h</b></div>
+      <div class="stat"><span>v max</span><b>${fmt(s.maxV,1)} km/h</b></div>
+      <div class="stat"><span>P max</span><b>${fmt(s.maxP,1)} kW</b></div>
+      <div class="stat"><span>energy</span><b>${fmt(s.energy,1)} Wh</b></div>
+    </div>`);
+});
+function highlightSector(n){ document.querySelectorAll('.sector-chip').forEach(el=>el.classList.toggle('active', parseInt(el.dataset.sec)===n)); }
+document.querySelectorAll('.sector-chip').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const sn = parseInt(el.dataset.sec);
+    const i = LAP.findIndex(p=>p.s===sn);
+    if(i>=0){ isPlaying=false; $('btnPlay').textContent='? PLAY'; $('btnPlay').classList.remove('active'); setCurrentIdx(i); }
+  });
+});
+
+// -------- Endurance totals --------
+const endItems = [
+  ['lap time',      fmt(SUM.lap_time_s,2)+' s'],
+  ['lap distance',  fmt(SUM.lap_dist_m,0)+' m'],
+  ['E per lap',     fmt(SUM.E_lap_Wh,1)+' Wh'],
+  ['laps actually finished', SUM.laps_done + ' / 22'],
+  ['regen %',       fmt(SUM.regen_pct,1)+' %'],
+  ['avg power',     fmt(SUM.avg_power_kW,2)+' kW'],
+  ['peak current',  fmt(SUM.I_peak,1)+' A'],
+  ['RMS current',   fmt(SUM.I_rms,1)+' A'],
+  ['Ah consumed',   fmt(SUM.Ah_used,2)+' Ah'],
+  ['SOC end',       fmt(SUM.SOC_end,1)+' %'],
+  ['range predicted', fmt(SUM.range_km,1)+' km'],
+  ['Wh / km',       fmt(SUM.E_per_km,1)+' Wh/km']
+];
+const eg = $('endGrid');
+endItems.forEach(([k,v])=>eg.insertAdjacentHTML('beforeend', `<div class="cell"><div class="k">${k}</div><div class="v">${v}</div></div>`));
+
+// -------- CHARTS (short!) --------
+Chart.defaults.color = '#97a9c0';
+Chart.defaults.font.family = 'JetBrains Mono';
+Chart.defaults.font.size = 9;
+Chart.defaults.animation = false;
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+Chart.defaults.plugins.legend.labels.padding = 6;
+
+const tArr = LAP.map(p=>p.t);
+const vArr = LAP.map(p=>p.v);
+const pArr = LAP.map(p=>p.p);
+
+const chTrace = new Chart($('chTrace'),{
+  type:'line',
+  data:{datasets:[
+    {label:'Speed [km/h]', data:tArr.map((t,i)=>({x:t,y:vArr[i]})), borderColor:'#00e0ff', yAxisID:'y', pointRadius:0, borderWidth:1.2, tension:0.05},
+    {label:'Power [kW]',   data:tArr.map((t,i)=>({x:t,y:pArr[i]})), borderColor:'#ff9500', yAxisID:'y1', pointRadius:0, borderWidth:1.2, tension:0.05}
+  ]},
+  options:{responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'nearest',axis:'x',intersect:false},
+    plugins:{legend:{position:'top', align:'end'}},
+    scales:{
+      x:{type:'linear', title:{display:true,text:'t [s]', font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:8}},
+      y:{position:'left', title:{display:true,text:'km/h',font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:5}},
+      y1:{position:'right', title:{display:true,text:'kW',font:{size:9}}, grid:{display:false}, ticks:{maxTicksLimit:5}}
+    }
+  }
+});
+
+// V, I pre-compute lap 1
+const VI = [];
+for(const p of LAP){
+  const st = getStateAt(p.t,1);
+  const Voc = PP.Ns * ocv(st.SOC/100);
+  let I=0, V=Voc;
+  if(p.p>0){
+    const Pw=p.p*1000, disc=Voc*Voc-4*PP.R*Pw;
+    if(disc>=0){I=(Voc-Math.sqrt(disc))/(2*PP.R); V=Voc-I*PP.R;}
+  } else if(p.rg){
+    const Pr=p.prg*1000;
+    const Imag=(-Voc+Math.sqrt(Voc*Voc+4*PP.R*Pr))/(2*PP.R);
+    I=-Math.min(Imag,40.5); V=Voc+Math.abs(I)*PP.R;
+  }
+  VI.push({t:p.t,V,I});
+}
+const chVI = new Chart($('chVI'),{
+  type:'line',
+  data:{datasets:[
+    {label:'V', data:VI.map(d=>({x:d.t,y:d.V})), borderColor:'#8cff4d', yAxisID:'y', pointRadius:0, borderWidth:1.1, tension:0.05},
+    {label:'I', data:VI.map(d=>({x:d.t,y:d.I})), borderColor:'#ff3355', yAxisID:'y1', pointRadius:0, borderWidth:1.1, tension:0.05},
+    {label:'V now', data:[], borderColor:'#8cff4d', backgroundColor:'#8cff4d', yAxisID:'y',  pointRadius:5, pointStyle:'circle', showLine:false},
+    {label:'I now', data:[], borderColor:'#ff3355', backgroundColor:'#ff3355', yAxisID:'y1', pointRadius:5, pointStyle:'circle', showLine:false}
+  ]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'top', align:'end', labels:{filter:item=>!item.text.includes('now')}}},
+    scales:{
+      x:{type:'linear', title:{display:true,text:'t [s]',font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:6}},
+      y:{position:'left',  title:{display:true,text:'V',font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:5}, suggestedMin:380, suggestedMax:470},
+      y1:{position:'right', title:{display:true,text:'A',font:{size:9}}, grid:{display:false}, ticks:{maxTicksLimit:5}, suggestedMin:-60, suggestedMax:160}
+    }
+  }
+});
+
+const lapNums = END.map(e=>e.l);
+const socSeries = [95].concat(END.map(e=>e.soc));
+const lapNumsExt = [0].concat(lapNums);
+
+const chSoc = new Chart($('chSoc'),{
+  type:'line',
+  data:{labels:lapNumsExt, datasets:[{label:'SOC', data:socSeries, borderColor:'#00e0ff', backgroundColor:'rgba(0,224,255,0.1)', fill:true, pointRadius:2, borderWidth:1.3, tension:0.15}]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{title:{display:true,text:'lap #',font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:8}},
+      y:{title:{display:true,text:'SOC %',font:{size:9}}, min:0, max:100, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:5}}
+    }
+  }
+});
+
+const chTherm = new Chart($('chTherm'),{
+  type:'line',
+  data:{labels:lapNums, datasets:[
+    {label:'Cell',  data:END.map(e=>e.tc), borderColor:'#ff9500', pointRadius:1, borderWidth:1.3, tension:0.15},
+    {label:'Motor', data:END.map(e=>e.tm), borderColor:'#00e0ff', pointRadius:1, borderWidth:1.3, tension:0.15},
+    {label:'Inv',   data:END.map(e=>e.ti), borderColor:'#8cff4d', pointRadius:1, borderWidth:1.3, tension:0.15}
+  ]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'top', align:'end'}},
+    scales:{
+      x:{title:{display:true,text:'lap #',font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:8}},
+      y:{title:{display:true,text:'?C',font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:5}}
+    }
+  }
+});
+
+const chLap = new Chart($('chLap'),{
+  type:'bar',
+  data:{labels:lapNums, datasets:[{label:'E [Wh]', data:END.map(e=>e.el), backgroundColor:END.map(e=>e.el<400?'#40e0d0':'#ff9500')}]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{title:{display:true,text:'lap',font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:8}},
+      y:{title:{display:true,text:'Wh',font:{size:9}}, grid:{color:'rgba(28,42,70,0.35)'}, ticks:{maxTicksLimit:5}}
+    }
+  }
+});
+
+// Scrubber
+const scrubber = $('scrubber');
+scrubber.addEventListener('click',(e)=>{
+  isPlaying=false; $('btnPlay').textContent='? PLAY'; $('btnPlay').classList.remove('active');
+  const rect=scrubber.getBoundingClientRect();
+  const frac=(e.clientX-rect.left)/rect.width;
+  setCurrentIdx(Math.round(frac*(LAP.length-1)));
+});
+
+// Playback
+let isPlaying=true, playSpeed=1, lastTs=0, t_lap_sim=0;
+function tick(ts){
+  if(!lastTs) lastTs=ts;
+  const dt=(ts-lastTs)/1000; lastTs=ts;
+  if(isPlaying){
+    t_lap_sim += dt*playSpeed*5;
+    if(t_lap_sim>SUM.lap_time_s){
+      t_lap_sim=0;
+      currentLap = currentLap>=END.length ? 1 : currentLap+1;
+    }
+    let lo=0, hi=LAP.length-1;
+    while(lo<hi){const mid=(lo+hi)>>1; if(LAP[mid].t<t_lap_sim) lo=mid+1; else hi=mid;}
+    setCurrentIdx(lo);
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+$('btnPlay').addEventListener('click',()=>{
+  isPlaying = !isPlaying;
+  $('btnPlay').textContent = isPlaying?'?? PAUSE':'? PLAY';
+  $('btnPlay').classList.toggle('active', isPlaying);
+});
+$('btnRewind').addEventListener('click',()=>{t_lap_sim=0; currentLap=1; setCurrentIdx(0);});
+$('btnSpeed').addEventListener('click',(e)=>{
+  const speeds=[1,2,5,10,0.5];
+  playSpeed=speeds[(speeds.indexOf(playSpeed)+1)%speeds.length];
+  e.target.textContent = playSpeed+'?';
+});
+
+setCurrentIdx(0);
+</script>
+</body>
+</html>
