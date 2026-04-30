@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VdeV Prototype Telemetry ? Buddh International Circuit</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Oswald:wght@300;400;600;700&display=swap');
+
+:root {
+  --bg: #06080d; --bg-el: #0c1220; --bg-el-2: #131b2f; --panel: #0e1627;
+  --line: #1c2a46; --line-hi: #2b3e64; --mute: #5a7090; --text: #d8e4f0;
+  --acc: #00e0ff; --acc-2: #ff9500; --acc-3: #8cff4d; --warn: #ffcc00;
+}
+
+body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; margin: 0; font-size: 12px; overflow: hidden; height: 100vh; }
+.dashboard { display: grid; grid-template-columns: 280px 1fr 340px; grid-template-rows: 60px 1fr 180px 70px; height: 100vh; gap: 8px; padding: 8px; box-sizing: border-box; }
+
+/* Header */
+header { grid-column: 1 / span 3; display: flex; align-items: center; background: var(--bg-el); border-radius: 4px; padding: 0 20px; border: 1px solid var(--line); }
+.brand { font-family: 'Oswald'; font-weight: 700; font-size: 20px; color: var(--acc); letter-spacing: 1px; }
+
+/* Sidebar Stats */
+.sidebar { grid-row: 2 / span 2; display: flex; flex-direction: column; gap: 8px; }
+.card { background: var(--bg-el); border-radius: 4px; padding: 15px; border: 1px solid var(--line); }
+.val-lg { font-family: 'Oswald'; font-size: 42px; font-weight: 600; line-height: 1; }
+.unit { font-size: 14px; color: var(--mute); margin-left: 4px; }
+.label { font-size: 10px; color: var(--mute); text-transform: uppercase; margin-bottom: 4px; letter-spacing: 1px; }
+
+/* Center Display */
+.main-stage { grid-column: 2; grid-row: 2 / span 2; display: flex; flex-direction: column; gap: 8px; }
+.chart-box { flex: 1; background: var(--bg-el); border-radius: 4px; border: 1px solid var(--line); padding: 10px; position: relative; }
+
+/* Right Panel: Track & Inputs */
+.right-panel { grid-row: 2 / span 2; display: flex; flex-direction: column; gap: 8px; }
+.track-map { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; border-radius: 4px; border: 1px solid var(--line); }
+svg { width: 90%; height: 90%; transform: scaleY(-1); }
+.track-line { fill: none; stroke: var(--line-hi); stroke-width: 4; stroke-linejoin: round; }
+.car-pos { fill: var(--acc); stroke: #fff; stroke-width: 2; }
+
+/* Bottom Bar: Controls */
+footer { grid-column: 1 / span 3; background: var(--bg-el); border-radius: 4px; display: flex; align-items: center; padding: 0 20px; gap: 20px; border: 1px solid var(--line); }
+.btn { background: var(--bg-el-2); border: 1px solid var(--line-hi); color: var(--acc); padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 700; }
+.btn.active { background: var(--acc); color: #000; }
+#scrubber { flex: 1; height: 10px; background: var(--bg-el-2); border-radius: 5px; position: relative; cursor: pointer; }
+#progress { height: 100%; background: var(--acc); border-radius: 5px; width: 0%; }
+
+.gauge-h { height: 8px; background: var(--bg-el-2); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+.gauge-f { height: 100%; transition: width 0.1s linear; }
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+    <header>
+        <div class="brand">VdeV PROTOTYPE <span style="font-weight:300; color:var(--mute)">| BUDDH INTERNATIONAL CIRCUIT</span></div>
+        <div style="margin-left:auto; color:var(--mute)">V4.2.0-STABLE</div>
+    </header>
+
+    <div class="sidebar">
+        <div class="card">
+            <div class="label">Speed</div>
+            <div class="val-lg" id="v-speed">0.0<span class="unit">km/h</span></div>
+        </div>
+        <div class="card">
+            <div class="label">Power</div>
+            <div class="val-lg" id="v-power">0.0<span class="unit">kW</span></div>
+        </div>
+        <div class="card">
+            <div class="label">Battery SOC</div>
+            <div class="val-lg" id="v-soc" style="color:var(--acc-3)">100.0<span class="unit">%</span></div>
+            <div class="gauge-h"><div id="g-soc" class="gauge-f" style="width:100%; background:var(--acc-3)"></div></div>
+        </div>
+        <div class="card" style="flex:1">
+            <div class="label">System Status</div>
+            <div style="margin-top:10px">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px"><span>INV TEMP</span><span style="color:var(--acc-3)">OK</span></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px"><span>MOTOR</span><span style="color:var(--acc-3)">NOMINAL</span></div>
+                <div style="display:flex; justify-content:space-between"><span>HV LOCK</span><span style="color:var(--acc)">ACTIVE</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-stage">
+        <div class="chart-box"><canvas id="c-speed"></canvas></div>
+        <div class="chart-box"><canvas id="c-power"></canvas></div>
+    </div>
+
+    <div class="right-panel">
+        <div class="track-map">
+            <svg viewBox="0 0 200 200">
+                <path id="track-path" class="track-line" d=""></path>
+                <circle id="car" class="car-pos" r="6" cx="0" cy="0"></circle>
+            </svg>
+        </div>
+        <div class="card">
+            <div class="label">Driver Inputs</div>
+            <div class="label" style="font-size:8px; margin-top:5px">Throttle</div>
+            <div class="gauge-h"><div id="g-th" class="gauge-f" style="width:0%; background:var(--acc-3)"></div></div>
+            <div class="label" style="font-size:8px; margin-top:5px">Brake</div>
+            <div class="gauge-h"><div id="g-bk" class="gauge-f" style="width:0%; background:var(--acc-2)"></div></div>
+        </div>
+    </div>
+
+    <footer>
+        <button class="btn" id="btn-play">? PLAY</button>
+        <div id="v-timer" style="font-size:18px; font-weight:700; width:100px">00:00.00</div>
+        <div id="scrubber"><div id="progress"></div></div>
+        <div style="display:flex; gap:10px">
+            <button class="btn speed-btn" data-s="1">1x</button>
+            <button class="btn speed-btn" data-s="2">2x</button>
+        </div>
+    </footer>
+</div>
+
+<script>
+// Data points extracted from your VdeV Prototype Buddh Lap
+const LAP = [
+    {"t": 0.0, "v": 178.4, "p": 0.0, "th": 0, "bk": 0, "s": 100.0, "x": 118.98, "y": 107.35},
+    {"t": 11.2, "v": 220.5, "p": 196.2, "th": 100, "bk": 0, "s": 98.8, "x": 102.5, "y": 125.8},
+    {"t": 18.5, "v": 115.2, "p": -110.0, "th": 0, "bk": 95, "s": 99.1, "x": 82.4, "y": 155.2},
+    {"t": 45.0, "v": 202.1, "p": 188.4, "th": 100, "bk": 0, "s": 96.5, "x": 15.2, "y": 80.4},
+    {"t": 82.3, "v": 90.4, "p": -50.2, "th": 10, "bk": 60, "s": 96.8, "x": 145.2, "y": 30.5},
+    {"t": 114.3, "v": 178.5, "p": 179.4, "th": 100, "bk": 0, "s": 95.8, "x": 118.98, "y": 107.35}
+];
+
+let idx = 0, playing = false, playSpeed = 1;
+
+// Setup Track
+const path = document.getElementById('track-path');
+path.setAttribute('d', LAP.map((p,i)=>`${i===0?'M':'L'} ${p.x} ${p.y}`).join(' ')+' Z');
+
+// Chart Setup
+const cfg = (col) => ({
+    type:'line', data:{ labels:LAP.map(d=>d.t), datasets:[{data:LAP.map(d=>d.v), borderColor:col, borderWidth:2, pointRadius:0, fill:true, backgroundColor:col+'15'}]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{display:false}, y:{grid:{color:'#1c2a46'}, ticks:{color:'#5a7090'}} } }
+});
+
+const sChart = new Chart(document.getElementById('c-speed'), cfg('#00e0ff'));
+const pChart = new Chart(document.getElementById('c-power'), cfg('#8cff4d'));
+pChart.data.datasets[0].data = LAP.map(d=>d.p); pChart.update();
+
+function tick() {
+    if(!playing) return;
+    const d = LAP[idx];
+    document.getElementById('v-speed').innerHTML = `${d.v.toFixed(1)}<span class="unit">km/h</span>`;
+    document.getElementById('v-power').innerHTML = `${d.p.toFixed(1)}<span class="unit">kW</span>`;
+    document.getElementById('v-soc').textContent = d.s.toFixed(1) + '%';
+    document.getElementById('g-soc').style.width = d.s + '%';
+    document.getElementById('g-th').style.width = d.th + '%';
+    document.getElementById('g-bk').style.width = d.bk + '%';
+    document.getElementById('v-timer').textContent = `00:${d.t.toFixed(2).padStart(5,'0')}`;
+    document.getElementById('car').setAttribute('cx', d.x);
+    document.getElementById('car').setAttribute('cy', d.y);
+    document.getElementById('progress').style.width = (idx/(LAP.length-1)*100)+'%';
+    
+    sChart.setActiveElements([{datasetIndex:0, index:idx}]); sChart.update();
+    pChart.setActiveElements([{datasetIndex:0, index:idx}]); pChart.update();
+
+    idx = (idx + 1) % LAP.length;
+    setTimeout(()=>requestAnimationFrame(tick), 100 / playSpeed);
+}
+
+document.getElementById('btn-play').onclick = (e) => {
+    playing = !playing; e.target.textContent = playing ? '|| PAUSE' : '? PLAY';
+    if(playing) tick();
+};
+
+document.querySelectorAll('.speed-btn').forEach(b => {
+    b.onclick = () => { playSpeed = parseInt(b.dataset.s); };
+});
+</script>
+</body>
+</html>
