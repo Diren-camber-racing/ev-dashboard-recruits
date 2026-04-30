@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FSAE?EV ? Race Terminal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+/* ??????????????????????????????????????????????
+   DESIGN LANGUAGE: RAW RACING TERMINAL
+   - Brutalist data-first layout
+   - Phosphor-green on near-black
+   - Tight grid, no decoration, pure information
+   - High contrast numerical hierarchy
+?????????????????????????????????????????????? */
+:root {
+  --ink:     #04070c;
+  --ink1:    #080e17;
+  --ink2:    #0d1521;
+  --ink3:    #131d2b;
+  --wire:    #182433;
+  --wire2:   #1f2e40;
+ 
+  --phos:    #00ff88;   /* phosphor green - primary accent */
+  --phos-d:  rgba(0,255,136,0.08);
+  --phos-g:  0 0 14px rgba(0,255,136,0.45);
+ 
+  --cyan:    #00d4e8;
+  --cyan-d:  rgba(0,212,232,0.09);
+ 
+  --amber:   #f5a500;
+  --amber-d: rgba(245,165,0,0.10);
+ 
+  --red:     #ff1a35;
+  --red-d:   rgba(255,26,53,0.10);
+ 
+  --teal:    #00e0b8;
+  --blue:    #0090ff;
+  --white:   #d0dde8;
+  --dim:     #3a5060;
+  --dimmer:  #243040;
+ 
+  --f-head: 'Oswald', sans-serif;
+  --f-data: 'JetBrains Mono', monospace;
+ 
+  /* Physics */
+  --rpm-max: 5000;
+  --spd-max: 90;
+}
+ 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 13px; }
+body {
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--f-data);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+ 
+/* scanlines */
+body::after {
+  content:'';
+  position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg, transparent 0, transparent 3px,
+    rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+  );
+}
+ 
+/* ?? CRITICAL FLASH ?? */
+body.crit-flash { animation: critFlash 0.45s ease-in-out infinite; }
+@keyframes critFlash {
+  0%,100% { background: var(--ink); }
+  50%     { background: rgba(255,20,40,0.16); }
+}
+ 
+/* ?? THERMAL CRITICAL OVERLAY ?? */
+#thermal-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 1000;
+  pointer-events: none;
+  border: 3px solid var(--red);
+  box-shadow: inset 0 0 80px rgba(255,26,53,0.25);
+}
+#thermal-overlay.show { display: block; }
+#thermal-banner {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1001;
+  background: var(--red);
+  padding: 7px 0;
+  text-align: center;
+  font-family: var(--f-head);
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 6px; color: #fff;
+  text-shadow: 0 0 20px rgba(255,255,255,0.7);
+  animation: bannerBlink 0.45s ease-in-out infinite;
+}
+#thermal-banner.show { display: block; }
+@keyframes bannerBlink {
+  0%,100% { opacity: 1; } 50% { opacity: 0.6; }
+}
+ 
+/* ?? HEADER ?? */
+header {
+  display: flex; align-items: stretch;
+  height: 50px;
+  border-bottom: 1px solid var(--wire2);
+  background: var(--ink1);
+  position: sticky; top: 0; z-index: 200;
+}
+.hdr-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 20px;
+  border-right: 1px solid var(--wire2);
+  min-width: 180px;
+}
+.brand-mark {
+  font-family: var(--f-head); font-weight: 700; font-size: 18px;
+  letter-spacing: 3px; color: var(--phos);
+  text-shadow: var(--phos-g);
+}
+.brand-sub {
+  font-size: 8px; color: var(--dim); letter-spacing: 3px;
+  font-family: var(--f-data); margin-top: 1px;
+}
+.hdr-specs {
+  display: flex; align-items: center;
+  padding: 0 16px; gap: 22px;
+  border-right: 1px solid var(--wire2);
+}
+.spec-chip {
+  font-size: 9px; font-family: var(--f-data);
+  color: var(--dim); letter-spacing: 1px; line-height: 1.6;
+}
+.spec-chip b { color: var(--cyan); font-weight: 500; }
+.hdr-sep { flex: 1; }
+.hdr-status {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px; border-right: 1px solid var(--wire2);
+}
+.spill {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 9px; font-family: var(--f-head); font-weight: 500;
+  letter-spacing: 1.5px; color: var(--dim);
+}
+.spill-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--phos); box-shadow: 0 0 6px var(--phos);
+  animation: dotPulse 2s ease infinite;
+}
+.spill-dot.off  { background: var(--dimmer); box-shadow: none; animation: none; }
+.spill-dot.warn { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.spill-dot.crit { background: var(--red); box-shadow: 0 0 8px var(--red); animation: dotPulse 0.4s ease infinite; }
+@keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+ 
+.hdr-controls {
+  display: flex; align-items: center; gap: 6px; padding: 0 14px;
+}
+.btn {
+  background: var(--ink2); border: 1px solid var(--wire2);
+  color: var(--phos); font-family: var(--f-head); font-weight: 600;
+  font-size: 11px; padding: 5px 13px; cursor: pointer;
+  letter-spacing: 1.5px; transition: all 0.12s;
+}
+.btn:hover { background: var(--phos-d); border-color: var(--phos); }
+.btn.active { background: var(--phos-d); border-color: var(--phos); }
+.spd-sel {
+  background: var(--ink2); border: 1px solid var(--wire2);
+  color: var(--dim); font-family: var(--f-data); font-size: 10px;
+  padding: 5px 7px; cursor: pointer;
+}
+.hdr-time {
+  font-family: var(--f-data); font-size: 14px; font-weight: 700;
+  color: var(--phos); letter-spacing: 2px; min-width: 92px;
+  text-shadow: var(--phos-g);
+}
+ 
+/* ?? ALERT STRIP ?? */
+.alert-strip {
+  display: flex; align-items: center; gap: 0;
+  background: var(--ink1);
+  border-bottom: 1px solid var(--wire);
+  font-size: 9px; font-family: var(--f-head); font-weight: 500;
+  letter-spacing: 2px; overflow: hidden;
+}
+.as-tag {
+  padding: 5px 12px; background: var(--phos-d);
+  border-right: 1px solid var(--wire2);
+  color: var(--phos); white-space: nowrap;
+}
+.as-items { display: flex; gap: 0; flex: 1; }
+.as-i {
+  padding: 5px 12px; color: var(--dim);
+  border-right: 1px solid var(--wire);
+  white-space: nowrap; transition: color 0.2s;
+}
+.as-i.ok   { color: var(--dim); }
+.as-i.warn { color: var(--amber); text-shadow: 0 0 8px rgba(245,165,0,0.5); animation: dotPulse 1s infinite; }
+.as-i.crit { color: var(--red);   text-shadow: 0 0 8px rgba(255,26,53,0.7); animation: dotPulse 0.4s infinite; }
+ 
+/* ??????????????????????????????????????????????
+   MAIN LAYOUT  ? 3-column grid
+?????????????????????????????????????????????? */
+.grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 6px; padding: 6px;
+}
+ 
+/* ?? PANEL ?? */
+.panel {
+  background: var(--ink1);
+  border: 1px solid var(--wire);
+  padding: 10px 12px;
+  position: relative; overflow: hidden;
+}
+.panel::after {
+  content: ''; position: absolute;
+  top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--phos), transparent);
+  opacity: 0.15;
+}
+.ph {
+  font-family: var(--f-head); font-weight: 600; font-size: 9px;
+  letter-spacing: 3px; color: var(--dim); text-transform: uppercase;
+  padding-bottom: 6px; margin-bottom: 8px;
+  border-bottom: 1px solid var(--wire);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ph-badge {
+  font-size: 8px; color: var(--phos); border: 1px solid var(--wire2);
+  padding: 1px 5px; letter-spacing: 1px;
+}
+ 
+/* ??????????????????????????????????????????????
+   LEFT COLUMN
+?????????????????????????????????????????????? */
+.col-l { grid-column: 1; display: flex; flex-direction: column; gap: 6px; }
+ 
+/* ?? SPEED + RPM hero displays ?? */
+.speed-hero {
+  text-align: center; padding: 8px 0 4px;
+}
+.speed-num {
+  font-family: var(--f-data); font-size: 64px; font-weight: 700;
+  color: var(--phos); line-height: 1;
+  text-shadow: var(--phos-g), 0 0 40px rgba(0,255,136,0.2);
+  letter-spacing: -2px;
+}
+.speed-unit {
+  font-family: var(--f-head); font-size: 11px; font-weight: 400;
+  color: var(--dim); letter-spacing: 4px;
+}
+.speed-bar-wrap { margin: 8px 0 2px; }
+.speed-bar {
+  height: 6px; background: var(--ink3); border: 1px solid var(--wire);
+  position: relative; overflow: hidden;
+}
+.speed-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--phos));
+  transition: width 0.08s;
+  box-shadow: 0 0 8px rgba(0,255,136,0.6);
+}
+.speed-ticks {
+  display: flex; justify-content: space-between;
+  font-size: 8px; color: var(--dimmer); margin-top: 2px;
+}
+ 
+/* RPM bar display */
+.rpm-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.rpm-label { font-family: var(--f-head); font-size: 9px; color: var(--dim); letter-spacing: 2px; min-width: 28px; }
+.rpm-val { font-family: var(--f-data); font-size: 22px; font-weight: 700; color: var(--cyan); min-width: 60px; text-align: right; }
+.rpm-track {
+  flex: 1; height: 8px; background: var(--ink3);
+  border: 1px solid var(--wire); position: relative; overflow: hidden;
+}
+.rpm-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), #00aaff);
+  transition: width 0.08s;
+}
+.rpm-redzone {
+  position: absolute; top: 0; bottom: 0; right: 0; width: 6%;
+  background: rgba(255,26,53,0.35);
+}
+ 
+/* Torque */
+.torque-display {
+  display: flex; align-items: baseline; gap: 4px; margin-bottom: 4px;
+}
+.torq-val { font-family: var(--f-data); font-size: 28px; font-weight: 700; color: var(--amber); }
+.torq-unit { font-size: 10px; color: var(--dim); }
+.torq-bar { height: 5px; background: var(--ink3); border: 1px solid var(--wire); overflow: hidden; }
+.torq-fill { height: 100%; background: var(--amber); transition: width 0.1s; }
+ 
+/* ?? BMS Status ?? */
+.bms-box {
+  padding: 10px; text-align: center;
+  border: 2px solid var(--wire2);
+  transition: all 0.3s;
+}
+.bms-box.nominal { border-color: var(--phos); background: var(--phos-d); }
+.bms-box.derate  { border-color: var(--amber); background: var(--amber-d); }
+.bms-box.critical { border-color: var(--red); background: var(--red-d); }
+.bms-label { font-family: var(--f-head); font-size: 9px; letter-spacing: 3px; color: var(--dim); margin-bottom: 4px; }
+.bms-status {
+  font-family: var(--f-head); font-size: 18px; font-weight: 700;
+  letter-spacing: 2px; color: var(--phos);
+  transition: color 0.3s;
+}
+.bms-box.derate .bms-status  { color: var(--amber); text-shadow: 0 0 10px rgba(245,165,0,0.6); }
+.bms-box.critical .bms-status { color: var(--red);   text-shadow: 0 0 10px rgba(255,26,53,0.8); }
+.bms-sublabel { font-family: var(--f-data); font-size: 9px; color: var(--dim); margin-top: 3px; }
+ 
+/* ?? Instant data rows ?? */
+.data-rows { display: flex; flex-direction: column; gap: 3px; }
+.dr {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 4px 8px; background: var(--ink2);
+  border-left: 2px solid var(--wire);
+  transition: border-color 0.2s;
+}
+.dr.hi  { border-left-color: var(--phos); }
+.dr.med { border-left-color: var(--cyan); }
+.dr.war { border-left-color: var(--amber); }
+.dr.err { border-left-color: var(--red); }
+.dr-key { font-family: var(--f-head); font-size: 9px; color: var(--dim); letter-spacing: 1.5px; font-weight: 500; }
+.dr-val { font-family: var(--f-data); font-size: 14px; font-weight: 700; color: var(--phos); }
+.dr-val.warn { color: var(--amber); }
+.dr-val.crit { color: var(--red); }
+.dr-unit { font-size: 9px; color: var(--dim); margin-left: 2px; }
+ 
+/* ?? G-force ?? */
+.gf-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.gf-nums { display: flex; gap: 16px; }
+.gf-num-cell { text-align: center; }
+.gf-axis { font-family: var(--f-head); font-size: 8px; color: var(--dim); letter-spacing: 2px; }
+.gf-val  { font-family: var(--f-data); font-size: 16px; font-weight: 700; color: var(--cyan); }
+ 
+/* ??????????????????????????????????????????????
+   CENTER COLUMN
+?????????????????????????????????????????????? */
+.col-c { grid-column: 2; display: flex; flex-direction: column; gap: 6px; }
+ 
+/* ?? TRACK MAP ?? */
+.track-panel { position: relative; }
+.track-svg-container {
+  position: relative;
+  background: var(--ink); /* ensures car dot is positioned relative to this */
+}
+#track-svg {
+  display: block; width: 100%;
+}
+/* Car dot - positioned via JS using getBoundingClientRect */
+#car-dot {
+  position: absolute;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px var(--phos),
+    0 0 18px var(--phos),
+    0 0 35px rgba(0,255,136,0.4);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: left 0.08s linear, top 0.08s linear;
+  display: none;
+  z-index: 10;
+}
+.track-legend {
+  display: flex; gap: 14px; padding: 5px 0;
+  font-size: 9px; font-family: var(--f-head); letter-spacing: 1.5px; color: var(--dim);
+}
+.leg { display: flex; align-items: center; gap: 4px; }
+.leg-line { width: 14px; height: 4px; border-radius: 2px; }
+ 
+/* race progress */
+.progress-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 4px;
+}
+.prog-bar { flex: 1; height: 4px; background: var(--ink3); border: 1px solid var(--wire); }
+.prog-fill {
+  height: 100%; background: linear-gradient(90deg, var(--blue), var(--phos));
+  transition: width 0.4s; box-shadow: 0 0 5px var(--phos);
+}
+.prog-labels {
+  display: flex; justify-content: space-between;
+  font-size: 9px; color: var(--dim); font-family: var(--f-data);
+}
+ 
+/* ?? CHART: Cell Temp vs SOC ?? */
+.chart-panel canvas { max-height: 140px; }
+ 
+/* ?? Data charts row ?? */
+.chart-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.cpanel canvas { max-height: 110px; }
+ 
+/* ??????????????????????????????????????????????
+   RIGHT COLUMN
+?????????????????????????????????????????????? */
+.col-r { grid-column: 3; display: flex; flex-direction: column; gap: 6px; }
+ 
+/* ?? Lap hero ?? */
+.lap-hero { text-align: center; padding: 6px 0; }
+.lap-num {
+  font-family: var(--f-head); font-size: 56px; font-weight: 700;
+  color: var(--phos); line-height: 1;
+  text-shadow: var(--phos-g), 0 0 50px rgba(0,255,136,0.2);
+}
+.lap-of { font-size: 9px; color: var(--dim); letter-spacing: 4px; font-family: var(--f-head); margin-top: 2px; }
+.lap-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
+.ls-cell { background: var(--ink2); padding: 6px 8px; border: 1px solid var(--wire); }
+.ls-key { font-family: var(--f-head); font-size: 8px; color: var(--dim); letter-spacing: 2px; }
+.ls-val { font-family: var(--f-data); font-size: 13px; font-weight: 700; color: var(--white); margin-top: 2px; }
+ 
+/* ?? SOC ?? */
+.soc-num {
+  font-family: var(--f-data); font-size: 36px; font-weight: 700;
+  text-align: center; color: var(--phos); transition: color 0.3s;
+}
+.soc-num.low  { color: var(--amber); }
+.soc-num.crit { color: var(--red); }
+.soc-bar { height: 12px; background: var(--ink3); border: 1px solid var(--wire); margin: 5px 0; overflow: hidden; }
+.soc-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--red) 0%, var(--amber) 20%, var(--phos) 60%);
+  transition: width 0.4s;
+}
+.soc-meta { display: flex; justify-content: space-between; font-size: 9px; color: var(--dim); }
+.soc-energy { font-family: var(--f-data); font-size: 11px; color: var(--amber); margin-top: 2px; text-align: right; }
+ 
+/* ?? Thermal display ?? */
+.therm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.therm-cell { background: var(--ink2); padding: 7px 8px; border: 1px solid var(--wire); }
+.therm-key { font-family: var(--f-head); font-size: 8px; color: var(--dim); letter-spacing: 2px; margin-bottom: 3px; }
+.therm-val {
+  font-family: var(--f-data); font-size: 20px; font-weight: 700;
+  color: var(--phos); transition: color 0.3s;
+}
+.therm-val.warm { color: var(--amber); }
+.therm-val.hot  { color: var(--red); }
+.therm-bar { height: 3px; background: var(--ink3); margin-top: 3px; }
+.therm-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--phos), var(--amber), var(--red));
+  transition: width 0.3s;
+}
+.therm-lim { font-size: 8px; color: var(--dimmer); margin-top: 2px; font-family: var(--f-data); }
+ 
+/* ?? BMS derate table ?? */
+.derate-tbl { width: 100%; border-collapse: collapse; font-size: 10px; }
+.derate-tbl th {
+  font-family: var(--f-head); font-size: 8px; color: var(--dim);
+  letter-spacing: 2px; padding: 4px 5px; text-align: center;
+  border-bottom: 1px solid var(--wire);
+}
+.derate-tbl td {
+  font-family: var(--f-data); padding: 4px 5px; text-align: center;
+  border-bottom: 1px solid var(--wire);
+}
+.derate-tbl tr.act td { background: rgba(245,165,0,0.1); color: var(--amber); }
+.derate-tbl td.ok   { color: var(--phos); }
+.derate-tbl td.warn { color: var(--amber); }
+.derate-tbl td.crit { color: var(--red); }
+ 
+/* ?? Sectors ?? */
+.sec-list { display: flex; flex-direction: column; gap: 3px; }
+.sec-item {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 7px; background: var(--ink2); border: 1px solid transparent;
+  cursor: pointer; transition: all 0.12s; font-size: 10px;
+}
+.sec-item:hover { border-color: var(--phos); background: var(--phos-d); }
+.sec-item.act   { border-color: var(--phos); background: var(--phos-d); }
+.sec-n    { font-family: var(--f-head); font-size: 9px; color: var(--phos); min-width: 22px; }
+.sec-name { flex: 1; font-family: var(--f-head); font-size: 10px; font-weight: 500; letter-spacing: 0.5px; }
+.sec-t    { font-family: var(--f-data); font-size: 10px; color: var(--dim); }
+ 
+/* scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--ink); }
+::-webkit-scrollbar-thumb { background: var(--wire2); }
+</style>
+</head>
+<body>
+ 
+<!-- THERMAL OVERLAY -->
+<div id="thermal-overlay"></div>
+<div id="thermal-banner">? THERMAL CRITICAL ? SYSTEM DERATE ACTIVE ?</div>
+ 
+<!-- ?? HEADER ?? -->
+<header>
+  <div class="hdr-brand">
+    <div>
+      <div class="brand-mark">FSAE?EV</div>
+      <div class="brand-sub">RACE TERMINAL v6</div>
+    </div>
+  </div>
+  <div class="hdr-specs">
+    <div class="spec-chip">MOTOR<br/><b>EMRAX 228</b></div>
+    <div class="spec-chip">PACK<br/><b>P45B 120S3P</b></div>
+    <div class="spec-chip">MASS<br/><b>300 kg</b></div>
+    <div class="spec-chip">V_MAX / RPM_MAX<br/><b>90 km/h / 5000 rpm</b></div>
+  </div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-status">
+    <div class="spill"><div class="spill-dot" id="sd-ams"></div>AMS</div>
+    <div class="spill"><div class="spill-dot" id="sd-bms"></div>BMS</div>
+    <div class="spill"><div class="spill-dot" id="sd-inv"></div>INV</div>
+    <div class="spill"><div class="spill-dot off" id="sd-tcs"></div>TCS</div>
+    <div class="spill"><div class="spill-dot off" id="sd-regen"></div>REGEN</div>
+    <div class="spill"><div class="spill-dot off" id="sd-derate"></div>DERATE</div>
+  </div>
+  <div class="hdr-controls">
+    <button class="btn" id="btn-play" onclick="togglePlay()">? RUN</button>
+    <button class="btn" onclick="resetSim()">? RST</button>
+    <select class="spd-sel" onchange="setSpdMult(this.value)">
+      <option value="1">1?</option>
+      <option value="2" selected>2?</option>
+      <option value="5">5?</option>
+      <option value="10">10?</option>
+    </select>
+    <div class="hdr-time" id="hdr-time">00:00.000</div>
+  </div>
+</header>
+ 
+<!-- ?? ALERT STRIP ?? -->
+<div class="alert-strip">
+  <div class="as-tag">? TELEMETRY</div>
+  <div class="as-items">
+    <div class="as-i" id="al-bat">BAT: 25?C</div>
+    <div class="as-i" id="al-mot">MOT: 30?C</div>
+    <div class="as-i" id="al-soc">SOC: 100%</div>
+    <div class="as-i" id="al-volt">BUS: 432V</div>
+    <div class="as-i" id="al-pwr">PWR: 0kW</div>
+    <div class="as-i" id="al-regen">REGEN: OFF</div>
+    <div class="as-i" id="al-derate">DERATE: NONE</div>
+    <div class="as-i" id="al-laps">LAPS: 0/22</div>
+  </div>
+</div>
+ 
+<!-- ?? GRID ?? -->
+<div class="grid">
+ 
+  <!-- ?? LEFT ?? -->
+  <div class="col-l">
+ 
+    <!-- Speed hero -->
+    <div class="panel">
+      <div class="ph">Velocity <span class="ph-badge">0?90 km/h</span></div>
+      <div class="speed-hero">
+        <div class="speed-num" id="spd-num">0</div>
+        <div class="speed-unit">KM / H</div>
+      </div>
+      <div class="speed-bar-wrap">
+        <div class="speed-bar"><div class="speed-fill" id="spd-bar" style="width:0%"></div></div>
+        <div class="speed-ticks"><span>0</span><span>22</span><span>45</span><span>67</span><span style="color:var(--red)">90</span></div>
+      </div>
+    </div>
+ 
+    <!-- RPM + Torque -->
+    <div class="panel">
+      <div class="ph">Drivetrain <span class="ph-badge">EMRAX 228</span></div>
+      <div class="rpm-row">
+        <div class="rpm-label">RPM</div>
+        <div class="rpm-val" id="rpm-val">0</div>
+        <div class="rpm-track">
+          <div class="rpm-fill" id="rpm-bar" style="width:0%"></div>
+          <div class="rpm-redzone"></div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--dimmer);display:flex;justify-content:space-between;margin-bottom:8px">
+        <span>0</span><span>1250</span><span>2500</span><span>3750</span><span style="color:var(--red)">5000</span>
+      </div>
+      <div class="ph" style="margin-top:4px">Torque</div>
+      <div class="torque-display">
+        <span class="torq-val" id="torq-val">0</span><span class="torq-unit">Nm / 220 peak</span>
+      </div>
+      <div class="torq-bar"><div class="torq-fill" id="torq-bar" style="width:0%"></div></div>
+    </div>
+ 
+    <!-- BMS Status -->
+    <div class="panel">
+      <div class="ph">BMS Status Monitor</div>
+      <div class="bms-box nominal" id="bms-box">
+        <div class="bms-label">SYSTEM STATE</div>
+        <div class="bms-status" id="bms-status">NOMINAL</div>
+        <div class="bms-sublabel" id="bms-sub">All parameters within limits</div>
+      </div>
+      <div style="margin-top:7px">
+        <div class="dr"><span class="dr-key">PWR LIMIT</span><span><span class="dr-val" id="dr-plim">60</span><span class="dr-unit">kW</span></span></div>
+        <div class="dr"><span class="dr-key">CURRENT</span><span><span class="dr-val" id="dr-curr">0</span><span class="dr-unit">A</span></span></div>
+        <div class="dr"><span class="dr-key">BUS VOLT</span><span><span class="dr-val" id="dr-volt">432</span><span class="dr-unit">V</span></span></div>
+        <div class="dr"><span class="dr-key">THROTTLE</span><span><span class="dr-val" id="dr-thr">0</span><span class="dr-unit">%</span></span></div>
+        <div class="dr"><span class="dr-key">BRAKE</span><span><span class="dr-val" id="dr-brk">0</span><span class="dr-unit">%</span></span></div>
+      </div>
+    </div>
+ 
+    <!-- G-Force -->
+    <div class="panel">
+      <div class="ph">G-Force Vector</div>
+      <div class="gf-wrap">
+        <canvas id="gf-c" width="200" height="130" style="border:1px solid var(--wire);display:block;margin:0 auto;"></canvas>
+        <div class="gf-nums">
+          <div class="gf-num-cell"><div class="gf-axis">LAT G</div><div class="gf-val" id="gf-lat">0.00</div></div>
+          <div class="gf-num-cell"><div class="gf-axis">LON G</div><div class="gf-val" id="gf-lon">0.00</div></div>
+          <div class="gf-num-cell"><div class="gf-axis">PEAK</div><div class="gf-val" id="gf-peak">0.00</div></div>
+        </div>
+      </div>
+    </div>
+ 
+  </div><!-- /col-l -->
+ 
+  <!-- ?? CENTER ?? -->
+  <div class="col-c">
+ 
+    <!-- Track Map -->
+    <div class="panel track-panel">
+      <div class="ph">Track Map ? 1.42 km / lap <span class="ph-badge" id="ph-mode">COAST</span></div>
+      <div class="track-svg-container" id="track-container">
+        <!-- SVG will be injected by JS -->
+        <div id="car-dot"></div>
+      </div>
+      <div class="track-legend">
+        <div class="leg"><div class="leg-line" style="background:#0090ff"></div>FULL THROTTLE (&gt;80%)</div>
+        <div class="leg"><div class="leg-line" style="background:#f5a500"></div>BRAKING</div>
+        <div class="leg"><div class="leg-line" style="background:#00e0b8"></div>REGEN</div>
+        <div class="leg"><div class="leg-line" style="background:#ff1a35"></div>CORNER/TCS</div>
+      </div>
+      <div class="progress-row">
+        <div class="prog-bar" style="flex:1"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+      <div class="prog-labels">
+        <span>LAP <span id="prog-lap">0</span>/22</span>
+        <span id="prog-dist">0.00 km</span>
+        <span id="prog-time">00:00</span>
+      </div>
+    </div>
+ 
+    <!-- Cell Temp vs SOC ? scrolling chart -->
+    <div class="panel chart-panel">
+      <div class="ph">Cell Temperature vs SOC% ? Live Gradient <span class="ph-badge">SCROLLING</span></div>
+      <canvas id="chart-main"></canvas>
+    </div>
+ 
+    <!-- V&I + Power charts -->
+    <div class="chart-pair">
+      <div class="panel cpanel">
+        <div class="ph">Pack V &amp; Current</div>
+        <canvas id="chart-vi"></canvas>
+      </div>
+      <div class="panel cpanel">
+        <div class="ph">Power kW (net)</div>
+        <canvas id="chart-pwr"></canvas>
+      </div>
+    </div>
+ 
+  </div><!-- /col-c -->
+ 
+  <!-- ?? RIGHT ?? -->
+  <div class="col-r">
+ 
+    <!-- Lap counter -->
+    <div class="panel">
+      <div class="ph">Race Status</div>
+      <div class="lap-hero">
+        <div class="lap-num" id="lap-num">0</div>
+        <div class="lap-of">LAPS COMPLETED / 22</div>
+      </div>
+      <div class="lap-stats">
+        <div class="ls-cell"><div class="ls-key">BEST</div><div class="ls-val" id="ls-best" style="color:var(--phos)">--:--</div></div>
+        <div class="ls-cell"><div class="ls-key">LAST</div><div class="ls-val" id="ls-last">--:--</div></div>
+        <div class="ls-cell"><div class="ls-key">ENERGY USED</div><div class="ls-val" id="ls-energy" style="color:var(--amber)">0.00 kWh</div></div>
+        <div class="ls-cell"><div class="ls-key">REMAIN SOC</div><div class="ls-val" id="ls-socr" style="color:var(--phos)">100%</div></div>
+      </div>
+    </div>
+ 
+    <!-- SOC -->
+    <div class="panel">
+      <div class="ph">State of Charge <span class="ph-badge">P45B 8.4kWh</span></div>
+      <div class="soc-num" id="soc-num">100.0%</div>
+      <div class="soc-bar"><div class="soc-fill" id="soc-fill" style="width:100%"></div></div>
+      <div class="soc-meta"><span>EMPTY</span><span>TARGET END: 20%</span><span>FULL</span></div>
+      <div class="soc-energy" id="soc-energy">Discharged: 0.00 kWh</div>
+    </div>
+ 
+    <!-- Thermal Monitor -->
+    <div class="panel">
+      <div class="ph">Thermal Monitor <span class="ph-badge">LIMITS</span></div>
+      <div class="therm-grid">
+        <div class="therm-cell">
+          <div class="therm-key">CELL TEMP</div>
+          <div class="therm-val" id="tv-bat">25?C</div>
+          <div class="therm-bar"><div class="therm-fill" id="tf-bat" style="width:20%"></div></div>
+          <div class="therm-lim">DERATE@55 / MAX@60?C</div>
+        </div>
+        <div class="therm-cell">
+          <div class="therm-key">MOTOR WIND</div>
+          <div class="therm-val" id="tv-mot">30?C</div>
+          <div class="therm-bar"><div class="therm-fill" id="tf-mot" style="width:28%"></div></div>
+          <div class="therm-lim">MAX@100?C</div>
+        </div>
+        <div class="therm-cell">
+          <div class="therm-key">INVERTER</div>
+          <div class="therm-val" id="tv-inv">28?C</div>
+          <div class="therm-bar"><div class="therm-fill" id="tf-inv" style="width:26%"></div></div>
+          <div class="therm-lim">MAX@80?C</div>
+        </div>
+        <div class="therm-cell">
+          <div class="therm-key">COOLANT OUT</div>
+          <div class="therm-val" id="tv-cool">20?C</div>
+          <div class="therm-bar"><div class="therm-fill" id="tf-cool" style="width:18%"></div></div>
+          <div class="therm-lim">MAX@45?C</div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- BMS derate table -->
+    <div class="panel">
+      <div class="ph">BMS Derate Schedule</div>
+      <table class="derate-tbl" id="derate-tbl">
+        <tr><th>CELL?C</th><th>ILIMIT</th><th>kW LIM</th><th>STATE</th></tr>
+      </table>
+    </div>
+ 
+    <!-- Sectors -->
+    <div class="panel" style="flex:1;overflow-y:auto;max-height:200px">
+      <div class="ph">Sector Breakdown</div>
+      <div class="sec-list" id="sec-list"></div>
+    </div>
+ 
+  </div><!-- /col-r -->
+ 
+</div><!-- /grid -->
+ 
+<script>
+'use strict';
+/* ???????????????????????????????????????????????????????????
+   PHYSICS & HARDWARE CONSTANTS
+??????????????????????????????????????????????????????????? */
+const PHY = {
+  // EMRAX 228
+  rpmMax:    5000,
+  torqueMax: 220,
+  motorTempMax: 100,
+  // Vehicle
+  mass:      300,       // kg
+  wheelR:    0.254,     // m  (10-inch wheel, typical FSAE)
+  gearRatio: 3.68,      // primary + final drive
+  // Hardcapped
+  vMax:      90,        // km/h
+  // Battery: Molicel P45B 120S3P
+  vNom:      432,       // V
+  vMin:      340,       // V
+  capacity:  8.4,       // kWh
+  cellTempDerate: 55,   // ?C  ? start derating current
+  cellTempMax:    60,   // ?C  ? critical
+  invTempMax:     80,   // ?C
+  // Endurance target: finish 22 laps with exactly 20% SOC
+  // We tune consumption per lap to use 80% of 8.4 = 6.72 kWh over 22 laps
+  // ? 0.3055 kWh/lap  (we'll scale it in the physics)
+};
+ 
+// RPM ? speed (km/h) via drivetrain geometry
+// v = rpm / gearRatio * 2? * wheelR * 60/1000
+const rpmToKmh = rpm => (rpm / PHY.gearRatio) * (2 * Math.PI * PHY.wheelR) * (60 / 1000);
+// Inverse
+const kmhToRpm = v   => (v * PHY.gearRatio) / (2 * Math.PI * PHY.wheelR) * (1000 / 60);
+ 
+// Verify cap: at 90 km/h ? RPM = 90*1000/(60*2?*0.254*1) * gearRatio
+// = 90000/(377.0)*3.68 = ~878 rpm ? too low. Use gearRatio = 0.55 for FSAE typical
+// Recalculate: FSAE cars 90 km/h at ~4500-5000 RPM requires ratio ? 8
+// Let's use: v(km/h) = RPM * 2? * r_wheel * 60 / (gearRatio * 1000)
+// At 5000 RPM: v = 5000 * 6.2832 * 0.254 * 60 / (G * 1000) = 90
+// ? G = 5000 * 6.2832 * 0.254 * 60 / (90 * 1000) = 5.298
+PHY.gearRatio = 5.298;
+ 
+// BMS derate schedule (cell temp ?C ? current limit A, power limit kW)
+const DERATE_TABLE = [
+  { temp: 25, iLim: 120, pLim: 60 },
+  { temp: 40, iLim: 120, pLim: 60 },
+  { temp: 50, iLim: 100, pLim: 50 },
+  { temp: 55, iLim:  70, pLim: 35 },
+  { temp: 58, iLim:  40, pLim: 20 },
+  { temp: 60, iLim:  10, pLim:  5 },
+];
+ 
+const TOTAL_LAPS   = 22;
+const LAP_DIST_KM  = 1.42;
+const BASE_LAP_T   = 60;   // s ? one lap base time (aggressive driver)
+ 
+/* ???????????????????????????????????????????????????????????
+   TRACK SVG PATH ? single <path> element
+   This is a closed loop ? we use getPointAtLength() for car position
+??????????????????????????????????????????????????????????? */
+const TRACK_D = `
+  M 80 175
+  C 120 175, 160 170, 200 158
+  C 240 146, 265 125, 285 105
+  C 305  85, 325  65, 350  52
+  C 375  39, 405  36, 435  42
+  C 465  48, 490  60, 515  78
+  C 540  96, 555 120, 562 148
+  C 569 175, 558 195, 535 205
+  C 512 215, 480 218, 448 212
+  C 416 206, 385 194, 355 182
+  C 325 170, 295 165, 260 168
+  C 225 171, 195 174, 165 172
+  C 135 170, 110 165,  80 175
+  Z
+`.trim();
+ 
+const SEG_COUNT = 28; // number of colour segments along the path
+ 
+/* Sectors */
+const SECTORS = [
+  { name:'Start/Finish', pct:0.00, type:'straight' },
+  { name:'Hairpin T1',   pct:0.09, type:'corner'   },
+  { name:'Fast Straight',pct:0.21, type:'straight' },
+  { name:'Chicane S1',   pct:0.36, type:'corner'   },
+  { name:'Back Straight',pct:0.51, type:'straight' },
+  { name:'Complex T2',   pct:0.64, type:'corner'   },
+  { name:'Slow Hairpin', pct:0.76, type:'corner'   },
+  { name:'Final Blast',  pct:0.89, type:'straight' },
+];
+ 
+/* ???????????????????????????????????????????????????????????
+   BUILD TRACK SVG  ? inject into DOM
+??????????????????????????????????????????????????????????? */
+let trackPathEl = null;
+let trackPathLen = 0;
+let segPaths = [];
+ 
+function buildTrackSVG() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('id', 'track-svg');
+  svg.setAttribute('viewBox', '0 0 640 250');
+  svg.setAttribute('xmlns', ns);
+  svg.style.display = 'block';
+  svg.style.width   = '100%';
+ 
+  // Dark background
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('width','640'); bg.setAttribute('height','250');
+  bg.setAttribute('fill','#04070c');
+  svg.appendChild(bg);
+ 
+  // The one true path (invisible, used for getPointAtLength)
+  const masterPath = document.createElementNS(ns, 'path');
+  masterPath.setAttribute('d', TRACK_D);
+  masterPath.setAttribute('fill','none');
+  masterPath.setAttribute('stroke','none');
+  masterPath.setAttribute('id','track-master');
+  svg.appendChild(masterPath);
+ 
+  // Coloured segments (thick, visible)
+  for (let i = 0; i < SEG_COUNT; i++) {
+    const sp = document.createElementNS(ns, 'path');
+    sp.setAttribute('d', TRACK_D);
+    sp.setAttribute('fill', 'none');
+    sp.setAttribute('stroke', '#182433');
+    sp.setAttribute('stroke-width', '11');
+    sp.setAttribute('stroke-linecap', 'round');
+    sp.setAttribute('stroke-dasharray', '1 0'); // will be updated
+    sp.id = `seg-${i}`;
+    svg.appendChild(sp);
+  }
+ 
+  // Insert into container before car-dot
+  const container = document.getElementById('track-container');
+  container.insertBefore(svg, document.getElementById('car-dot'));
+ 
+  trackPathEl = document.getElementById('track-master');
+  trackPathLen = trackPathEl.getTotalLength();
+ 
+  // Set up per-segment dash arrays
+  const segLen = trackPathLen / SEG_COUNT;
+  for (let i = 0; i < SEG_COUNT; i++) {
+    const offset = -(i * segLen);
+    const el = document.getElementById(`seg-${i}`);
+    el.setAttribute('stroke-dasharray', `${segLen} ${trackPathLen - segLen}`);
+    el.setAttribute('stroke-dashoffset', `${offset}`);
+  }
+ 
+  // Sector markers
+  SECTORS.forEach((s, idx) => {
+    const dist = s.pct * trackPathLen;
+    const pt   = trackPathEl.getPointAtLength(dist);
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y);
+    c.setAttribute('r', '5');
+    c.setAttribute('fill','none'); c.setAttribute('stroke','#1f2e40'); c.setAttribute('stroke-width','1.5');
+    svg.appendChild(c);
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', pt.x+7); t.setAttribute('y', pt.y-5);
+    t.setAttribute('fill','#243040'); t.setAttribute('font-size','8');
+    t.setAttribute('font-family','Oswald,sans-serif');
+    t.textContent = `S${idx+1}`;
+    svg.appendChild(t);
+  });
+}
+ 
+function setSegColor(segIdx, color) {
+  const el = document.getElementById(`seg-${segIdx}`);
+  if (el) el.setAttribute('stroke', color);
+}
+ 
+function updateCarDot(lapPct) {
+  const dist  = lapPct * trackPathLen;
+  const pt    = trackPathEl.getPointAtLength(dist);
+  const svg   = document.getElementById('track-svg');
+  const rect  = svg.getBoundingClientRect();
+  const vb    = svg.viewBox.baseVal;
+  const scaleX = rect.width  / vb.width;
+  const scaleY = rect.height / vb.height;
+  const dot   = document.getElementById('car-dot');
+  dot.style.display = 'block';
+  dot.style.left = (pt.x * scaleX) + 'px';
+  dot.style.top  = (pt.y * scaleY) + 'px';
+}
+ 
+/* ???????????????????????????????????????????????????????????
+   BUILD UI ELEMENTS
+??????????????????????????????????????????????????????????? */
+function buildSectors() {
+  const el = document.getElementById('sec-list');
+  el.innerHTML = '';
+  SECTORS.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'sec-item'; div.id = `sec-${i}`;
+    div.onclick = () => { sim.lapT = s.pct * BASE_LAP_T; };
+    div.innerHTML = `<span class="sec-n">S${i+1}</span><span class="sec-name">${s.name}</span><span class="sec-t" id="sect-${i}">--.-s</span>`;
+    el.appendChild(div);
+  });
+}
+ 
+function buildDerateTable() {
+  const tbl = document.getElementById('derate-tbl');
+  tbl.innerHTML = '<tr><th>CELL?C</th><th>ILIMIT</th><th>kW LIM</th><th>STATE</th></tr>';
+  DERATE_TABLE.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.id = `dr-${row.temp}`;
+    tr.innerHTML = `<td>${row.temp}?C</td><td>${row.iLim}A</td><td>${row.pLim}kW</td><td>?</td>`;
+    tbl.appendChild(tr);
+  });
+}
+ 
+/* ???????????????????????????????????????????????????????????
+   CHARTS
+??????????????????????????????????????????????????????????? */
+Chart.defaults.color       = '#3a5060';
+Chart.defaults.borderColor = '#0d1521';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size   = 9;
+ 
+const cOpts = (y1, y2) => ({
+  responsive: true, animation: false,
+  plugins:{ legend:{ display: true, labels:{ boxWidth:7, padding:8, font:{size:8} } } },
+  scales:{
+    x:{ ticks:{ maxTicksLimit:6, font:{size:8} }, grid:{ color:'#0d1521' } },
+    y:{ title:{ display:!!y1, text:y1, font:{size:8} }, ticks:{ maxTicksLimit:5, font:{size:8} }, grid:{ color:'#0d1521' } },
+    ...(y2 ? { y2:{ position:'right', title:{ display:true, text:y2, font:{size:8} }, ticks:{ maxTicksLimit:5, font:{size:8} }, grid:{ display:false } } } : {})
+  }
+});
+ 
+let charts = {};
+function initCharts() {
+  // Main: Cell Temp vs SOC ? gradient fill
+  charts.main = new Chart(document.getElementById('chart-main').getContext('2d'), {
+    type: 'line',
+    data:{
+      labels:[],
+      datasets:[
+        {
+          label:'Cell Temp ?C',
+          data:[], borderColor:'#f5a500', borderWidth:2, pointRadius:0, tension:0.4,
+          yAxisID:'y',
+          fill:true, backgroundColor: ctx => {
+            const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
+            g.addColorStop(0,'rgba(245,165,0,0.25)');
+            g.addColorStop(1,'rgba(245,165,0,0.01)');
+            return g;
+          }
+        },
+        {
+          label:'SOC %',
+          data:[], borderColor:'#00ff88', borderWidth:1.5, pointRadius:0, tension:0.4,
+          yAxisID:'y2', fill:false
+        }
+      ]
+    },
+    options: {
+      ...cOpts('?C','%'),
+      plugins:{ legend:{ display:true, labels:{ boxWidth:7, padding:10, font:{size:9} } } }
+    }
+  });
+ 
+  charts.vi = new Chart(document.getElementById('chart-vi').getContext('2d'), {
+    type:'line',
+    data:{ labels:[], datasets:[
+      { label:'V',  data:[], borderColor:'#00d4e8', borderWidth:1.5, pointRadius:0, tension:0.3, yAxisID:'y' },
+      { label:'A',  data:[], borderColor:'#ff1a35', borderWidth:1,   pointRadius:0, tension:0.3, yAxisID:'y2' }
+    ]},
+    options: cOpts('V','A')
+  });
+ 
+  charts.pwr = new Chart(document.getElementById('chart-pwr').getContext('2d'), {
+    type:'line',
+    data:{ labels:[], datasets:[
+      { label:'Drive kW', data:[], borderColor:'#0090ff', borderWidth:1.5, pointRadius:0, tension:0.4,
+        fill:true, backgroundColor:'rgba(0,144,255,0.07)', yAxisID:'y' },
+      { label:'Regen kW', data:[], borderColor:'#00e0b8', borderWidth:1,   pointRadius:0, tension:0.4, yAxisID:'y' }
+    ]},
+    options: cOpts('kW')
+  });
+}
+ 
+const MAX_PTS = 200;
+function pushChart(ch, lbl, ...vals) {
+  ch.data.labels.push(lbl);
+  vals.forEach((v,i) => ch.data.datasets[i].data.push(v));
+  if (ch.data.labels.length > MAX_PTS) {
+    ch.data.labels.shift();
+    ch.data.datasets.forEach(d => d.data.shift());
+  }
+  ch.update('none');
+}
+ 
+/* ???????????????????????????????????????????????????????????
+   G-FORCE CANVAS
+??????????????????????????????????????????????????????????? */
+function drawGforce(latG, lonG) {
+  const c = document.getElementById('gf-c');
+  const ctx = c.getContext('2d');
+  const W=c.width, H=c.height, cx=W/2, cy=H/2;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#04070c'; ctx.fillRect(0,0,W,H);
+  // rings
+  [0.5,1,1.5,2].forEach(r => {
+    const px = r/2.5*Math.min(cx,cy)*0.88;
+    ctx.beginPath(); ctx.arc(cx,cy,px,0,Math.PI*2);
+    ctx.strokeStyle='#0d1521'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='#182433'; ctx.font='7px JetBrains Mono';
+    ctx.fillText(r+'G', cx+px+2, cy-2);
+  });
+  // axes
+  ctx.strokeStyle='#182433'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(cx,8); ctx.lineTo(cx,H-8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(8,cy); ctx.lineTo(W-8,cy); ctx.stroke();
+  // dot
+  const sc = Math.min(cx,cy)*0.88/2.5;
+  const dx = latG*sc, dy = -lonG*sc;
+  // trail
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+dx,cy+dy);
+  ctx.strokeStyle='rgba(0,255,136,0.2)'; ctx.lineWidth=2; ctx.stroke();
+  // dot
+  ctx.beginPath(); ctx.arc(cx+dx,cy+dy,6,0,Math.PI*2);
+  ctx.fillStyle='#00ff88';
+  ctx.shadowColor='#00ff88'; ctx.shadowBlur=14;
+  ctx.fill(); ctx.shadowBlur=0;
+}
+ 
+/* ???????????????????????????????????????????????????????????
+   PHYSICS ENGINE ? AGGRESSIVE DRIVER MODEL
+   Key features:
+   - Late braking: full throttle until close to corner, hard brake
+   - Pinned-throttle exits: max power out of corner
+   - RPM/speed physically coupled via drivetrain ratio
+   - Energy tuned for 20% SOC remaining at lap 22
+??????????????????????????????????????????????????????????? */
+function aggressiveDriverProfile(lapPct) {
+  // Lap profile: speed varies based on corner positions
+  // Six corners at roughly: 10%, 28%, 42%, 58%, 72%, 86% of lap
+  const corners = [0.10, 0.28, 0.42, 0.58, 0.72, 0.86];
+  const cornerWidth = 0.07; // fraction of lap in braking/cornering zone
+ 
+  // Start at peak speed
+  let normSpeed = 1.0; // 0?1 scaled to vMax
+ 
+  // For each corner, drop speed in corner zone
+  corners.forEach(c => {
+    const dist = Math.min(
+      Math.abs(lapPct - c),
+      Math.abs(lapPct - c + 1),
+      Math.abs(lapPct - c - 1)
+    );
+    if (dist < cornerWidth) {
+      const dip = 1 - Math.cos(Math.PI * dist / cornerWidth);
+      normSpeed -= (0.55 - 0.20 * Math.random()) * (1 - dip/2);
+    }
+  });
+  normSpeed = Math.max(0.18, Math.min(1.0, normSpeed));
+ 
+  // Next-step speed for throttle/brake calculation
+  const eps = 0.004;
+  let normNext = 1.0;
+  const lapPctNext = (lapPct + eps) % 1;
+  corners.forEach(c => {
+    const dist = Math.min(
+      Math.abs(lapPctNext - c),
+      Math.abs(lapPctNext - c + 1),
+      Math.abs(lapPctNext - c - 1)
+    );
+    if (dist < cornerWidth) {
+      const dip = 1 - Math.cos(Math.PI * dist / cornerWidth);
+      normNext -= (0.55 - 0.20 * Math.random()) * (1 - dip/2);
+    }
+  });
+  normNext = Math.max(0.18, Math.min(1.0, normNext));
+ 
+  const dv = normNext - normSpeed;
+ 
+  // Aggressive driver: late braking (sharp transitions)
+  let throttle = 0, brake = 0;
+  if (dv >= 0) {
+    throttle = Math.min(100, dv * 280 + 55 * normSpeed);
+  } else {
+    // Late braking: sharp
+    brake = Math.min(100, -dv * 380);
+    throttle = 0;
+  }
+  // Pinned exit: extra throttle push out of corner
+  const isExiting = corners.some(c => {
+    const d = Math.min(Math.abs(lapPct-c), Math.abs(lapPct-c+1), Math.abs(lapPct-c-1));
+    return d > cornerWidth * 0.4 && d < cornerWidth * 0.9 && lapPct > c;
+  });
+  if (isExiting && throttle > 0) throttle = Math.min(100, throttle * 1.25);
+ 
+  return { normSpeed, throttle, brake };
+}
+ 
+function getBMSDerate(cellTemp) {
+  let iLim = 120, pLim = 60;
+  for (let i = DERATE_TABLE.length - 1; i >= 0; i--) {
+    if (cellTemp >= DERATE_TABLE[i].temp) { iLim = DERATE_TABLE[i].iLim; pLim = DERATE_TABLE[i].pLim; break; }
+  }
+  return { iLim, pLim };
+}
+ 
+function physics(lapPct, lapNum, simT) {
+  const { normSpeed, throttle, brake } = aggressiveDriverProfile(lapPct);
+ 
+  // Speed (km/h) capped at 90
+  const speed = Math.max(0, Math.min(PHY.vMax, normSpeed * PHY.vMax));
+ 
+  // RPM from speed via drivetrain (physically coupled)
+  const rpm   = Math.min(PHY.rpmMax, kmhToRpm(speed));
+ 
+  // SOC ? endurance management: target 20% remaining after 22 laps
+  // Total consumption over race = 80% of 8.4 kWh = 6.72 kWh
+  // Each lap: 6.72/22 = 0.3055 kWh ? we use this as baseline
+  const lapsDone = lapNum + lapPct;
+  const soc = Math.max(20, 100 - (lapsDone / TOTAL_LAPS) * 80);
+ 
+  // Thermals ? rise with laps, modulated by throttle
+  const cellTemp  = 22 + lapNum * 1.55 + 9 * (throttle / 100) * Math.sin(lapPct * Math.PI * 3 + 0.8);
+  const motTemp   = 28 + lapNum * 2.10 + 14 * (throttle / 100);
+  const invTemp   = 25 + lapNum * 1.10 + 7  * (throttle / 100);
+  const coolTemp  = 18 + lapNum * 0.80;
+ 
+  // BMS derate
+  const { iLim, pLim } = getBMSDerate(cellTemp);
+ 
+  // Torque from EMRAX 228 torque-speed curve (peak 220Nm, falls off above 3000 RPM)
+  const torqueAvail = rpm < 3000
+    ? PHY.torqueMax
+    : PHY.torqueMax * (1 - 0.45 * ((rpm - 3000) / (PHY.rpmMax - 3000)));
+  const torque = Math.min(torqueAvail, torqueAvail * (throttle / 100));
+ 
+  // Power: P = T * ? = T * rpm * 2? / 60
+  const omega   = rpm * 2 * Math.PI / 60;
+  const mechPwr = (torque * omega) / 1000; // kW
+  const drivePwr = Math.min(pLim, Math.max(0, mechPwr));
+ 
+  // Regen during braking
+  const regenEff = 0.65;
+  const regenPwr = brake > 15 ? Math.min(20, drivePwr * 0.55 * regenEff) : 0;
+  const netPwr   = regenPwr > 0 ? -regenPwr : drivePwr;
+ 
+  // Voltage sag under load
+  const voltSag  = (Math.abs(netPwr) / 60) * 20 + (lapNum / TOTAL_LAPS) * (PHY.vNom - PHY.vMin) * 0.65;
+  const packV    = Math.max(PHY.vMin, PHY.vNom - voltSag);
+  const current  = (netPwr * 1000) / packV;
+ 
+  // G-forces (aggressive profile has sharper peaks)
+  const latG = 1.2 * Math.sin(lapPct * Math.PI * 6) * (0.7 + 0.3 * normSpeed);
+  const lonG = (throttle / 100 - brake / 100) * 1.8;
+ 
+  // Driving mode
+  let mode = 'coast';
+  if (Math.abs(latG) > 0.75) mode = 'corner';
+  else if (regenPwr > 0.5)   mode = 'regen';
+  else if (brake > 25)       mode = 'brake';
+  else if (throttle > 80)    mode = 'throttle';
+ 
+  // Thermal critical
+  const thermalCrit = cellTemp >= PHY.cellTempMax || motTemp >= PHY.motorTempMax;
+ 
+  return {
+    speed, rpm, torque, throttle, brake, soc,
+    cellTemp, motTemp, invTemp, coolTemp,
+    drivePwr, regenPwr, netPwr, packV, current,
+    latG, lonG, iLim, pLim, mode, thermalCrit
+  };
+}
+ 
+/* ???????????????????????????????????????????????????????????
+   UPDATE UI
+??????????????????????????????????????????????????????????? */
+const $ = id => document.getElementById(id);
+ 
+const MODE_COLORS = {
+  throttle: '#0090ff',
+  brake:    '#f5a500',
+  regen:    '#00e0b8',
+  corner:   '#ff1a35',
+  coast:    '#182433'
+};
+ 
+function updateUI(d, lapPct, lapNum, totalEnergy) {
+  // ? Speed
+  $('spd-num').textContent = d.speed.toFixed(0);
+  $('spd-bar').style.width = (d.speed / PHY.vMax * 100) + '%';
+ 
+  // ? RPM + Torque
+  $('rpm-val').textContent = d.rpm.toFixed(0);
+  $('rpm-bar').style.width = (d.rpm / PHY.rpmMax * 100) + '%';
+  $('torq-val').textContent = d.torque.toFixed(0);
+  $('torq-bar').style.width = (d.torque / PHY.torqueMax * 100) + '%';
+ 
+  // ? BMS box
+  const bmsBox = $('bms-box');
+  const bmsStatus = $('bms-status');
+  const bmsSub    = $('bms-sub');
+  if (d.thermalCrit || d.pLim <= 5) {
+    bmsBox.className = 'bms-box critical';
+    bmsStatus.textContent = 'CRITICAL';
+    bmsSub.textContent = `Cell ${d.cellTemp.toFixed(0)}?C / Mot ${d.motTemp.toFixed(0)}?C`;
+  } else if (d.pLim < 60) {
+    bmsBox.className = 'bms-box derate';
+    bmsStatus.textContent = 'DERATING';
+    bmsSub.textContent = `Limit: ${d.pLim}kW / ${d.iLim}A`;
+  } else {
+    bmsBox.className = 'bms-box nominal';
+    bmsStatus.textContent = 'NOMINAL';
+    bmsSub.textContent = 'All parameters within limits';
+  }
+ 
+  // ? Data rows
+  $('dr-plim').textContent = d.pLim;
+  $('dr-curr').textContent = Math.abs(d.current).toFixed(0);
+  $('dr-volt').textContent = d.packV.toFixed(0);
+  $('dr-thr').textContent  = d.throttle.toFixed(0);
+  $('dr-brk').textContent  = d.brake.toFixed(0);
+ 
+  // ? G-Force
+  $('gf-lat').textContent  = d.latG.toFixed(2);
+  $('gf-lon').textContent  = d.lonG.toFixed(2);
+  $('gf-peak').textContent = Math.sqrt(d.latG**2 + d.lonG**2).toFixed(2);
+  drawGforce(d.latG, d.lonG);
+ 
+  // ? Car dot on track (physics-accurate getPointAtLength)
+  updateCarDot(lapPct);
+ 
+  // ? Track segment color
+  const sIdx = Math.floor(lapPct * SEG_COUNT) % SEG_COUNT;
+  setSegColor(sIdx, MODE_COLORS[d.mode]);
+ 
+  // ? Mode badge
+  $('ph-mode').textContent = d.mode.toUpperCase();
+  $('ph-mode').style.borderColor = MODE_COLORS[d.mode];
+  $('ph-mode').style.color = MODE_COLORS[d.mode];
+ 
+  // ? SOC
+  const socEl = $('soc-num');
+  socEl.textContent = d.soc.toFixed(1) + '%';
+  socEl.className   = 'soc-num' + (d.soc < 20 ? ' crit' : d.soc < 35 ? ' low' : '');
+  $('soc-fill').style.width = d.soc + '%';
+  $('soc-energy').textContent = `Discharged: ${totalEnergy.toFixed(3)} kWh`;
+  $('ls-socr').textContent    = d.soc.toFixed(0) + '%';
+ 
+  // ? Thermal
+  const tSet = (vid, fid, val, max) => {
+    const pct = Math.min(100, val/max*100);
+    $(vid).textContent = val.toFixed(0) + '?C';
+    $(fid).style.width = pct + '%';
+    $(vid).className   = 'therm-val' + (pct>90?' hot':pct>70?' warm':'');
+  };
+  tSet('tv-bat','tf-bat', d.cellTemp, PHY.cellTempMax);
+  tSet('tv-mot','tf-mot', d.motTemp,  PHY.motorTempMax);
+  tSet('tv-inv','tf-inv', d.invTemp,  PHY.invTempMax);
+  tSet('tv-cool','tf-cool',d.coolTemp, 45);
+ 
+  // ? THERMAL CRITICAL
+  document.body.classList.toggle('crit-flash', d.thermalCrit);
+  $('thermal-overlay').classList.toggle('show', d.thermalCrit);
+  $('thermal-banner').classList.toggle('show', d.thermalCrit);
+ 
+  // ? Alert strip
+  const setAI = (id, txt, cls) => { const el=$(id); el.textContent=txt; el.className='as-i '+cls; };
+  const batCls = d.cellTemp>=PHY.cellTempMax?'crit':d.cellTemp>=PHY.cellTempDerate?'warn':'ok';
+  const motCls = d.motTemp>=PHY.motorTempMax?'crit':d.motTemp>=75?'warn':'ok';
+  setAI('al-bat',   `BAT: ${d.cellTemp.toFixed(0)}?C${d.cellTemp>=55?' ?':''}`, batCls);
+  setAI('al-mot',   `MOT: ${d.motTemp.toFixed(0)}?C${d.motTemp>=75?' ?':''}`, motCls);
+  setAI('al-soc',   `SOC: ${d.soc.toFixed(0)}%`, d.soc<20?'crit':d.soc<30?'warn':'ok');
+  setAI('al-volt',  `BUS: ${d.packV.toFixed(0)}V`, d.packV<360?'warn':'ok');
+  setAI('al-pwr',   `PWR: ${Math.abs(d.netPwr).toFixed(1)}kW`, d.netPwr<0?'warn':'ok');
+  setAI('al-regen', `REGEN: ${d.regenPwr>0.5?d.regenPwr.toFixed(1)+'kW':'OFF'}`, d.regenPwr>0.5?'warn':'ok');
+  setAI('al-derate',`DERATE: ${d.pLim<60?d.pLim+'kW':'NONE'}`, d.pLim<60?'warn':'ok');
+  $('al-laps').textContent = `LAPS: ${lapNum}/${TOTAL_LAPS}`;
+ 
+  // ? Status dots
+  $('sd-tcs').className   = 'spill-dot' + (Math.abs(d.latG)>0.9?' warn':' off');
+  $('sd-regen').className = 'spill-dot' + (d.regenPwr>0.5?'':' off');
+  $('sd-derate').className= 'spill-dot' + (d.pLim<60?' warn':' off');
+  $('sd-bms').className   = 'spill-dot' + (d.thermalCrit?' crit':d.pLim<60?' warn':'');
+ 
+  // ? Sector highlight
+  let actSec = 0;
+  SECTORS.forEach((s,i)=>{ if(lapPct>=s.pct) actSec=i; });
+  SECTORS.forEach((_,i)=>{ $(`sec-${i}`)?.classList.toggle('act', i===actSec); });
+ 
+  // ? Derate table active row
+  let activeTemp = DERATE_TABLE[0];
+  DERATE_TABLE.forEach(r=>{ if(d.cellTemp>=r.temp) activeTemp=r; });
+  DERATE_TABLE.forEach(r=>{
+    const tr=$(`dr-${r.temp}`); if(!tr)return;
+    const isAct = r.temp===activeTemp.temp;
+    tr.className = isAct?'act':'';
+    const stateCell = tr.querySelectorAll('td')[3];
+    stateCell.className = r.pLim===60?'ok':r.pLim>=35?'warn':'crit';
+    stateCell.textContent = isAct?'? ACTIVE':(r.pLim===60?'OK':'DERATE');
+  });
+}
+ 
+/* ???????????????????????????????????????????????????????????
+   SIMULATION STATE
+??????????????????????????????????????????????????????????? */
+const sim = {
+  t: 0, lapT: 0, lapNum: 0,
+  playing: false, speed: 2,
+  totalEnergy: 0, lapEnergies: [],
+  bestLap: Infinity, chartTick: 0
+};
+ 
+let lastTs = null, animId = null;
+ 
+function simStep(realDt) {
+  if (sim.lapNum >= TOTAL_LAPS) { sim.playing = false; updatePlayBtn(); return; }
+ 
+  const dt = realDt * sim.speed;
+  sim.lapT += dt;
+  sim.t    += dt;
+ 
+  const lapPct = (sim.lapT % BASE_LAP_T) / BASE_LAP_T;
+  const d = physics(lapPct, sim.lapNum, sim.t);
+ 
+  // Energy accumulation (tuned for 20% remaining: 6.72 kWh over 22 laps)
+  const energyRate = 0.3055; // kWh per lap target
+  sim.totalEnergy += Math.max(0, d.drivePwr - d.regenPwr) * dt / 3600
+    * (energyRate * TOTAL_LAPS / (PHY.capacity * 0.8)); // scale to hit exactly 20% SOC
+ 
+  // Lap boundary
+  if (sim.lapT >= BASE_LAP_T) {
+    sim.lapT -= BASE_LAP_T;
+    const lt = BASE_LAP_T + (Math.random() - 0.5) * 2;
+    if (lt < sim.bestLap) sim.bestLap = lt;
+    sim.lapEnergies.push(sim.totalEnergy - sim.lapEnergies.reduce((a,b)=>a+b,0));
+    $('ls-last').textContent = lt.toFixed(3) + 's';
+    $('ls-best').textContent = sim.bestLap === Infinity ? '--:--' : sim.bestLap.toFixed(3) + 's';
+    SECTORS.forEach((_,i)=>{
+      const el=$(`sect-${i}`); if(el) el.textContent=(BASE_LAP_T*SECTORS[i].pct+Math.random()*1.2).toFixed(1)+'s';
+    });
+    sim.lapNum++;
+  }
+  if (sim.lapNum >= TOTAL_LAPS) { sim.playing=false; updatePlayBtn(); }
+ 
+  // Update energy display
+  $('ls-energy').textContent = sim.totalEnergy.toFixed(3) + ' kWh';
+ 
+  // Race progress
+  const totalPct = (sim.lapNum + (sim.lapT/BASE_LAP_T)) / TOTAL_LAPS * 100;
+  $('prog-fill').style.width = totalPct + '%';
+  $('prog-lap').textContent  = sim.lapNum;
+  $('prog-dist').textContent = (sim.lapNum*LAP_DIST_KM + (sim.lapT/BASE_LAP_T)*LAP_DIST_KM).toFixed(2)+' km';
+  const rmm=String(Math.floor(sim.t/60)).padStart(2,'0'), rss=String(Math.floor(sim.t%60)).padStart(2,'0');
+  $('prog-time').textContent = `${rmm}:${rss}`;
+ 
+  // Lap counter
+  $('lap-num').textContent = sim.lapNum;
+ 
+  // Header timer
+  const mm=String(Math.floor(sim.t/60)).padStart(2,'0');
+  const ss=String(Math.floor(sim.t%60)).padStart(2,'0');
+  const ms=String(Math.floor((sim.t%1)*1000)).padStart(3,'0');
+  $('hdr-time').textContent = `${mm}:${ss}.${ms}`;
+ 
+  updateUI(d, lapPct, sim.lapNum, sim.totalEnergy);
+ 
+  // Charts every ~150ms sim time
+  sim.chartTick += dt;
+  if (sim.chartTick >= 0.15) {
+    sim.chartTick = 0;
+    const lbl = `${mm}:${ss}`;
+    pushChart(charts.main, lbl, d.cellTemp.toFixed(1), d.soc.toFixed(1));
+    pushChart(charts.vi,   lbl, d.packV.toFixed(1), Math.abs(d.current).toFixed(1));
+    pushChart(charts.pwr,  lbl, Math.max(0, d.netPwr).toFixed(2), d.regenPwr.toFixed(2));
+  }
+}
+ 
+function animate(ts) {
+  if (!sim.playing) return;
+  if (lastTs !== null) {
+    const dt = Math.min((ts - lastTs) / 1000, 0.05);
+    simStep(dt);
+  }
+  lastTs = ts;
+  animId = requestAnimationFrame(animate);
+}
+ 
+function togglePlay() {
+  sim.playing = !sim.playing;
+  updatePlayBtn();
+  if (sim.playing) { lastTs = null; animId = requestAnimationFrame(animate); }
+  else if (animId) cancelAnimationFrame(animId);
+}
+function updatePlayBtn() {
+  const b = $('btn-play');
+  b.textContent = sim.playing ? '? PAUSE' : '? RUN';
+  b.classList.toggle('active', sim.playing);
+}
+function resetSim() {
+  sim.playing = false; if (animId) cancelAnimationFrame(animId);
+  Object.assign(sim, { t:0, lapT:0, lapNum:0, totalEnergy:0, lapEnergies:[], bestLap:Infinity, chartTick:0 });
+  updatePlayBtn();
+  Object.values(charts).forEach(ch => {
+    ch.data.labels = []; ch.data.datasets.forEach(d => d.data = []); ch.update('none');
+  });
+  $('hdr-time').textContent = '00:00.000';
+  $('lap-num').textContent  = '0';
+  $('prog-fill').style.width = '0%';
+  document.body.classList.remove('crit-flash');
+  $('thermal-overlay').classList.remove('show');
+  $('thermal-banner').classList.remove('show');
+  for (let i=0; i<SEG_COUNT; i++) setSegColor(i,'#182433');
+  $('car-dot').style.display = 'none';
+  buildSectors();
+  drawGforce(0,0);
+}
+function setSpdMult(v) { sim.speed = parseInt(v); }
+ 
+/* ???????????????????????????????????????????????????????????
+   INITIALISE
+??????????????????????????????????????????????????????????? */
+buildTrackSVG();
+buildSectors();
+buildDerateTable();
+initCharts();
+drawGforce(0, 0);
+</script>
+</body>
+</html>
