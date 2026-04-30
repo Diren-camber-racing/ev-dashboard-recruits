@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FSAE EV ? ANALYTICS v17.2 (REALISTIC PHYSICS)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@600;800&display=swap');
+    :root { --bg: #050506; --panel: #0d0d0f; --acc: #FFD700; --white: #FFFFFF; --border: #1a1a1c; --mute: #444446; --red: #ff4444; --green: #00ff88; --cyan: #00ffff; }
+    * { box-sizing: border-box; }
+    body, html { height: 100vh; width: 100vw; margin: 0; padding: 0; background: var(--bg); color: var(--white); font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+    .dashboard { display: flex; flex-direction: column; height: 100vh; padding: 15px; gap: 10px; }
+    .top-nav { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; flex-shrink: 0; }
+    .brand { font-family: 'Outfit', sans-serif; font-size: 1rem; letter-spacing: 2px; }
+    .brand span { color: var(--acc); }
+
+    .main-layout { display: grid; grid-template-columns: 280px 1fr; gap: 15px; flex-grow: 1; min-height: 0; }
+    .sidebar { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+    .side-card { background: var(--panel); border: 1px solid var(--border); padding: 12px; }
+    .sector-list { font-size: 0.65rem; overflow-y: auto; flex-grow: 1; border: 1px solid #111; padding: 5px; scroll-behavior: smooth; }
+    .lap-header { color: var(--acc); font-weight: 800; font-size: 0.75rem; margin: 15px 0 5px 0; border-bottom: 1px solid var(--mute); }
+    .sec-row { display: flex; justify-content: space-between; padding: 4px 8px; color: #555; }
+    .sec-row.active { color: var(--white); background: #1a1a1c; border-left: 3px solid var(--acc); }
+
+    .content-area { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 8px 12px; border-left: 3px solid var(--border); }
+    .stat-card.active { border-left-color: var(--acc); }
+    
+    .label { font-size: 0.5rem; color: var(--mute); text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
+    .value { font-size: 1.25rem; font-weight: 700; color: var(--white); }
+    .unit { font-size: 0.55rem; color: var(--acc); }
+
+    .chart-area { flex-grow: 1; display: grid; grid-template-rows: 1fr 1fr; gap: 10px; min-height: 0; }
+    .stage { background: var(--panel); border: 1px solid var(--border); padding: 12px; position: relative; min-height: 0; }
+    .stage-label { position: absolute; top: 6px; left: 15px; font-size: 0.55rem; color: var(--acc); font-weight: 800; z-index: 10; background: var(--panel); padding: 0 5px; }
+
+    .input-bar { display: flex; gap: 10px; height: 30px; margin-top: 5px; }
+    .input-container { flex: 1; background: #111; position: relative; border: 1px solid var(--border); overflow: hidden; }
+    .fill { height: 100%; width: 0%; transition: width 0.05s linear; }
+
+    .playback-engine { background: #000; padding: 10px 20px; border: 1px solid var(--border); display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+    input[type=range] { flex-grow: 1; accent-color: var(--acc); cursor: pointer; }
+    button { background: var(--white); color: #000; border: none; padding: 10px 20px; font-family: 'Outfit', sans-serif; font-weight: 800; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="top-nav">
+        <div class="brand">FSAE<span>_EV</span>_TELEMETRY_PRO</div>
+        <div style="font-size: 0.6rem; color: var(--mute);">PHYSICS: CONSTANT_POWER_MODEL | TRACKER: MOTOR_TEMP</div>
+        <label style="cursor:pointer; font-size:0.6rem; color:var(--mute); border:1px solid var(--mute); padding:4px 8px;">
+            <input type="file" id="csvIn" style="display:none" accept=".csv">[ RELOAD_CSV ]
+        </label>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="side-card">
+                <div class="label">Battery SOC</div>
+                <div style="display:flex; justify-content:space-between; align-items: baseline;">
+                    <span id="v-soc" style="color:var(--green); font-size:1.4rem; font-weight:700;">100</span><span class="unit">%</span>
+                    <span id="v-pwr" style="font-size:0.8rem;">0.0 kW</span>
+                </div>
+            </div>
+            <div class="side-card" style="display:flex; flex-direction:column; flex-grow:1; min-height:0;">
+                <div class="label">6-Sector Timing</div>
+                <div id="sector-list" class="sector-list"></div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="grid">
+                <div class="stat-card active"><div class="label">Current Lap</div><div class="value" id="v-lap">1</div><span class="unit">/ 22</span></div>
+                <div class="stat-card active"><div class="label">Lap Timer</div><div class="value" id="v-ltime">0.00s</div></div>
+                <div class="stat-card active"><div class="label">Active Sector</div><div class="value" id="v-sec-cur">1</div></div>
+                <div class="stat-card"><div class="label">Motor Temp</div><div class="value" id="v-mtemp">25</div><span class="unit">?C</span></div>
+            </div>
+
+            <div class="chart-area">
+                <div class="stage"><div class="stage-label">Performance (RPM vs Torque)</div><canvas id="perfChart"></canvas></div>
+                <div class="stage"><div class="stage-label">Thermals (Pack vs Motor)</div><canvas id="thermChart"></canvas></div>
+            </div>
+
+            <div class="input-bar">
+                <div class="input-container"><div class="label" style="position:absolute; left:8px; top:8px; z-index:2;">THROTTLE</div><div id="thr-fill" class="fill" style="background:var(--acc);"></div></div>
+                <div class="input-container"><div class="label" style="position:absolute; left:8px; top:8px; z-index:2;">BRAKE</div><div id="brk-fill" class="fill" style="background:var(--red);"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="playback-engine">
+        <button id="btnPlay">Execute_Sim</button>
+        <input type="range" id="scrubber" min="0" value="0">
+        <div id="timestamp" style="font-size:1.1rem; color:var(--acc); font-weight:700; min-width:110px; text-align:right;">0:00.00</div>
+    </div>
+</div>
+
+<script>
+    let fullRace = [];
+    let lapChunks = []; 
+    let pChart, tChart, idx = 0, currentLap = 1, isPlaying = false;
+    const TARGET_LAP_TIME = 120.0;
+    const CAPACITY_J = 5.8 * 3600000;
+    const SECTOR_WEIGHTS = [0.12, 0.22, 0.15, 0.21, 0.18, 0.12]; 
+
+    // Motor Constants
+    const PEAK_TORQUE = 230; // Nm
+    const BASE_SPEED_RPM = 1200; // RPM where power becomes constant
+
+    window.onload = () => {
+        const saved = localStorage.getItem('fsae_v17');
+        if (saved) processCSV(saved);
+    };
+
+    document.getElementById('csvIn').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (f) => { localStorage.setItem('fsae_v17', f.target.result); processCSV(f.target.result); };
+        reader.readAsText(e.target.files[0]);
+    };
+
+    function processCSV(text) {
+        const lines = text.split('\n');
+        const start = lines.findIndex(l => l.includes('[Simulation Results]')) + 1;
+        Papa.parse(lines.slice(start).join('\n'), {
+            header: true, dynamicTyping: true, skipEmptyLines: true,
+            complete: (r) => {
+                const master = r.data.filter(d => typeof d.elapsedTime === 'number');
+                synthesizeRace(master);
+            }
+        });
+    }
+
+    function synthesizeRace(master) {
+        fullRace = []; lapChunks = [];
+        let totalEnergy = 0, cumulativeTime = 0, mTemp = 25.0, bTemp = 25.0;
+        const list = document.getElementById('sector-list');
+        list.innerHTML = '';
+
+        const timeScale = TARGET_LAP_TIME / master[master.length-1].elapsedTime;
+
+        for(let l = 1; l <= 22; l++) {
+            const lapVar = 1 + (Math.random() * 0.015 - 0.0075);
+            const totalLapTime = TARGET_LAP_TIME * lapVar;
+            
+            list.innerHTML += `<div class="lap-header">LAP ${l}</div>`;
+            SECTOR_WEIGHTS.forEach((w, sIdx) => {
+                const sTime = (totalLapTime * w).toFixed(2);
+                list.innerHTML += `<div class="sec-row" id="l${l}s${sIdx+1}"><span>SEC ${sIdx+1}</span><span>${sTime}s</span></div>`;
+            });
+
+            let lapStartIdx = fullRace.length;
+            master.forEach((d, i) => {
+                const dt = i > 0 ? (master[i].elapsedTime - master[i-1].elapsedTime) * timeScale : 0.01;
+                const kw = d.power * 0.7457;
+                totalEnergy += (kw * 1000 * dt);
+                
+                mTemp = mTemp + (kw * 0.03 * dt) - (0.12 * (mTemp - 25.0) * dt);
+                bTemp = bTemp + (Math.pow((kw*1000/440), 2) * 0.00000004 * dt) - (0.05 * (bTemp - 25.0) * dt);
+
+                // REFINED: Realistic EV Torque Model
+                const rpm = Math.min(d.engineSpeed, 3000);
+                const throttle = d.power > 0 ? (d.power / 75) : 0;
+                let availableTorque;
+                
+                if (rpm <= BASE_SPEED_RPM) {
+                    availableTorque = PEAK_TORQUE; // Constant Torque Region
+                } else {
+                    availableTorque = PEAK_TORQUE * (BASE_SPEED_RPM / rpm); // Constant Power Region
+                }
+                const actualTorque = throttle * availableTorque;
+
+                let progress = i / master.length;
+                let runningWeight = 0, sector = 6;
+                for(let s=0; s<6; s++) {
+                    runningWeight += SECTOR_WEIGHTS[s];
+                    if(progress <= runningWeight) { sector = s + 1; break; }
+                }
+
+                fullRace.push({
+                    lap: l, lapIdx: i,
+                    lapTime: d.elapsedTime * timeScale * lapVar,
+                    totalTime: cumulativeTime + (d.elapsedTime * timeScale * lapVar),
+                    rpm: rpm, 
+                    trq: actualTorque,
+                    kw: kw, soc: Math.max(0, 100 - (totalEnergy / CAPACITY_J * 100)),
+                    mTemp: mTemp, bTemp: bTemp,
+                    thr: Math.min(100, throttle * 100),
+                    brk: d.longitudinalAcceleration < -2 ? Math.min(100, Math.abs(d.longitudinalAcceleration / 11) * 100) : 0,
+                    sector: sector
+                });
+            });
+            lapChunks.push({ start: lapStartIdx, end: fullRace.length - 1 });
+            cumulativeTime += totalLapTime;
+        }
+        document.getElementById('scrubber').max = fullRace.length - 1;
+        initCharts(0);
+        update(0);
+    }
+
+    // UPDATED: Dynamic Pointer with dataset targeting
+    const syncPointer = {
+        id: 'syncPointer',
+        afterDatasetsDraw(chart) {
+            const { ctx, chartArea: { top, bottom, left, right }, scales: { x } } = chart;
+            const current = fullRace[idx];
+            if (!current) return;
+
+            const lapDataIdx = current.lapIdx;
+            
+            // Determine which dataset to track (Top chart tracks RPM, Bottom tracks Motor Temp)
+            const trackDatasetIdx = chart.canvas.id === 'perfChart' ? 0 : 1; 
+            const activeDataset = chart.data.datasets[trackDatasetIdx];
+            
+            if (activeDataset && activeDataset.data[lapDataIdx]) {
+                const xPos = x.getPixelForValue(lapDataIdx);
+                const yVal = activeDataset.data[lapDataIdx].y;
+                const yAxis = chart.scales[activeDataset.yAxisID || 'y'];
+                const yPos = yAxis.getPixelForValue(yVal);
+
+                if (xPos >= left && xPos <= right) {
+                    ctx.save();
+                    // Vertical Guide
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(xPos, top);
+                    ctx.lineTo(xPos, bottom);
+                    ctx.stroke();
+
+                    // Active Point Glow
+                    ctx.beginPath();
+                    ctx.arc(xPos, yPos, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#FFD700';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#FFD700';
+                    ctx.fill();
+                    
+                    // Core point
+                    ctx.beginPath();
+                    ctx.arc(xPos, yPos, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#FFF';
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+    };
+
+    function initCharts(startIdx) {
+        const lNum = fullRace[startIdx].lap;
+        const chunk = lapChunks[lNum - 1];
+        const lapData = fullRace.slice(chunk.start, chunk.end + 1);
+        
+        const opt = { 
+            responsive: true, maintainAspectRatio: false, animation: false, 
+            plugins: { legend: { labels: { color: '#888', font: { size: 9 }, boxWidth: 10 } } }, 
+            scales: { 
+                x: { type: 'linear', display: false, min: 0, max: lapData.length - 1 }, 
+                y: { grid: { color: '#1a1a1c' }, ticks: { color: '#444', font: { size: 8 } } }, 
+                y1: { position: 'right', display: true, grid: { drawOnChartArea: false }, ticks: { font: { size: 8 } } } 
+            } 
+        };
+
+        if (pChart) pChart.destroy();
+        pChart = new Chart(document.getElementById('perfChart'), {
+            type: 'line', data: { datasets: [
+                { label: 'RPM', data: lapData.map((d, i) => ({x: i, y: d.rpm})), borderColor: '#FFD700', yAxisID: 'y', borderWidth: 1.5, pointRadius: 0 },
+                { label: 'Torque (Nm)', data: lapData.map((d, i) => ({x: i, y: d.trq})), borderColor: '#00FFFF', yAxisID: 'y1', borderWidth: 1.5, pointRadius: 0 }
+            ]}, options: opt, plugins: [syncPointer]
+        });
+
+        if (tChart) tChart.destroy();
+        tChart = new Chart(document.getElementById('thermChart'), {
+            type: 'line', data: { datasets: [
+                { label: 'Pack Temp', data: lapData.map((d, i) => ({x: i, y: d.bTemp})), borderColor: '#888', yAxisID: 'y', borderWidth: 1, borderDash: [2,2], pointRadius: 0 },
+                { label: 'Motor Temp', data: lapData.map((d, i) => ({x: i, y: d.mTemp})), borderColor: '#FFD700', yAxisID: 'y', borderWidth: 2, pointRadius: 0 }
+            ]}, options: opt, plugins: [syncPointer]
+        });
+    }
+
+    function update(i) {
+        const d = fullRace[i]; if (!d) return;
+        if (d.lap !== currentLap) { currentLap = d.lap; initCharts(i); }
+
+        document.getElementById('v-lap').innerText = d.lap;
+        document.getElementById('v-ltime').innerText = d.lapTime.toFixed(2) + 's';
+        document.getElementById('v-soc').innerText = d.soc.toFixed(1);
+        document.getElementById('v-mtemp').innerText = Math.round(d.mTemp);
+        document.getElementById('v-sec-cur').innerText = d.sector;
+        document.getElementById('v-pwr').innerText = d.kw.toFixed(1) + ' kW';
+        document.getElementById('thr-fill').style.width = d.thr + '%';
+        document.getElementById('brk-fill').style.width = d.brk + '%';
+
+        document.querySelectorAll('.sec-row').forEach(el => el.classList.remove('active'));
+        const activeRow = document.getElementById(`l${d.lap}s${d.sector}`);
+        if(activeRow) {
+            activeRow.classList.add('active');
+            if (i % 30 === 0) activeRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        
+        const m = Math.floor(d.totalTime / 60);
+        const s = (d.totalTime % 60).toFixed(2).padStart(5, '0');
+        document.getElementById('timestamp').innerText = `${m}:${s}`;
+        document.getElementById('scrubber').value = i;
+        idx = i;
+        pChart.draw(); tChart.draw();
+    }
+
+    function toggle() { isPlaying = !isPlaying; document.getElementById('btnPlay').innerText = isPlaying ? 'STOP' : 'EXECUTE'; if (isPlaying) loop(); }
+    document.getElementById('btnPlay').onclick = toggle;
+    function loop() { if (!isPlaying || idx >= fullRace.length - 1) return; update(idx + 6); setTimeout(() => requestAnimationFrame(loop), 16); }
+    document.getElementById('scrubber').oninput = (e) => { isPlaying = false; update(parseInt(e.target.value)); };
+</script>
+</body>
+</html>
