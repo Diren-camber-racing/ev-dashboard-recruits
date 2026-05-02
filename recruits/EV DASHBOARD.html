@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EV DASHBOARD ? EMRAX 228 / Molicel P45B 96S4P</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+    :root {
+      --bg: #050810;
+      --bg-el: #0a1020;
+      --bg-el2: #0f1628;
+      --panel: #0c1422;
+      --line: #162038;
+      --line-hi: #1e2e50;
+      --mute: #4a6080;
+      --text: #d0dff0;
+      --dim: #8899b8;
+      --acc: #00d4ff;
+      --acc2: #ff6d00;
+      --acc3: #76ff03;
+      --warn: #ffca28;
+      --danger: #ff1744;
+      --heat: #ff4800;
+      --regen: #00e5d4;
+      --mono: 'Share Tech Mono', monospace;
+      --head: 'Rajdhani', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--head);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse at 15% 8%, rgba(0, 212, 255, 0.07) 0%, transparent 38%),
+        radial-gradient(ellipse at 88% 85%, rgba(255, 109, 0, 0.05) 0%, transparent 40%),
+        radial-gradient(ellipse at 60% 50%, rgba(118, 255, 3, 0.02) 0%, transparent 45%);
+    }
+
+    /* HEADER */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(180deg, rgba(5, 8, 16, 0.97) 0%, rgba(5, 8, 16, 0.80) 100%);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 5px;
+      position: relative;
+      background: linear-gradient(135deg, var(--acc) 0%, var(--acc2) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo::before {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border-radius: 3px;
+      background: var(--bg);
+    }
+
+    .logo span {
+      position: relative;
+      z-index: 1;
+      color: var(--acc);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+      gap: 3px;
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, var(--acc) 0%, var(--text) 60%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text small {
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 0.05em;
+    }
+
+    .hdr-center {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hdr-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 12px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--bg-el);
+      min-width: 70px;
+    }
+
+    .hdr-stat .hk {
+      font-size: 8px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .hdr-stat .hv {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .hdr-stat .hv.acc {
+      color: var(--acc);
+    }
+
+    .hdr-stat .hv.warn {
+      color: var(--warn);
+    }
+
+    .hdr-stat .hv.ok {
+      color: var(--acc3);
+    }
+
+    .hdr-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 11px;
+      border: 1px solid var(--line);
+      border-radius: 100px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+    }
+
+    .pill .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--acc3);
+      box-shadow: 0 0 6px var(--acc3);
+      animation: pulse 2s infinite;
+    }
+
+    .pill.warn {
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    .pill.warn .dot {
+      background: var(--warn);
+      box-shadow: 0 0 6px var(--warn);
+    }
+
+    .pill.heat-active {
+      border-color: var(--heat);
+      color: var(--heat);
+    }
+
+    .pill.heat-active .dot {
+      background: var(--heat);
+      box-shadow: 0 0 6px var(--heat);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.35;
+      }
+    }
+
+    .playback {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .playback button {
+      background: var(--bg-el);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-family: var(--head);
+      font-weight: 600;
+      font-size: 11px;
+      padding: 5px 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.15s;
+    }
+
+    .playback button:hover {
+      background: var(--bg-el2);
+      border-color: var(--acc);
+      color: var(--acc);
+    }
+
+    .playback button.active {
+      background: var(--acc);
+      color: #021018;
+      border-color: var(--acc);
+    }
+
+    /* MAIN GRID */
+    main {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 10px;
+      padding: 10px;
+      max-width: 1900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 2px;
+      width: 44px;
+      background: var(--acc);
+      box-shadow: 0 0 8px var(--acc);
+    }
+
+    .card.acc2-top::before {
+      background: var(--acc2);
+      box-shadow: 0 0 8px var(--acc2);
+    }
+
+    .card.acc3-top::before {
+      background: var(--acc3);
+      box-shadow: 0 0 8px var(--acc3);
+    }
+
+    .card.warn-top::before {
+      background: var(--warn);
+      box-shadow: 0 0 8px var(--warn);
+    }
+
+    .card.heat-top::before {
+      background: var(--heat);
+      box-shadow: 0 0 8px var(--heat);
+    }
+
+    .card h3 {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      padding-bottom: 7px;
+      margin-bottom: 9px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card h3 .badge {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--acc);
+      padding: 2px 6px;
+      border: 1px solid var(--line-hi);
+      border-radius: 3px;
+    }
+
+    .card h3 .badge.hot {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .card h3 .badge.warn {
+      color: var(--warn);
+      border-color: var(--warn);
+    }
+
+    .card h3 .badge.heat {
+      color: var(--heat);
+      border-color: var(--heat);
+    }
+
+    .card h3 .badge.ok {
+      color: var(--acc3);
+      border-color: var(--acc3);
+    }
+
+    /* TRACK */
+    .track-card {
+      grid-column: 1/2;
+      grid-row: 1/3;
+      min-height: 510px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .track-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 400px;
+    }
+
+    #trackSvg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    #trackSvg .track-bg {
+      fill: none;
+      stroke: var(--line-hi);
+      stroke-width: 14;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    #trackSvg .track-fg {
+      fill: none;
+      stroke-width: 9;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    .track-legend {
+      display: flex;
+      gap: 10px;
+      padding: 5px 0 0;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--dim);
+      flex-wrap: wrap;
+    }
+
+    .track-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .track-legend i {
+      display: inline-block;
+      width: 12px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    /* INSTANT */
+    .instant-card {
+      grid-column: 2/4;
+      grid-row: 1/2;
+    }
+
+    .instant-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .metric {
+      background: var(--bg-el);
+      border: 1px solid var(--line);
+      padding: 9px 11px;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      min-height: 76px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: var(--acc);
+      width: 0%;
+      opacity: 0.45;
+      transition: width 0.25s;
+    }
+
+    .metric.warn::after {
+      background: var(--warn);
+    }
+
+    .metric.hot::after {
+      background: var(--danger);
+    }
+
+    .metric.heat::after {
+      background: var(--heat);
+    }
+
+    .metric .lbl {
+      font-size: 9px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .metric .val {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .metric .val small {
+      color: var(--dim);
+      font-size: 10px;
+      font-weight: 400;
+      margin-left: 2px;
+    }
+
+    .metric .sub {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--mute);
+    }
+
+    .metric.accent .val {
+      color: var(--acc);
+    }
+
+    .metric.warn .val {
+      color: var(--warn);
+    }
+
+    .metric.hot .val {
+      color: var(--danger);
+    }
+
+    .metric.regen .val {
+      color: var(--regen);
+    }
+
+    .metric.heat .val {
+      color: var(--heat);
+    }
+
+    /* GAUGES */
+    .gauge-card {
+      grid-column: 2/4;
+      grid-row: 2/3;
+    }
+
+    .gauge-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .gauge {
+      background: var(--bg-el);
+      border: 1px solid var(--line);
+      padding: 9px;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-height: 150px;
+    }
+
+    .gauge svg {
+      width: 115px;
+      height: 72px;
+    }
+
+    .gauge .glbl {
+      font-size: 9px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .gauge .gval {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .gauge .gval small {
+      font-size: 10px;
+      color: var(--dim);
+    }
+
+    .gauge .bar-wrap {
+      width: 100%;
+      height: 5px;
+      background: var(--bg-el2);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .gauge .bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--acc3), var(--acc));
+      transition: width 0.25s;
+      width: 0%;
+    }
+
+    .gauge .bar.warn {
+      background: var(--warn);
+    }
+
+    .gauge .bar.hot {
+      background: var(--danger);
+    }
+
+    .gauge .bar.heat {
+      background: var(--heat);
+    }
+
+    /* SCRUBBER */
+    .scrubber-card {
+      grid-column: 1/4;
+      padding: 9px 12px;
+    }
+
+    .scrubber-wrap {
+      position: relative;
+      padding: 8px 0;
+    }
+
+    .scrubber {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-el2);
+      border-radius: 3px;
+      position: relative;
+      cursor: pointer;
+      border: 1px solid var(--line);
+    }
+
+    .scrubber .prog {
+      height: 100%;
+      background: linear-gradient(90deg, var(--acc), var(--acc2));
+      border-radius: 3px;
+      width: 0%;
+      position: relative;
+    }
+
+    .scrubber .thumb {
+      position: absolute;
+      top: 50%;
+      transform: translate(50%, -50%);
+      right: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--acc);
+      box-shadow: 0 0 6px var(--acc);
+      pointer-events: none;
+    }
+
+    .scrub-meta {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--dim);
+      padding: 5px 0 0;
+    }
+
+    /* ALERTS */
+    .alert-row {
+      grid-column: 1/4;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      background: linear-gradient(90deg, rgba(255, 23, 68, 0.04) 0%, rgba(255, 202, 40, 0.04) 100%);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .alert-row::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 2px;
+      width: 60px;
+      background: var(--warn);
+      box-shadow: 0 0 8px var(--warn);
+    }
+
+    .alert-row h3 {
+      margin-right: 8px;
+      color: var(--warn);
+      padding: 0 8px 0 0;
+      border-right: 1px solid var(--line);
+      border-bottom: none;
+      font-size: 10px;
+    }
+
+    .alert {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--line-hi);
+      color: var(--dim);
+    }
+
+    .alert.warn {
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    .alert.hot {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .alert.heat {
+      border-color: var(--heat);
+      color: var(--heat);
+      animation: pulse 1.5s infinite;
+    }
+
+    /* BATTERY CONFIG */
+    .batt-card {
+      grid-column: 1/4;
+    }
+
+    .batt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .batt-block {
+      background: var(--bg-el);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+
+    .batt-block h4 {
+      font-size: 10px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .batt-block h4 .chip {
+      font-family: var(--mono);
+      font-size: 9px;
+      padding: 2px 6px;
+      border: 1px solid var(--line-hi);
+      border-radius: 3px;
+      color: var(--acc);
+    }
+
+    .batt-table {
+      width: 100%;
+      font-family: var(--mono);
+      font-size: 11px;
+      border-collapse: collapse;
+    }
+
+    .batt-table td {
+      padding: 4px 3px;
+      border-bottom: 1px dashed rgba(22, 32, 56, 0.6);
+    }
+
+    .batt-table td:first-child {
+      color: var(--dim);
+    }
+
+    .batt-table td:last-child {
+      color: var(--text);
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .batt-table tr.active td {
+      background: rgba(255, 109, 0, 0.12);
+      color: var(--acc2) !important;
+    }
+
+    .batt-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 8px 10px;
+      border-radius: 4px;
+      background: var(--bg-el2);
+      border: 1px solid var(--line-hi);
+      margin-top: 8px;
+      gap: 8px;
+    }
+
+    .batt-status.ok {
+      border-color: var(--acc3);
+      color: var(--acc3);
+    }
+
+    .batt-status.warn {
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    .batt-status.heat {
+      border-color: var(--heat);
+      color: var(--heat);
+    }
+
+    /* HEAT STRIP */
+    .heat-strip {
+      grid-column: 1/4;
+      background: linear-gradient(90deg, rgba(255, 72, 0, 0.08) 0%, rgba(255, 72, 0, 0.02) 100%);
+      border: 1px solid rgba(255, 72, 0, 0.3);
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .heat-strip::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 2px;
+      width: 70px;
+      background: var(--heat);
+      box-shadow: 0 0 10px var(--heat);
+    }
+
+    .heat-icon {
+      font-size: 22px;
+      animation: pulse 1.5s infinite;
+    }
+
+    .heat-info {
+      flex: 1;
+    }
+
+    .heat-info .ht {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--heat);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .heat-info .hs {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 2px;
+    }
+
+    .heat-bars {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .hb {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .hb .hbl {
+      font-size: 8px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .hb .hbv {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hb .hbv.cold {
+      color: var(--acc);
+    }
+
+    .hb .hbv.warm {
+      color: var(--acc3);
+    }
+
+    .hb .hbv.heat {
+      color: var(--heat);
+    }
+
+    /* CHARTS */
+    .chart-card {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 170px !important;
+      width: 100%;
+    }
+
+    .chart-wrap canvas {
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* SECTORS */
+    .sector-card {
+      grid-column: 1/4;
+    }
+
+    .sector-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+
+    .sector-chip {
+      background: var(--bg-el);
+      border: 1px solid var(--line);
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sector-chip:hover {
+      border-color: var(--acc);
+    }
+
+    .sector-chip.active {
+      border-color: var(--acc2);
+      box-shadow: 0 0 12px rgba(255, 109, 0, 0.15);
+    }
+
+    .sector-chip .sname {
+      font-size: 9px;
+      color: var(--acc2);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 5px;
+    }
+
+    .sector-chip .sstat {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+
+    .sector-chip .sstat b {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* ENDURANCE SUMMARY */
+    .end-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+    }
+
+    .end-grid .cell {
+      background: var(--bg-el);
+      border: 1px solid var(--line);
+      padding: 7px 9px;
+      border-radius: 3px;
+    }
+
+    .end-grid .cell .k {
+      font-size: 9px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .end-grid .cell .v {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .lap-sum-card {
+      grid-column: 1/4;
+    }
+
+    footer {
+      padding: 18px 22px;
+      text-align: center;
+      color: var(--mute);
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      border-top: 1px solid var(--line);
+    }
+
+    @media(max-width:1300px) {
+      main {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .track-card {
+        grid-column: 1/3;
+        grid-row: auto;
+        min-height: 400px;
+      }
+
+      .instant-card,
+      .gauge-card,
+      .batt-card,
+      .scrubber-card,
+      .alert-row,
+      .heat-strip,
+      .sector-card,
+      .lap-sum-card {
+        grid-column: 1/3;
+      }
+
+      .sector-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .batt-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .instant-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media(max-width:800px) {
+      .hdr-center {
+        display: none;
+      }
+
+      .instant-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .gauge-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .end-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .sector-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="logo"><span>EV</span></div>
+      <div class="brand-text">
+        <h1>EV Dashboard</h1>
+        <small>EMRAX 228 ? Molicel P45B 96S4P ? 345.6V ? 18Ah ? v_max 90 km/h ? RPM_max 5000</small>
+      </div>
+    </div>
+    <div class="hdr-center">
+      <div class="hdr-stat">
+        <div class="hk">SOC</div>
+        <div class="hv acc" id="hSOC">95%</div>
+      </div>
+      <div class="hdr-stat">
+        <div class="hk">Speed</div>
+        <div class="hv" id="hSpd">? km/h</div>
+      </div>
+      <div class="hdr-stat">
+        <div class="hk">RPM</div>
+        <div class="hv" id="hRPM">?</div>
+      </div>
+      <div class="hdr-stat">
+        <div class="hk">Power</div>
+        <div class="hv" id="hPwr">? kW</div>
+      </div>
+      <div class="hdr-stat">
+        <div class="hk">Cell T?</div>
+        <div class="hv" id="hTc">? ?C</div>
+      </div>
+      <div class="hdr-stat">
+        <div class="hk">Motor T?</div>
+        <div class="hv" id="hTm">? ?C</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="pill" id="sysPill"><span class="dot"></span><span id="sysTxt">SYSTEM NOMINAL</span></div>
+      <div class="pill heat-active" id="heatPill"><span class="dot"></span><span>BATT HEAT ON</span></div>
+      <div class="playback">
+        <button id="btnRew">?</button>
+        <button id="btnPlay" class="active">? PLAY</button>
+        <button id="btnSpd">1?</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- TRACK MAP -->
+    <div class="card track-card">
+      <h3>Track Map ? Click Any Point <span class="badge" id="trackBadge">pt 0 / 0</span></h3>
+      <div class="track-wrap">
+        <svg id="trackSvg" viewBox="0 0 600 420" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="track-legend">
+        <span><i style="background:#162038;"></i>Track</span>
+        <span><i style="background:var(--acc);"></i>Full Throttle</span>
+        <span><i style="background:var(--regen);"></i>Regen</span>
+        <span><i style="background:var(--acc2);"></i>Braking</span>
+        <span><i style="background:var(--danger);"></i>Corner</span>
+      </div>
+    </div>
+
+    <!-- INSTANT METRICS -->
+    <div class="card instant-card acc2-top">
+      <h3>Instantaneous Values <span class="badge" id="tBadge">t = 0.00 s</span></h3>
+      <div class="instant-grid">
+        <div class="metric accent">
+          <div class="lbl">Vehicle Speed</div>
+          <div class="val" id="mSpd">?<small>km/h</small></div>
+          <div class="sub" id="mSpdMs">? m/s ? limit 90</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Motor RPM</div>
+          <div class="val" id="mRpm">?</div>
+          <div class="sub" id="mRpmPct">? % of 5000 limit</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Shaft Torque</div>
+          <div class="val" id="mTq">?<small>Nm</small></div>
+          <div class="sub">EMRAX 228 ? max 130 Nm</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Bus Power</div>
+          <div class="val" id="mPwr2">?<small>kW</small></div>
+          <div class="sub" id="mPwrPct">? % of 60 kW cap</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Throttle</div>
+          <div class="val" id="mThr">?<small>%</small></div>
+          <div class="sub" id="mThrSub">mode: drive</div>
+        </div>
+        <div class="metric regen">
+          <div class="lbl">Brake / Regen</div>
+          <div class="val" id="mBrk">?<small>%</small></div>
+          <div class="sub" id="mBrkSub">regen 0 kW</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">Lat / Long g</div>
+          <div class="val" id="mG">? / ?</div>
+          <div class="sub" id="mCorner">straight</div>
+        </div>
+        <div class="metric accent">
+          <div class="lbl">Sector</div>
+          <div class="val" id="mSec">?</div>
+          <div class="sub" id="mSecName">?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAUGES -->
+    <div class="card gauge-card">
+      <h3>Powertrain Health <span class="badge" id="lapBadge">LAP 1 / 22</span></h3>
+      <div class="gauge-row">
+        <!-- SOC gauge -->
+        <div class="gauge">
+          <svg viewBox="0 0 130 70">
+            <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#162038" stroke-width="9" />
+            <path id="socArc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#76ff03" stroke-width="9"
+              stroke-dasharray="172 172" stroke-dashoffset="172" />
+            <text x="65" y="51" fill="#d0dff0" font-family="Share Tech Mono" font-size="13" font-weight="700"
+              text-anchor="middle" id="socTxt">?</text>
+            <text x="65" y="65" fill="#4a6080" font-family="Rajdhani" font-size="8" font-weight="600"
+              text-anchor="middle" letter-spacing="0.15em">SOC %</text>
+          </svg>
+          <div class="glbl">Pack SOC</div>
+          <div class="gval" id="gSOC">?<small>%</small></div>
+          <div class="bar-wrap">
+            <div class="bar" id="gSOCBar"></div>
+          </div>
+        </div>
+        <!-- Cell temp -->
+        <div class="gauge">
+          <svg viewBox="0 0 130 70">
+            <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#162038" stroke-width="9" />
+            <path id="tcArc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="var(--acc)" stroke-width="9"
+              stroke-dasharray="172 172" stroke-dashoffset="172" />
+            <text x="65" y="51" fill="#d0dff0" font-family="Share Tech Mono" font-size="13" font-weight="700"
+              text-anchor="middle" id="tcTxt">?</text>
+            <text x="65" y="65" fill="#4a6080" font-family="Rajdhani" font-size="8" font-weight="600"
+              text-anchor="middle" letter-spacing="0.15em">CELL ?C</text>
+          </svg>
+          <div class="glbl">Cell Temp</div>
+          <div class="gval" id="gTc">?<small>?C</small></div>
+          <div class="bar-wrap">
+            <div class="bar" id="gTcBar"></div>
+          </div>
+        </div>
+        <!-- Motor temp -->
+        <div class="gauge">
+          <svg viewBox="0 0 130 70">
+            <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#162038" stroke-width="9" />
+            <path id="tmArc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="var(--acc2)" stroke-width="9"
+              stroke-dasharray="172 172" stroke-dashoffset="172" />
+            <text x="65" y="51" fill="#d0dff0" font-family="Share Tech Mono" font-size="13" font-weight="700"
+              text-anchor="middle" id="tmTxt">?</text>
+            <text x="65" y="65" fill="#4a6080" font-family="Rajdhani" font-size="8" font-weight="600"
+              text-anchor="middle" letter-spacing="0.15em">MOTOR ?C</text>
+          </svg>
+          <div class="glbl">Motor Temp</div>
+          <div class="gval" id="gTm">?<small>?C</small></div>
+          <div class="bar-wrap">
+            <div class="bar" id="gTmBar"></div>
+          </div>
+        </div>
+        <!-- Inverter temp -->
+        <div class="gauge">
+          <svg viewBox="0 0 130 70">
+            <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="#162038" stroke-width="9" />
+            <path id="tiArc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="var(--acc3)" stroke-width="9"
+              stroke-dasharray="172 172" stroke-dashoffset="172" />
+            <text x="65" y="51" fill="#d0dff0" font-family="Share Tech Mono" font-size="13" font-weight="700"
+              text-anchor="middle" id="tiTxt">?</text>
+            <text x="65" y="65" fill="#4a6080" font-family="Rajdhani" font-size="8" font-weight="600"
+              text-anchor="middle" letter-spacing="0.15em">INV ?C</text>
+          </svg>
+          <div class="glbl">Inverter Temp</div>
+          <div class="gval" id="gTi">?<small>?C</small></div>
+          <div class="bar-wrap">
+            <div class="bar" id="gTiBar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCRUBBER -->
+    <div class="card scrubber-card">
+      <h3>Lap Timeline</h3>
+      <div class="scrubber-wrap">
+        <div class="scrubber" id="scrubber">
+          <div class="prog" id="scrubProg">
+            <div class="thumb"></div>
+          </div>
+        </div>
+        <div class="scrub-meta">
+          <span>0.00 s</span>
+          <span id="scrubMid">?</span>
+          <span id="scrubEnd">? s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="alert-row">
+      <h3>System Alerts</h3>
+      <div id="alertList" style="display:flex;gap:8px;flex-wrap:wrap;flex:1;align-items:center;"></div>
+    </div>
+
+    <!-- BATTERY HEATING PANEL -->
+    <div class="heat-strip" id="heatStrip">
+      <div class="heat-icon">?</div>
+      <div class="heat-info">
+        <div class="ht">Battery Heating System Active</div>
+        <div class="hs" id="heatStatus">Cell temp below 15?C threshold ? heating element drawing ~800W to warm pack to
+          operating temp</div>
+      </div>
+      <div class="heat-bars">
+        <div class="hb">
+          <div class="hbl">Cell Temp</div>
+          <div class="hbv cold" id="hbCell">??C</div>
+        </div>
+        <div class="hb">
+          <div class="hbl">Target</div>
+          <div class="hbv warm">15?C</div>
+        </div>
+        <div class="hb">
+          <div class="hbl">Heater</div>
+          <div class="hbv heat" id="hbHeat">800W</div>
+        </div>
+        <div class="hb">
+          <div class="hbl">ETA</div>
+          <div class="hbv" id="hbETA" style="color:var(--warn);">?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATTERY CONFIG CARD -->
+    <div class="card batt-card heat-top">
+      <h3>Battery Configuration & BMS Policy ? Molicel P45B 96S4P <span class="badge heat" id="battChip">HEATING</span>
+      </h3>
+      <div class="batt-grid">
+        <div class="batt-block">
+          <h4>Cell & Pack Config <span class="chip">96S4P</span></h4>
+          <table class="batt-table">
+            <tr>
+              <td>Cell model</td>
+              <td>Molicel INR-21700-P45B</td>
+            </tr>
+            <tr>
+              <td>Capacity</td>
+              <td>4.5 Ah / 16.2 Wh</td>
+            </tr>
+            <tr>
+              <td>Nominal voltage</td>
+              <td>3.6 V</td>
+            </tr>
+            <tr>
+              <td>Cont. discharge</td>
+              <td>45 A (80?C cut-off)</td>
+            </tr>
+            <tr>
+              <td>Series cells (Ns)</td>
+              <td>96</td>
+            </tr>
+            <tr>
+              <td>Parallel cells (Np)</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>Pack voltage nom</td>
+              <td>345.6 V</td>
+            </tr>
+            <tr>
+              <td>Pack voltage max</td>
+              <td>403.2 V</td>
+            </tr>
+            <tr>
+              <td>Pack capacity</td>
+              <td>18 Ah</td>
+            </tr>
+            <tr>
+              <td>Pack energy</td>
+              <td>6221 Wh</td>
+            </tr>
+            <tr>
+              <td>Pack resistance</td>
+              <td>~0.36 ?</td>
+            </tr>
+          </table>
+        </div>
+        <div class="batt-block">
+          <h4>SOC Power Derate <span class="chip" id="socChip">? kW</span></h4>
+          <table class="batt-table" id="socTable">
+            <tr data-hi="0">
+              <td>SOC &gt; 80 %</td>
+              <td>60 kW</td>
+            </tr>
+            <tr data-hi="1">
+              <td>80 % ? 50 %</td>
+              <td>55 kW</td>
+            </tr>
+            <tr data-hi="2">
+              <td>50 % ? 30 %</td>
+              <td>50 kW</td>
+            </tr>
+            <tr data-hi="3">
+              <td>30 % ? 15 %</td>
+              <td>40 kW</td>
+            </tr>
+            <tr data-hi="4">
+              <td>&le; 15 % (floor)</td>
+              <td>0 kW ? SHUTDOWN</td>
+            </tr>
+          </table>
+          <div class="batt-status ok" id="bmsStatus"><b>?</b> BMS: nominal</div>
+        </div>
+        <div class="batt-block">
+          <h4>Cell Temp Policy <span class="chip" id="tempChip">HEATING</span></h4>
+          <table class="batt-table" id="tempTable">
+            <tr data-hi="0">
+              <td>T &lt; 5 ?C</td>
+              <td>heating only, no discharge</td>
+            </tr>
+            <tr data-hi="1">
+              <td>5 ? 15 ?C</td>
+              <td>heating active, 30% power</td>
+            </tr>
+            <tr data-hi="2">
+              <td>15 ? 45 ?C</td>
+              <td>full power, heating off</td>
+            </tr>
+            <tr data-hi="3">
+              <td>45 ? 60 ?C</td>
+              <td>derate 0.7?, fan on</td>
+            </tr>
+            <tr data-hi="4">
+              <td>&gt; 60 ?C</td>
+              <td>limp mode 0.2?</td>
+            </tr>
+          </table>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.8;margin-top:6px;">
+            <div>Effective SOC cap: <span style="color:var(--text)" id="effSocCap">? kW</span></div>
+            <div>Temp derate: <span style="color:var(--text)" id="effTempD">??</span></div>
+            <div>Effective cap: <span style="color:var(--acc2)" id="effCap">? kW</span></div>
+            <div>Demanded: <span style="color:var(--text)" id="effDemand">? kW</span></div>
+            <div>Heating pwr: <span style="color:var(--heat)" id="effHeat">? W</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="card chart-card" style="grid-column:1/3;">
+      <h3>Lap Trace ? Speed & Power</h3>
+      <div class="chart-wrap"><canvas id="chTrace"></canvas></div>
+    </div>
+    <div class="card chart-card" style="grid-column:3/4;">
+      <h3>Pack V & I</h3>
+      <div class="chart-wrap"><canvas id="chVI"></canvas></div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="card chart-card" style="grid-column:1/2;">
+      <h3>SOC ? 22 Laps</h3>
+      <div class="chart-wrap"><canvas id="chSoc"></canvas></div>
+    </div>
+    <div class="card chart-card" style="grid-column:2/3;">
+      <h3>Thermal Trend ? 22 Laps</h3>
+      <div class="chart-wrap"><canvas id="chTherm"></canvas></div>
+    </div>
+    <div class="card chart-card" style="grid-column:3/4;">
+      <h3>Energy / Lap</h3>
+      <div class="chart-wrap"><canvas id="chLap"></canvas></div>
+    </div>
+
+    <!-- SECTORS -->
+    <div class="card sector-card">
+      <h3>Sector Breakdown <span class="badge">CLICK TO JUMP</span></h3>
+      <div class="sector-grid" id="sectorGrid"></div>
+    </div>
+
+    <!-- ENDURANCE SUMMARY -->
+    <div class="card lap-sum-card">
+      <h3>Endurance Totals <span class="badge ok">TARGET: 20% SOC REMAINING</span></h3>
+      <div class="end-grid" id="endGrid"></div>
+    </div>
+
+  </main>
+
+  <footer>
+    <div>EV Dashboard ? EMRAX 228 PMSM Axial Flux ? Molicel P45B 96S4P 345.6V 18Ah 6221Wh ? 90 km/h limit ? RPM cap 5000
+      ? Battery Heating Active</div>
+    <div style="margin-top:4px;opacity:0.6;">FSAE Endurance ? 22 ? 1.42 km ? P_max 60 kW ? I_max 120 A ? BMS per 2026
+      FSAE rules ? SOC target ? 20% finish</div>
+  </footer>
+
+  <script>
+    const RAW = JSON.parse('{"summary":{"lap_time_s":98.3076923076923,"lap_dist_m":1420.0,"n_points":489,"E_lap_Wh":212.07153846153844,"E_total_Wh":4932.960556395695,"E_regen_Wh":282.61742791710986,"regen_pct":5.729164559215662,"avg_power_kW":9.528834355828222,"I_peak":120.0,"I_rms":66.0,"SOC_end":20.245255779343744,"T_cell_max":45,"T_motor_max":51.35,"T_inv_max":39.83,"Ah_used":14.273612721052357,"E_per_km":157.90526749025912,"laps_done":22,"V_pack_nom":345.6,"V_pack_max":403.20000000000005,"V_pack_min":240.0,"E_pack_Wh":6220.8,"Q_pack_Ah":18.0,"R_pack":0.36,"Ns":96,"Np":4,"v_max_kmh":90.0,"I_max_A":120.0,"P_max_kW":60.0,"v_avg_kmh":52.0,"rpm_max":5000,"battery_heating":true,"heating_threshold_C":15,"range_km":31.24,"bms_shutdown_t":-1},"sectors":[{"start":0,"end":237,"name":"Pit Straight"},{"start":237,"end":475,"name":"T1-T3 Chicane"},{"start":475,"end":712,"name":"Back Straight"},{"start":712,"end":949,"name":"Hairpin"},{"start":949,"end":1186,"name":"Sweeper & Esses"},{"start":1186,"end":1420,"name":"Final Corner + S/F"}],"lap":[{"t":0.0,"d":0.0,"v":55.25,"r":3077,"q":103.4,"p":47.72,"th":100,"bk":0,"la":4.42,"lo":2.5,"x":2.51,"y":0.0,"rg":false,"prg":0,"em":90.1,"s":1},{"t":0.164,"d":2.5,"v":59.71,"r":3326,"q":103.4,"p":47.72,"th":100,"bk":0,"la":3.33,"lo":2.5,"x":5.23,"y":0.0,"rg":false,"prg":0,"em":90.9,"s":1},{"t":0.328,"d":5.2,"v":63.51,"r":3537,"q":103.4,"p":41.03,"th":86,"bk":0,"la":4.71,"lo":2.15,"x":8.12,"y":0.0,"rg":false,"prg":0,"em":92.7,"s":1},{"t":0.492,"d":8.1,"v":66.73,"r":3717,"q":89.6,"p":34.88,"th":73,"bk":0,"la":5.18,"lo":1.83,"x":11.16,"y":0.0,"rg":false,"prg":0,"em":90.3,"s":1},{"t":0.655,"d":11.2,"v":69.47,"r":3869,"q":73.2,"p":29.64,"th":62,"bk":0,"la":3.77,"lo":1.55,"x":14.32,"y":0.01,"rg":false,"prg":0,"em":90.1,"s":1},{"t":0.819,"d":14.3,"v":71.8,"r":3999,"q":60.1,"p":25.2,"th":53,"bk":0,"la":-0.84,"lo":1.32,"x":17.59,"y":0.01,"rg":false,"prg":0,"em":92.0,"s":1},{"t":0.983,"d":17.6,"v":73.78,"r":4109,"q":49.8,"p":21.42,"th":45,"bk":0,"la":-1.42,"lo":1.12,"x":20.95,"y":0.02,"rg":false,"prg":0,"em":90.8,"s":1},{"t":1.147,"d":20.9,"v":75.46,"r":4203,"q":41.4,"p":18.21,"th":38,"bk":0,"la":0.45,"lo":0.95,"x":24.38,"y":0.04,"rg":false,"prg":0,"em":92.2,"s":1},{"t":1.311,"d":24.4,"v":76.89,"r":4283,"q":34.5,"p":15.48,"th":32,"bk":0,"la":-0.84,"lo":0.81,"x":27.88,"y":0.05,"rg":false,"prg":0,"em":92.4,"s":1},{"t":1.475,"d":27.9,"v":78.11,"r":4351,"q":28.9,"p":13.16,"th":28,"bk":0,"la":0.93,"lo":0.69,"x":31.44,"y":0.08,"rg":false,"prg":0,"em":90.0,"s":1},{"t":1.638,"d":31.4,"v":79.14,"r":4408,"q":24.2,"p":11.18,"th":23,"bk":0,"la":0.92,"lo":0.59,"x":35.04,"y":0.11,"rg":false,"prg":0,"em":92.8,"s":1},{"t":1.802,"d":35.0,"v":80.02,"r":4457,"q":20.4,"p":9.5,"th":20,"bk":0,"la":-0.48,"lo":0.5,"x":38.68,"y":0.15,"rg":false,"prg":0,"em":90.6,"s":1},{"t":1.966,"d":38.7,"v":80.77,"r":4499,"q":17.2,"p":8.08,"th":17,"bk":0,"la":1.37,"lo":0.42,"x":42.36,"y":0.2,"rg":false,"prg":0,"em":91.3,"s":1},{"t":2.13,"d":42.4,"v":81.4,"r":4534,"q":14.5,"p":6.86,"th":14,"bk":0,"la":-1.22,"lo":0.36,"x":46.06,"y":0.26,"rg":false,"prg":0,"em":90.4,"s":1},{"t":2.294,"d":46.1,"v":81.94,"r":4564,"q":12.2,"p":5.84,"th":12,"bk":0,"la":1.04,"lo":0.31,"x":49.79,"y":0.33,"rg":false,"prg":0,"em":92.4,"s":1},{"t":2.458,"d":49.8,"v":82.4,"r":4590,"q":22.9,"p":11.01,"th":23,"bk":0,"la":0.69,"lo":0.58,"x":53.54,"y":0.41,"rg":false,"prg":0,"em":92.1,"s":1},{"t":2.622,"d":53.5,"v":82.79,"r":4611,"q":24.4,"p":11.8,"th":25,"bk":0,"la":-0.36,"lo":0.62,"x":57.3,"y":0.51,"rg":false,"prg":0,"em":92.2,"s":1},{"t":2.785,"d":57.3,"v":83.12,"r":4630,"q":22.9,"p":11.12,"th":23,"bk":0,"la":0.36,"lo":0.58,"x":61.09,"y":0.62,"rg":false,"prg":0,"em":93.4,"s":1},{"t":2.949,"d":61.1,"v":83.4,"r":4645,"q":20.4,"p":9.91,"th":21,"bk":0,"la":0.61,"lo":0.52,"x":64.88,"y":0.74,"rg":false,"prg":0,"em":90.2,"s":1},{"t":3.113,"d":64.9,"v":83.64,"r":4659,"q":16.9,"p":8.25,"th":17,"bk":0,"la":-0.63,"lo":0.43,"x":68.68,"y":0.88,"rg":false,"prg":0,"em":90.3,"s":1},{"t":3.277,"d":68.7,"v":83.85,"r":4670,"q":16.9,"p":8.27,"th":17,"bk":0,"la":-1.2,"lo":0.43,"x":72.5,"y":1.03,"rg":false,"prg":0,"em":91.1,"s":1},{"t":3.441,"d":72.5,"v":84.02,"r":4680,"q":20.8,"p":10.19,"th":21,"bk":0,"la":-0.41,"lo":0.53,"x":76.32,"y":1.2,"rg":false,"prg":0,"em":91.5,"s":1},{"t":3.605,"d":76.3,"v":84.17,"r":4688,"q":16.6,"p":8.16,"th":17,"bk":0,"la":-0.7,"lo":0.43,"x":80.14,"y":1.39,"rg":false,"prg":0,"em":93.7,"s":1},{"t":3.768,"d":80.2,"v":84.29,"r":4695,"q":20.8,"p":10.25,"th":21,"bk":0,"la":0.33,"lo":0.54,"x":83.97,"y":1.6,"rg":false,"prg":0,"em":90.7,"s":1},{"t":3.932,"d":84.0,"v":84.4,"r":4701,"q":21.6,"p":10.63,"th":22,"bk":0,"la":-1.01,"lo":0.56,"x":87.81,"y":1.82,"rg":false,"prg":0,"em":91.5,"s":1},{"t":4.096,"d":87.8,"v":84.49,"r":4706,"q":24.1,"p":11.88,"th":25,"bk":0,"la":0.42,"lo":0.62,"x":91.65,"y":2.07,"rg":false,"prg":0,"em":92.2,"s":1},{"t":4.26,"d":91.7,"v":84.57,"r":4710,"q":21.2,"p":10.43,"th":22,"bk":0,"la":1.03,"lo":0.55,"x":95.49,"y":2.33,"rg":false,"prg":0,"em":93.1,"s":1},{"t":4.424,"d":95.5,"v":84.63,"r":4714,"q":16.7,"p":8.25,"th":17,"bk":0,"la":-1.4,"lo":0.43,"x":99.33,"y":2.62,"rg":false,"prg":0,"em":91.3,"s":1},{"t":4.588,"d":99.4,"v":84.69,"r":4717,"q":17.1,"p":8.44,"th":18,"bk":0,"la":-0.87,"lo":0.44,"x":103.17,"y":2.93,"rg":false,"prg":0,"em":93.8,"s":1},{"t":4.752,"d":103.2,"v":84.73,"r":4719,"q":22.9,"p":11.34,"th":24,"bk":0,"la":-0.56,"lo":0.59,"x":107.01,"y":3.26,"rg":false,"prg":0,"em":92.6,"s":1},{"t":4.915,"d":107.1,"v":84.77,"r":4722,"q":18.3,"p":9.04,"th":19,"bk":0,"la":1.24,"lo":0.47,"x":110.85,"y":3.61,"rg":false,"prg":0,"em":91.8,"s":1},{"t":5.079,"d":111.0,"v":84.81,"r":4724,"q":17.0,"p":8.42,"th":18,"bk":0,"la":-0.76,"lo":0.44,"x":114.7,"y":3.98,"rg":false,"prg":0,"em":92.2,"s":1},{"t":5.243,"d":114.8,"v":78.39,"r":4366,"q":0.0,"p":-9.54,"th":0,"bk":100,"la":-7.71,"lo":-2.5,"x":118.24,"y":4.35,"rg":true,"prg":40,"em":92.3,"s":1},{"t":5.407,"d":118.4,"v":72.93,"r":4062,"q":0.0,"p":-8.85,"th":0,"bk":93,"la":-5.81,"lo":-2.32,"x":121.54,"y":4.71,"rg":true,"prg":37.11,"em":91.6,"s":1},{"t":5.571,"d":121.7,"v":68.29,"r":3803,"q":0.0,"p":-7.52,"th":0,"bk":79,"la":-7.84,"lo":-1.97,"x":124.63,"y":5.07,"rg":true,"prg":31.55,"em":94.0,"s":1},{"t":5.735,"d":124.8,"v":64.35,"r":3584,"q":0.0,"p":-6.39,"th":0,"bk":67,"la":-6.97,"lo":-1.68,"x":127.54,"y":5.43,"rg":true,"prg":26.81,"em":90.4,"s":1},{"t":5.898,"d":127.7,"v":60.99,"r":3397,"q":0.0,"p":-5.44,"th":0,"bk":57,"la":-8.36,"lo":-1.42,"x":130.29,"y":5.78,"rg":true,"prg":22.79,"em":90.4,"s":1},{"t":6.062,"d":130.5,"v":58.14,"r":3238,"q":0.0,"p":-4.62,"th":0,"bk":48,"la":0.38,"lo":-1.21,"x":132.91,"y":6.14,"rg":true,"prg":19.37,"em":93.2,"s":1},{"t":6.226,"d":133.2,"v":55.72,"r":3104,"q":0.0,"p":-3.93,"th":0,"bk":41,"la":-0.23,"lo":-1.03,"x":135.42,"y":6.49,"rg":true,"prg":16.47,"em":90.3,"s":1},{"t":6.39,"d":135.7,"v":53.66,"r":2989,"q":0.0,"p":-3.34,"th":0,"bk":35,"la":-0.36,"lo":-0.87,"x":137.84,"y":6.85,"rg":true,"prg":14.0,"em":94.0,"s":1},{"t":6.554,"d":138.1,"v":51.91,"r":2891,"q":0.0,"p":-2.84,"th":0,"bk":30,"la":0.09,"lo":-0.74,"x":140.18,"y":7.21,"rg":true,"prg":11.9,"em":93.9,"s":1},{"t":6.718,"d":140.5,"v":50.43,"r":2809,"q":0.0,"p":-2.41,"th":0,"bk":25,"la":1.08,"lo":-0.63,"x":142.44,"y":7.58,"rg":true,"prg":10.11,"em":90.0,"s":1},{"t":6.882,"d":142.8,"v":49.16,"r":2738,"q":0.0,"p":-2.05,"th":0,"bk":21,"la":0.66,"lo":-0.54,"x":144.65,"y":7.95,"rg":true,"prg":8.6,"em":92.7,"s":1},{"t":7.045,"d":145.0,"v":48.09,"r":2678,"q":0.0,"p":-1.74,"th":0,"bk":18,"la":0.11,"lo":-0.46,"x":146.8,"y":8.33,"rg":true,"prg":7.31,"em":91.1,"s":1},{"t":7.209,"d":147.2,"v":47.18,"r":2627,"q":0.0,"p":-1.48,"th":0,"bk":16,"la":0.42,"lo":-0.39,"x":148.92,"y":8.72,"rg":true,"prg":6.21,"em":90.4,"s":1},{"t":7.373,"d":149.4,"v":46.4,"r":2584,"q":0.0,"p":-1.26,"th":0,"bk":13,"la":-0.2,"lo":-0.33,"x":150.99,"y":9.11,"rg":true,"prg":5.28,"em":91.8,"s":1},{"t":7.537,"d":151.5,"v":45.74,"r":2547,"q":0.0,"p":-1.07,"th":0,"bk":11,"la":1.36,"lo":-0.28,"x":153.03,"y":9.51,"rg":true,"prg":4.49,"em":93.5,"s":1},{"t":7.701,"d":153.6,"v":45.18,"r":2516,"q":0.0,"p":-0.91,"th":0,"bk":10,"la":-0.71,"lo":-0.24,"x":155.05,"y":9.92,"rg":true,"prg":3.81,"em":92.0,"s":1},{"t":7.865,"d":155.6,"v":44.7,"r":2490,"q":30.7,"p":8.01,"th":17,"bk":0,"la":1.24,"lo":0.42,"x":157.04,"y":10.33,"rg":false,"prg":0,"em":93.5,"s":1},{"t":8.028,"d":157.7,"v":44.3,"r":2467,"q":33.2,"p":8.58,"th":18,"bk":0,"la":0.42,"lo":0.45,"x":159.01,"y":10.76,"rg":false,"prg":0,"em":92.4,"s":1},{"t":8.192,"d":159.7,"v":43.95,"r":2448,"q":30.8,"p":7.89,"th":17,"bk":0,"la":0.79,"lo":0.41,"x":160.96,"y":11.2,"rg":false,"prg":0,"em":92.2,"s":1},{"t":8.356,"d":161.7,"v":43.66,"r":2432,"q":42.7,"p":10.87,"th":23,"bk":0,"la":0.09,"lo":0.57,"x":162.9,"y":11.64,"rg":false,"prg":0,"em":90.0,"s":1},{"t":8.52,"d":163.7,"v":43.41,"r":2418,"q":34.4,"p":8.7,"th":18,"bk":0,"la":-1.44,"lo":0.46,"x":164.82,"y":12.1,"rg":false,"prg":0,"em":93.7,"s":1},{"t":8.684,"d":165.6,"v":43.2,"r":2406,"q":45.0,"p":11.35,"th":24,"bk":0,"la":0.99,"lo":0.59,"x":166.73,"y":12.57,"rg":false,"prg":0,"em":91.2,"s":1},{"t":8.848,"d":167.6,"v":43.02,"r":2396,"q":29.6,"p":7.44,"th":16,"bk":0,"la":1.13,"lo":0.39,"x":168.63,"y":13.05,"rg":false,"prg":0,"em":93.8,"s":1},{"t":9.012,"d":169.6,"v":42.87,"r":2387,"q":30.2,"p":7.56,"th":16,"bk":0,"la":-0.04,"lo":0.4,"x":170.52,"y":13.53,"rg":false,"prg":0,"em":90.3,"s":1},{"t":9.175,"d":171.5,"v":45.14,"r":2514,"q":93.3,"p":24.55,"th":51,"bk":0,"la":0.78,"lo":1.29,"x":172.5,"y":14.06,"rg":false,"prg":0,"em":93.1,"s":1},{"t":9.339,"d":173.6,"v":47.07,"r":2621,"q":76.0,"p":20.87,"th":44,"bk":0,"la":-1.11,"lo":1.09,"x":174.57,"y":14.63,"rg":false,"prg":0,"em":91.9,"s":1},{"t":9.503,"d":175.7,"v":48.71,"r":2713,"q":62.4,"p":17.74,"th":37,"bk":0,"la":0.15,"lo":0.93,"x":176.7,"y":15.22,"rg":false,"prg":0,"em":91.1,"s":1},{"t":9.667,"d":177.9,"v":50.1,"r":2790,"q":51.6,"p":15.08,"th":32,"bk":0,"la":1.12,"lo":0.79,"x":178.9,"y":15.85,"rg":false,"prg":0,"em":91.7,"s":1},{"t":9.831,"d":180.2,"v":51.29,"r":2856,"q":42.9,"p":12.82,"th":27,"bk":0,"la":-0.86,"lo":0.67,"x":181.14,"y":16.51,"rg":false,"prg":0,"em":92.2,"s":1},{"t":9.995,"d":182.5,"v":52.29,"r":2912,"q":35.7,"p":10.9,"th":23,"bk":0,"la":0.69,"lo":0.57,"x":183.41,"y":17.2,"rg":false,"prg":0,"em":90.8,"s":1},{"t":10.158,"d":184.9,"v":53.15,"r":2960,"q":29.9,"p":9.26,"th":19,"bk":0,"la":-0.56,"lo":0.49,"x":185.73,"y":17.91,"rg":false,"prg":0,"em":94.0,"s":1},{"t":10.322,"d":187.3,"v":53.88,"r":3001,"q":25.1,"p":7.87,"th":16,"bk":0,"la":0.45,"lo":0.41,"x":188.06,"y":18.65,"rg":false,"prg":0,"em":91.8,"s":1},{"t":10.486,"d":189.8,"v":54.49,"r":3035,"q":21.1,"p":6.69,"th":14,"bk":0,"la":0.05,"lo":0.35,"x":190.42,"y":19.41,"rg":false,"prg":0,"em":90.5,"s":1},{"t":10.65,"d":192.3,"v":55.02,"r":3064,"q":25.6,"p":8.23,"th":17,"bk":0,"la":-0.49,"lo":0.43,"x":192.8,"y":20.19,"rg":false,"prg":0,"em":92.4,"s":1},{"t":10.814,"d":194.8,"v":55.47,"r":3089,"q":25.5,"p":8.26,"th":17,"bk":0,"la":-0.84,"lo":0.43,"x":195.2,"y":21.0,"rg":false,"prg":0,"em":90.3,"s":1},{"t":10.978,"d":197.3,"v":55.85,"r":3110,"q":31.2,"p":10.17,"th":21,"bk":0,"la":-0.81,"lo":0.53,"x":197.6,"y":21.82,"rg":false,"prg":0,"em":93.6,"s":1},{"t":11.142,"d":199.8,"v":56.17,"r":3128,"q":34.4,"p":11.26,"th":24,"bk":0,"la":-1.29,"lo":0.59,"x":200.01,"y":22.67,"rg":false,"prg":0,"em":91.0,"s":1},{"t":11.305,"d":202.4,"v":56.44,"r":3144,"q":31.4,"p":10.35,"th":22,"bk":0,"la":-0.86,"lo":0.54,"x":202.43,"y":23.53,"rg":false,"prg":0,"em":90.5,"s":1},{"t":11.469,"d":205.0,"v":56.68,"r":3157,"q":35.2,"p":11.62,"th":24,"bk":0,"la":0.21,"lo":0.61,"x":204.85,"y":24.42,"rg":false,"prg":0,"em":91.9,"s":1},{"t":11.633,"d":207.5,"v":56.88,"r":3168,"q":32.8,"p":10.9,"th":23,"bk":0,"la":0.92,"lo":0.57,"x":207.28,"y":25.32,"rg":false,"prg":0,"em":90.8,"s":1},{"t":11.797,"d":210.1,"v":57.04,"r":3177,"q":22.9,"p":7.62,"th":16,"bk":0,"la":-0.21,"lo":0.4,"x":209.71,"y":26.24,"rg":false,"prg":0,"em":91.7,"s":1},{"t":11.961,"d":212.7,"v":57.19,"r":3185,"q":28.2,"p":9.39,"th":20,"bk":0,"la":0.69,"lo":0.49,"x":212.14,"y":27.17,"rg":false,"prg":0,"em":92.7,"s":1},{"t":12.125,"d":215.3,"v":57.31,"r":3192,"q":35.5,"p":11.85,"th":25,"bk":0,"la":-1.2,"lo":0.62,"x":214.57,"y":28.13,"rg":false,"prg":0,"em":91.6,"s":1},{"t":12.288,"d":217.9,"v":57.41,"r":3198,"q":26.2,"p":8.78,"th":18,"bk":0,"la":1.09,"lo":0.46,"x":216.99,"y":29.09,"rg":false,"prg":0,"em":91.0,"s":1},{"t":12.452,"d":220.6,"v":57.5,"r":3203,"q":24.0,"p":8.07,"th":17,"bk":0,"la":-0.15,"lo":0.42,"x":219.42,"y":30.08,"rg":false,"prg":0,"em":91.7,"s":1},{"t":12.616,"d":223.2,"v":57.58,"r":3207,"q":25.3,"p":8.49,"th":18,"bk":0,"la":-0.75,"lo":0.44,"x":221.84,"y":31.08,"rg":false,"prg":0,"em":93.7,"s":1},{"t":12.78,"d":225.8,"v":57.64,"r":3210,"q":27.6,"p":9.27,"th":19,"bk":0,"la":1.08,"lo":0.49,"x":224.26,"y":32.09,"rg":false,"prg":0,"em":92.2,"s":1},{"t":12.944,"d":228.4,"v":57.69,"r":3213,"q":22.0,"p":7.4,"th":16,"bk":0,"la":1.5,"lo":0.39,"x":226.68,"y":33.12,"rg":false,"prg":0,"em":93.3,"s":1},{"t":13.108,"d":231.0,"v":57.74,"r":3216,"q":35.0,"p":11.78,"th":25,"bk":0,"la":1.28,"lo":0.62,"x":229.09,"y":34.16,"rg":false,"prg":0,"em":93.4,"s":1},{"t":13.272,"d":233.7,"v":57.78,"r":3218,"q":23.6,"p":7.95,"th":17,"bk":0,"la":-0.04,"lo":0.42,"x":231.5,"y":35.21,"rg":false,"prg":0,"em":90.9,"s":1},{"t":13.435,"d":236.3,"v":57.81,"r":3220,"q":26.9,"p":9.08,"th":19,"bk":0,"la":-1.32,"lo":0.48,"x":233.9,"y":36.28,"rg":false,"prg":0,"em":91.5,"s":1},{"t":13.599,"d":238.9,"v":57.84,"r":3221,"q":35.2,"p":11.86,"th":25,"bk":0,"la":-0.7,"lo":0.62,"x":236.3,"y":37.37,"rg":false,"prg":0,"em":93.1,"s":2},{"t":13.763,"d":241.6,"v":57.86,"r":3223,"q":27.7,"p":9.33,"th":20,"bk":0,"la":-0.23,"lo":0.49,"x":238.7,"y":38.46,"rg":false,"prg":0,"em":93.8,"s":2},{"t":13.927,"d":244.2,"v":57.88,"r":3224,"q":35.2,"p":11.91,"th":25,"bk":0,"la":0.17,"lo":0.62,"x":241.09,"y":39.57,"rg":false,"prg":0,"em":92.9,"s":2},{"t":14.091,"d":246.8,"v":57.9,"r":3225,"q":23.4,"p":7.9,"th":17,"bk":0,"la":-0.61,"lo":0.41,"x":243.47,"y":40.69,"rg":false,"prg":0,"em":93.9,"s":2},{"t":14.255,"d":249.5,"v":57.92,"r":3226,"q":29.3,"p":9.93,"th":21,"bk":0,"la":0.13,"lo":0.52,"x":245.85,"y":41.82,"rg":false,"prg":0,"em":93.0,"s":2},{"t":14.418,"d":252.1,"v":57.93,"r":3226,"q":22.0,"p":7.43,"th":16,"bk":0,"la":0.25,"lo":0.39,"x":248.23,"y":42.97,"rg":false,"prg":0,"em":92.0,"s":2},{"t":14.582,"d":254.7,"v":57.94,"r":3227,"q":33.2,"p":11.23,"th":24,"bk":0,"la":-1.03,"lo":0.59,"x":250.6,"y":44.13,"rg":false,"prg":0,"em":93.8,"s":2},{"t":14.746,"d":257.4,"v":57.95,"r":3227,"q":22.3,"p":7.54,"th":16,"bk":0,"la":-0.94,"lo":0.4,"x":252.96,"y":45.29,"rg":false,"prg":0,"em":92.4,"s":2},{"t":14.91,"d":260.0,"v":57.96,"r":3228,"q":30.7,"p":10.38,"th":22,"bk":0,"la":-0.79,"lo":0.54,"x":255.32,"y":46.47,"rg":false,"prg":0,"em":90.5,"s":2},{"t":15.074,"d":262.7,"v":57.96,"r":3228,"q":33.7,"p":11.41,"th":24,"bk":0,"la":-0.76,"lo":0.6,"x":257.68,"y":47.66,"rg":false,"prg":0,"em":92.4,"s":2},{"t":15.238,"d":265.3,"v":57.97,"r":3229,"q":29.9,"p":10.12,"th":21,"bk":0,"la":-0.24,"lo":0.53,"x":260.02,"y":48.86,"rg":false,"prg":0,"em":92.3,"s":2},{"t":15.402,"d":267.9,"v":57.97,"r":3229,"q":28.6,"p":9.66,"th":20,"bk":0,"la":1.3,"lo":0.51,"x":262.37,"y":50.08,"rg":false,"prg":0,"em":90.8,"s":2},{"t":15.565,"d":270.6,"v":57.98,"r":3229,"q":31.3,"p":10.58,"th":22,"bk":0,"la":-0.78,"lo":0.55,"x":264.71,"y":51.3,"rg":false,"prg":0,"em":91.6,"s":2},{"t":15.729,"d":273.2,"v":57.98,"r":3229,"q":30.6,"p":10.36,"th":22,"bk":0,"la":-0.6,"lo":0.54,"x":267.04,"y":52.53,"rg":false,"prg":0,"em":91.3,"s":2},{"t":15.893,"d":275.8,"v":57.98,"r":3229,"q":31.7,"p":10.75,"th":23,"bk":0,"la":-1.28,"lo":0.56,"x":269.37,"y":53.77,"rg":false,"prg":0,"em":91.8,"s":2},{"t":16.057,"d":278.5,"v":57.99,"r":3230,"q":35.2,"p":11.92,"th":25,"bk":0,"la":1.49,"lo":0.62,"x":271.69,"y":55.03,"rg":false,"prg":0,"em":90.3,"s":2},{"t":16.221,"d":281.1,"v":57.99,"r":3230,"q":24.2,"p":8.18,"th":17,"bk":0,"la":-0.7,"lo":0.43,"x":274.01,"y":56.29,"rg":false,"prg":0,"em":93.7,"s":2},{"t":16.385,"d":283.8,"v":57.99,"r":3230,"q":33.6,"p":11.37,"th":24,"bk":0,"la":1.14,"lo":0.6,"x":276.32,"y":57.56,"rg":false,"prg":0,"em":91.5,"s":2},{"t":16.548,"d":286.4,"v":57.99,"r":3230,"q":23.4,"p":7.91,"th":17,"bk":0,"la":1.0,"lo":0.41,"x":278.63,"y":58.84,"rg":false,"prg":0,"em":92.8,"s":2},{"t":16.712,"d":289.0,"v":57.99,"r":3230,"q":29.8,"p":10.08,"th":21,"bk":0,"la":1.46,"lo":0.53,"x":280.93,"y":60.13,"rg":false,"prg":0,"em":92.6,"s":2},{"t":16.876,"d":291.7,"v":57.99,"r":3230,"q":21.2,"p":7.2,"th":15,"bk":0,"la":0.95,"lo":0.38,"x":283.23,"y":61.43,"rg":false,"prg":0,"em":91.2,"s":2},{"t":17.04,"d":294.3,"v":57.99,"r":3230,"q":30.5,"p":10.32,"th":22,"bk":0,"la":1.32,"lo":0.54,"x":285.53,"y":62.73,"rg":false,"prg":0,"em":90.5,"s":2},{"t":17.204,"d":297.0,"v":58.0,"r":3230,"q":22.8,"p":7.71,"th":16,"bk":0,"la":-1.18,"lo":0.4,"x":287.81,"y":64.05,"rg":false,"prg":0,"em":92.2,"s":2},{"t":17.368,"d":299.6,"v":58.0,"r":3230,"q":25.0,"p":8.45,"th":18,"bk":0,"la":0.31,"lo":0.44,"x":290.1,"y":65.37,"rg":false,"prg":0,"em":92.9,"s":2},{"t":17.532,"d":302.2,"v":58.0,"r":3230,"q":24.0,"p":8.13,"th":17,"bk":0,"la":0.4,"lo":0.43,"x":292.38,"y":66.7,"rg":false,"prg":0,"em":91.1,"s":2},{"t":17.695,"d":304.9,"v":58.0,"r":3230,"q":28.1,"p":9.49,"th":20,"bk":0,"la":1.22,"lo":0.5,"x":294.65,"y":68.04,"rg":false,"prg":0,"em":93.4,"s":2},{"t":17.859,"d":307.5,"v":58.0,"r":3230,"q":22.4,"p":7.6,"th":16,"bk":0,"la":-0.23,"lo":0.4,"x":296.92,"y":69.39,"rg":false,"prg":0,"em":91.1,"s":2},{"t":18.023,"d":310.2,"v":58.0,"r":3230,"q":21.2,"p":7.17,"th":15,"bk":0,"la":0.81,"lo":0.38,"x":299.19,"y":70.75,"rg":false,"prg":0,"em":92.5,"s":2},{"t":18.187,"d":312.8,"v":54.55,"r":3038,"q":0.0,"p":-5.6,"th":0,"bk":59,"la":-7.71,"lo":-1.47,"x":301.31,"y":72.03,"rg":true,"prg":23.46,"em":93.0,"s":2},{"t":18.351,"d":315.3,"v":51.62,"r":2875,"q":0.0,"p":-4.76,"th":0,"bk":50,"la":0.16,"lo":-1.25,"x":303.32,"y":73.25,"rg":true,"prg":19.94,"em":91.7,"s":2},{"t":18.515,"d":317.6,"v":49.12,"r":2736,"q":0.0,"p":-4.04,"th":0,"bk":42,"la":-1.47,"lo":-1.06,"x":305.23,"y":74.42,"rg":true,"prg":16.95,"em":90.3,"s":2},{"t":18.678,"d":319.9,"v":47.01,"r":2618,"q":0.0,"p":-3.44,"th":0,"bk":36,"la":1.15,"lo":-0.9,"x":307.05,"y":75.54,"rg":true,"prg":14.41,"em":93.6,"s":2},{"t":18.842,"d":322.0,"v":45.2,"r":2518,"q":0.0,"p":-2.92,"th":0,"bk":31,"la":0.14,"lo":-0.77,"x":308.79,"y":76.62,"rg":true,"prg":12.25,"em":93.3,"s":2},{"t":19.006,"d":324.1,"v":43.67,"r":2432,"q":0.0,"p":-2.48,"th":0,"bk":26,"la":0.25,"lo":-0.65,"x":310.48,"y":77.68,"rg":true,"prg":10.41,"em":90.6,"s":2},{"t":19.17,"d":326.0,"v":42.37,"r":2360,"q":0.0,"p":-2.11,"th":0,"bk":22,"la":-1.12,"lo":-0.55,"x":312.11,"y":78.71,"rg":true,"prg":8.85,"em":91.2,"s":2},{"t":19.334,"d":328.0,"v":41.27,"r":2298,"q":0.0,"p":-1.8,"th":0,"bk":19,"la":1.2,"lo":-0.47,"x":313.7,"y":79.71,"rg":true,"prg":7.52,"em":93.2,"s":2},{"t":19.498,"d":329.9,"v":40.33,"r":2246,"q":0.0,"p":-1.53,"th":0,"bk":16,"la":1.08,"lo":-0.4,"x":315.24,"y":80.7,"rg":true,"prg":6.39,"em":93.6,"s":2},{"t":19.662,"d":331.7,"v":39.53,"r":2201,"q":0.0,"p":-1.3,"th":0,"bk":14,"la":-0.87,"lo":-0.34,"x":316.76,"y":81.67,"rg":true,"prg":5.43,"em":91.0,"s":2},{"t":19.825,"d":333.5,"v":38.85,"r":2164,"q":0.0,"p":-1.11,"th":0,"bk":12,"la":-1.19,"lo":-0.29,"x":318.24,"y":82.64,"rg":true,"prg":4.62,"em":93.1,"s":2},{"t":19.989,"d":335.3,"v":38.27,"r":2131,"q":0.0,"p":-0.94,"th":0,"bk":10,"la":1.15,"lo":-0.25,"x":319.7,"y":83.59,"rg":true,"prg":3.93,"em":91.6,"s":2},{"t":20.153,"d":337.0,"v":37.78,"r":2104,"q":45.9,"p":10.12,"th":21,"bk":0,"la":-1.04,"lo":0.53,"x":321.14,"y":84.53,"rg":false,"prg":0,"em":93.7,"s":2},{"t":20.317,"d":338.7,"v":37.36,"r":2081,"q":51.8,"p":11.29,"th":24,"bk":0,"la":1.43,"lo":0.59,"x":322.56,"y":85.47,"rg":false,"prg":0,"em":93.2,"s":2},{"t":20.481,"d":340.4,"v":37.01,"r":2061,"q":52.7,"p":11.37,"th":24,"bk":0,"la":-1.43,"lo":0.6,"x":323.96,"y":86.4,"rg":false,"prg":0,"em":92.9,"s":2},{"t":20.645,"d":342.1,"v":36.71,"r":2044,"q":40.8,"p":8.74,"th":18,"bk":0,"la":1.29,"lo":0.46,"x":325.35,"y":87.33,"rg":false,"prg":0,"em":93.2,"s":2},{"t":20.808,"d":343.8,"v":36.45,"r":2030,"q":53.1,"p":11.28,"th":24,"bk":0,"la":0.93,"lo":0.59,"x":326.72,"y":88.26,"rg":false,"prg":0,"em":91.1,"s":2},{"t":20.972,"d":345.4,"v":36.23,"r":2018,"q":51.6,"p":10.91,"th":23,"bk":0,"la":-1.18,"lo":0.57,"x":328.09,"y":89.18,"rg":false,"prg":0,"em":93.5,"s":2},{"t":21.136,"d":347.1,"v":36.05,"r":2008,"q":53.5,"p":11.25,"th":24,"bk":0,"la":-0.83,"lo":0.59,"x":329.44,"y":90.11,"rg":false,"prg":0,"em":93.3,"s":2},{"t":21.3,"d":348.7,"v":35.89,"r":1999,"q":44.7,"p":9.35,"th":20,"bk":0,"la":-0.58,"lo":0.49,"x":330.79,"y":91.03,"rg":false,"prg":0,"em":93.2,"s":2},{"t":21.464,"d":350.4,"v":35.76,"r":1991,"q":39.5,"p":8.25,"th":17,"bk":0,"la":-1.43,"lo":0.43,"x":332.13,"y":91.96,"rg":false,"prg":0,"em":90.8,"s":2},{"t":21.628,"d":352.0,"v":35.64,"r":1985,"q":42.0,"p":8.73,"th":18,"bk":0,"la":1.09,"lo":0.46,"x":333.46,"y":92.88,"rg":false,"prg":0,"em":93.9,"s":2},{"t":21.792,"d":353.6,"v":35.55,"r":1980,"q":41.0,"p":8.49,"th":18,"bk":0,"la":0.42,"lo":0.44,"x":334.79,"y":93.81,"rg":false,"prg":0,"em":91.6,"s":2},{"t":21.955,"d":355.2,"v":35.47,"r":1975,"q":57.3,"p":11.84,"th":25,"bk":0,"la":0.11,"lo":0.62,"x":336.11,"y":94.74,"rg":false,"prg":0,"em":93.8,"s":2},{"t":22.119,"d":356.8,"v":35.4,"r":1971,"q":37.3,"p":7.71,"th":16,"bk":0,"la":1.41,"lo":0.4,"x":337.42,"y":95.67,"rg":false,"prg":0,"em":90.7,"s":2},{"t":22.283,"d":358.4,"v":35.34,"r":1968,"q":57.0,"p":11.76,"th":25,"bk":0,"la":-0.7,"lo":0.62,"x":338.73,"y":96.61,"rg":false,"prg":0,"em":90.4,"s":2},{"t":22.447,"d":360.1,"v":35.29,"r":1965,"q":44.9,"p":9.23,"th":19,"bk":0,"la":0.69,"lo":0.48,"x":340.03,"y":97.54,"rg":false,"prg":0,"em":91.3,"s":2},{"t":22.611,"d":361.7,"v":35.24,"r":1963,"q":48.9,"p":10.05,"th":21,"bk":0,"la":0.03,"lo":0.53,"x":341.33,"y":98.48,"rg":false,"prg":0,"em":91.5,"s":2},{"t":22.775,"d":363.3,"v":35.21,"r":1961,"q":48.3,"p":9.91,"th":21,"bk":0,"la":-0.74,"lo":0.52,"x":342.63,"y":99.43,"rg":false,"prg":0,"em":92.8,"s":2},{"t":22.938,"d":364.9,"v":35.18,"r":1959,"q":34.9,"p":7.17,"th":15,"bk":0,"la":1.28,"lo":0.38,"x":343.92,"y":100.37,"rg":false,"prg":0,"em":92.2,"s":2},{"t":23.102,"d":366.5,"v":35.15,"r":1957,"q":51.6,"p":10.59,"th":22,"bk":0,"la":0.73,"lo":0.55,"x":345.21,"y":101.32,"rg":false,"prg":0,"em":92.7,"s":2},{"t":23.266,"d":368.1,"v":35.13,"r":1956,"q":43.4,"p":8.9,"th":19,"bk":0,"la":-1.29,"lo":0.47,"x":346.49,"y":102.27,"rg":false,"prg":0,"em":92.7,"s":2},{"t":23.43,"d":369.7,"v":42.61,"r":2373,"q":103.4,"p":47.72,"th":100,"bk":0,"la":3.49,"lo":2.5,"x":348.05,"y":103.43,"rg":false,"prg":0,"em":91.3,"s":2},{"t":23.594,"d":371.6,"v":48.97,"r":2727,"q":103.4,"p":47.72,"th":100,"bk":0,"la":5.04,"lo":2.5,"x":349.83,"y":104.77,"rg":false,"prg":0,"em":92.9,"s":2},{"t":23.758,"d":373.8,"v":54.37,"r":3028,"q":103.4,"p":47.72,"th":100,"bk":0,"la":3.4,"lo":2.5,"x":351.81,"y":106.26,"rg":false,"prg":0,"em":91.2,"s":2},{"t":23.922,"d":376.3,"v":58.97,"r":3284,"q":103.4,"p":47.72,"th":100,"bk":0,"la":3.73,"lo":2.5,"x":353.94,"y":107.88,"rg":false,"prg":0,"em":91.6,"s":2},{"t":24.085,"d":379.0,"v":62.87,"r":3502,"q":103.4,"p":42.24,"th":89,"bk":0,"la":3.39,"lo":2.21,"x":356.22,"y":109.62,"rg":false,"prg":0,"em":90.5,"s":2},{"t":24.249,"d":381.9,"v":66.19,"r":3687,"q":93.0,"p":35.9,"th":75,"bk":0,"la":3.76,"lo":1.88,"x":358.6,"y":111.46,"rg":false,"prg":0,"em":93.8,"s":2},{"t":24.413,"d":384.9,"v":69.01,"r":3844,"q":75.8,"p":30.52,"th":64,"bk":0,"la":4.53,"lo":1.6,"x":361.09,"y":113.38,"rg":false,"prg":0,"em":93.6,"s":2},{"t":24.577,"d":388.0,"v":71.41,"r":3977,"q":62.3,"p":25.94,"th":54,"bk":0,"la":0.35,"lo":1.36,"x":363.65,"y":115.38,"rg":false,"prg":0,"em":91.2,"s":2},{"t":24.741,"d":391.3,"v":73.45,"r":4091,"q":51.5,"p":22.05,"th":46,"bk":0,"la":0.14,"lo":1.16,"x":366.28,"y":117.44,"rg":false,"prg":0,"em":90.0,"s":2},{"t":24.905,"d":394.6,"v":75.18,"r":4187,"q":42.7,"p":18.75,"th":39,"bk":0,"la":-0.64,"lo":0.98,"x":368.97,"y":119.56,"rg":false,"prg":0,"em":91.7,"s":2},{"t":25.068,"d":398.0,"v":76.65,"r":4269,"q":35.6,"p":15.93,"th":33,"bk":0,"la":0.24,"lo":0.83,"x":371.7,"y":121.73,"rg":false,"prg":0,"em":92.6,"s":2},{"t":25.232,"d":401.5,"v":77.91,"r":4339,"q":29.8,"p":13.55,"th":28,"bk":0,"la":-0.11,"lo":0.71,"x":374.47,"y":123.95,"rg":false,"prg":0,"em":91.8,"s":2},{"t":25.396,"d":405.1,"v":78.97,"r":4398,"q":25.0,"p":11.51,"th":24,"bk":0,"la":-0.86,"lo":0.6,"x":377.26,"y":126.2,"rg":false,"prg":0,"em":91.9,"s":2},{"t":25.56,"d":408.7,"v":79.87,"r":4449,"q":21.0,"p":9.78,"th":21,"bk":0,"la":1.2,"lo":0.51,"x":380.09,"y":128.5,"rg":false,"prg":0,"em":93.2,"s":2},{"t":25.724,"d":412.3,"v":80.64,"r":4492,"q":17.7,"p":8.32,"th":17,"bk":0,"la":-0.99,"lo":0.44,"x":382.93,"y":130.82,"rg":false,"prg":0,"em":90.3,"s":2},{"t":25.888,"d":416.0,"v":81.3,"r":4528,"q":14.9,"p":7.07,"th":15,"bk":0,"la":0.05,"lo":0.37,"x":385.78,"y":133.17,"rg":false,"prg":0,"em":92.5,"s":2},{"t":26.052,"d":419.7,"v":81.85,"r":4559,"q":12.6,"p":6.01,"th":13,"bk":0,"la":-0.49,"lo":0.31,"x":388.65,"y":135.55,"rg":false,"prg":0,"em":93.3,"s":2},{"t":26.215,"d":423.4,"v":82.32,"r":4585,"q":22.3,"p":10.75,"th":23,"bk":0,"la":0.52,"lo":0.56,"x":391.52,"y":137.96,"rg":false,"prg":0,"em":90.9,"s":2},{"t":26.379,"d":427.1,"v":82.73,"r":4608,"q":16.8,"p":8.1,"th":17,"bk":0,"la":-1.43,"lo":0.42,"x":394.4,"y":140.39,"rg":false,"prg":0,"em":91.0,"s":2},{"t":26.543,"d":430.9,"v":83.07,"r":4627,"q":19.5,"p":9.43,"th":20,"bk":0,"la":1.05,"lo":0.49,"x":397.28,"y":142.83,"rg":false,"prg":0,"em":90.3,"s":2},{"t":26.707,"d":434.7,"v":83.36,"r":4643,"q":18.8,"p":9.14,"th":19,"bk":0,"la":0.39,"lo":0.48,"x":400.16,"y":145.3,"rg":false,"prg":0,"em":90.8,"s":2},{"t":26.871,"d":438.5,"v":83.6,"r":4657,"q":21.5,"p":10.48,"th":22,"bk":0,"la":-0.02,"lo":0.55,"x":403.04,"y":147.79,"rg":false,"prg":0,"em":91.0,"s":2},{"t":27.035,"d":442.3,"v":83.81,"r":4668,"q":21.1,"p":10.29,"th":22,"bk":0,"la":-1.48,"lo":0.54,"x":405.91,"y":150.3,"rg":false,"prg":0,"em":93.0,"s":2},{"t":27.198,"d":446.1,"v":83.99,"r":4678,"q":22.1,"p":10.83,"th":23,"bk":0,"la":-1.18,"lo":0.57,"x":408.78,"y":152.83,"rg":false,"prg":0,"em":91.7,"s":2},{"t":27.362,"d":449.9,"v":84.14,"r":4687,"q":16.3,"p":8.0,"th":17,"bk":0,"la":1.37,"lo":0.42,"x":411.64,"y":155.37,"rg":false,"prg":0,"em":92.1,"s":2},{"t":27.526,"d":453.7,"v":84.27,"r":4694,"q":15.0,"p":7.4,"th":16,"bk":0,"la":-0.75,"lo":0.39,"x":414.5,"y":157.93,"rg":false,"prg":0,"em":93.4,"s":2},{"t":27.69,"d":457.6,"v":84.38,"r":4700,"q":18.9,"p":9.34,"th":20,"bk":0,"la":0.9,"lo":0.49,"x":417.35,"y":160.51,"rg":false,"prg":0,"em":92.7,"s":2},{"t":27.854,"d":461.4,"v":84.47,"r":4705,"q":24.1,"p":11.87,"th":25,"bk":0,"la":0.29,"lo":0.62,"x":420.19,"y":163.1,"rg":false,"prg":0,"em":93.8,"s":2},{"t":28.018,"d":465.3,"v":84.55,"r":4709,"q":23.1,"p":11.41,"th":24,"bk":0,"la":0.34,"lo":0.6,"x":423.01,"y":165.71,"rg":false,"prg":0,"em":92.9,"s":2},{"t":28.182,"d":469.1,"v":84.62,"r":4713,"q":19.4,"p":9.57,"th":20,"bk":0,"la":0.99,"lo":0.5,"x":425.83,"y":168.34,"rg":false,"prg":0,"em":92.2,"s":2},{"t":28.345,"d":473.0,"v":84.68,"r":4716,"q":23.1,"p":11.44,"th":24,"bk":0,"la":0.73,"lo":0.6,"x":428.64,"y":170.98,"rg":false,"prg":0,"em":91.9,"s":2},{"t":28.509,"d":476.8,"v":84.73,"r":4719,"q":17.0,"p":8.4,"th":18,"bk":0,"la":-0.76,"lo":0.44,"x":431.43,"y":173.64,"rg":false,"prg":0,"em":92.6,"s":3},{"t":28.673,"d":480.7,"v":84.77,"r":4721,"q":21.9,"p":10.81,"th":23,"bk":0,"la":0.06,"lo":0.57,"x":434.21,"y":176.31,"rg":false,"prg":0,"em":92.5,"s":3},{"t":28.837,"d":484.5,"v":84.8,"r":4723,"q":17.1,"p":8.47,"th":18,"bk":0,"la":-1.27,"lo":0.44,"x":436.98,"y":179.0,"rg":false,"prg":0,"em":91.1,"s":3},{"t":29.001,"d":488.4,"v":84.83,"r":4725,"q":17.1,"p":8.45,"th":18,"bk":0,"la":-0.54,"lo":0.44,"x":439.73,"y":181.71,"rg":false,"prg":0,"em":92.2,"s":3},{"t":29.165,"d":492.2,"v":84.86,"r":4726,"q":15.8,"p":7.82,"th":16,"bk":0,"la":-0.81,"lo":0.41,"x":442.47,"y":184.44,"rg":false,"prg":0,"em":92.8,"s":3},{"t":29.328,"d":496.1,"v":84.88,"r":4728,"q":21.2,"p":10.53,"th":22,"bk":0,"la":-1.31,"lo":0.55,"x":445.19,"y":187.18,"rg":false,"prg":0,"em":91.6,"s":3},{"t":29.492,"d":500.0,"v":85.35,"r":4754,"q":19.6,"p":9.75,"th":20,"bk":0,"la":-0.25,"lo":0.51,"x":447.91,"y":189.95,"rg":false,"prg":0,"em":90.8,"s":3},{"t":29.656,"d":503.9,"v":85.74,"r":4776,"q":18.3,"p":9.16,"th":19,"bk":0,"la":1.21,"lo":0.48,"x":450.63,"y":192.75,"rg":false,"prg":0,"em":92.3,"s":3},{"t":29.82,"d":507.8,"v":86.08,"r":4795,"q":20.8,"p":10.48,"th":22,"bk":0,"la":1.07,"lo":0.55,"x":453.34,"y":195.58,"rg":false,"prg":0,"em":93.1,"s":3},{"t":29.984,"d":511.7,"v":86.37,"r":4811,"q":17.8,"p":8.97,"th":19,"bk":0,"la":-1.48,"lo":0.47,"x":456.04,"y":198.43,"rg":false,"prg":0,"em":91.4,"s":3},{"t":30.148,"d":515.6,"v":86.61,"r":4824,"q":21.3,"p":10.75,"th":23,"bk":0,"la":1.06,"lo":0.56,"x":458.73,"y":201.31,"rg":false,"prg":0,"em":93.8,"s":3},{"t":30.312,"d":519.6,"v":86.82,"r":4836,"q":18.1,"p":9.15,"th":19,"bk":0,"la":0.74,"lo":0.48,"x":461.41,"y":204.22,"rg":false,"prg":0,"em":92.2,"s":3},{"t":30.475,"d":523.5,"v":87.0,"r":4846,"q":19.8,"p":10.04,"th":21,"bk":0,"la":-0.84,"lo":0.53,"x":464.08,"y":207.14,"rg":false,"prg":0,"em":90.9,"s":3},{"t":30.639,"d":527.5,"v":87.15,"r":4854,"q":18.1,"p":9.24,"th":19,"bk":0,"la":-1.41,"lo":0.48,"x":466.73,"y":210.09,"rg":false,"prg":0,"em":91.3,"s":3},{"t":30.803,"d":531.4,"v":87.28,"r":4861,"q":20.4,"p":10.4,"th":22,"bk":0,"la":-0.29,"lo":0.54,"x":469.37,"y":213.06,"rg":false,"prg":0,"em":90.7,"s":3},{"t":30.967,"d":535.4,"v":87.39,"r":4867,"q":18.5,"p":9.39,"th":20,"bk":0,"la":-1.12,"lo":0.49,"x":471.99,"y":216.05,"rg":false,"prg":0,"em":92.5,"s":3},{"t":31.131,"d":539.4,"v":87.48,"r":4872,"q":14.3,"p":7.29,"th":15,"bk":0,"la":-0.32,"lo":0.38,"x":474.59,"y":219.07,"rg":false,"prg":0,"em":92.3,"s":3},{"t":31.295,"d":543.4,"v":87.56,"r":4877,"q":14.2,"p":7.29,"th":15,"bk":0,"la":0.43,"lo":0.38,"x":477.18,"y":222.1,"rg":false,"prg":0,"em":90.5,"s":3},{"t":31.458,"d":547.3,"v":87.62,"r":4880,"q":18.3,"p":9.36,"th":20,"bk":0,"la":-1.35,"lo":0.49,"x":479.75,"y":225.15,"rg":false,"prg":0,"em":91.5,"s":3},{"t":31.622,"d":551.3,"v":87.68,"r":4884,"q":16.0,"p":8.17,"th":17,"bk":0,"la":-0.52,"lo":0.43,"x":482.3,"y":228.22,"rg":false,"prg":0,"em":93.0,"s":3},{"t":31.786,"d":555.3,"v":87.73,"r":4886,"q":17.5,"p":8.96,"th":19,"bk":0,"la":0.76,"lo":0.47,"x":484.83,"y":231.31,"rg":false,"prg":0,"em":93.3,"s":3},{"t":31.95,"d":559.3,"v":87.77,"r":4889,"q":16.3,"p":8.36,"th":18,"bk":0,"la":-1.25,"lo":0.44,"x":487.34,"y":234.41,"rg":false,"prg":0,"em":90.1,"s":3},{"t":32.114,"d":563.3,"v":87.8,"r":4890,"q":19.0,"p":9.74,"th":20,"bk":0,"la":1.5,"lo":0.51,"x":489.83,"y":237.54,"rg":false,"prg":0,"em":91.4,"s":3},{"t":32.278,"d":567.3,"v":87.83,"r":4892,"q":20.0,"p":10.26,"th":22,"bk":0,"la":0.84,"lo":0.54,"x":492.3,"y":240.68,"rg":false,"prg":0,"em":92.6,"s":3},{"t":32.442,"d":571.3,"v":79.16,"r":4409,"q":0.0,"p":-9.54,"th":0,"bk":100,"la":-6.24,"lo":-2.5,"x":494.51,"y":243.52,"rg":true,"prg":40,"em":93.8,"s":3},{"t":32.605,"d":574.9,"v":71.78,"r":3998,"q":0.0,"p":-9.54,"th":0,"bk":100,"la":-7.9,"lo":-2.5,"x":496.5,"y":246.12,"rg":true,"prg":40,"em":90.1,"s":3},{"t":32.769,"d":578.2,"v":65.52,"r":3649,"q":0.0,"p":-9.54,"th":0,"bk":100,"la":-8.04,"lo":-2.5,"x":498.3,"y":248.5,"rg":true,"prg":40,"em":90.5,"s":3},{"t":32.933,"d":581.2,"v":60.19,"r":3352,"q":0.0,"p":-8.65,"th":0,"bk":91,"la":-6.49,"lo":-2.26,"x":499.93,"y":250.69,"rg":true,"prg":36.23,"em":92.3,"s":3},{"t":33.097,"d":583.9,"v":55.66,"r":3100,"q":0.0,"p":-7.35,"th":0,"bk":77,"la":-7.85,"lo":-1.92,"x":501.43,"y":252.73,"rg":true,"prg":30.79,"em":92.8,"s":3},{"t":33.261,"d":586.4,"v":51.81,"r":2886,"q":0.0,"p":-6.24,"th":0,"bk":65,"la":-6.2,"lo":-1.64,"x":502.82,"y":254.64,"rg":true,"prg":26.17,"em":90.7,"s":3},{"t":33.425,"d":588.8,"v":48.54,"r":2703,"q":0.0,"p":-5.31,"th":0,"bk":56,"la":-6.68,"lo":-1.39,"x":504.1,"y":256.44,"rg":true,"prg":22.25,"em":93.0,"s":3},{"t":33.588,"d":591.0,"v":45.76,"r":2548,"q":0.0,"p":-4.51,"th":0,"bk":47,"la":-1.16,"lo":-1.18,"x":505.31,"y":258.14,"rg":true,"prg":18.91,"em":93.3,"s":3},{"t":33.752,"d":593.1,"v":43.39,"r":2417,"q":0.0,"p":-3.83,"th":0,"bk":40,"la":1.39,"lo":-1.0,"x":506.44,"y":259.76,"rg":true,"prg":16.07,"em":90.4,"s":3},{"t":33.916,"d":595.1,"v":41.39,"r":2305,"q":0.0,"p":-3.26,"th":0,"bk":34,"la":-1.42,"lo":-0.85,"x":507.5,"y":261.31,"rg":true,"prg":13.66,"em":91.2,"s":3},{"t":34.08,"d":596.9,"v":39.68,"r":2210,"q":0.0,"p":-2.77,"th":0,"bk":29,"la":0.53,"lo":-0.73,"x":508.52,"y":262.81,"rg":true,"prg":11.61,"em":93.8,"s":3},{"t":34.244,"d":598.7,"v":38.23,"r":2129,"q":0.0,"p":-2.35,"th":0,"bk":25,"la":-0.31,"lo":-0.62,"x":509.49,"y":264.25,"rg":true,"prg":9.87,"em":92.9,"s":3},{"t":34.408,"d":600.5,"v":36.99,"r":2060,"q":0.0,"p":-2.0,"th":0,"bk":21,"la":-1.27,"lo":-0.52,"x":510.42,"y":265.65,"rg":true,"prg":8.39,"em":92.8,"s":3},{"t":34.572,"d":602.2,"v":35.94,"r":2002,"q":0.0,"p":-1.7,"th":0,"bk":18,"la":0.38,"lo":-0.45,"x":511.31,"y":267.02,"rg":true,"prg":7.13,"em":90.4,"s":3},{"t":34.735,"d":603.8,"v":35.05,"r":1952,"q":0.0,"p":-1.45,"th":0,"bk":15,"la":0.82,"lo":-0.38,"x":512.18,"y":268.36,"rg":true,"prg":6.06,"em":93.4,"s":3},{"t":34.899,"d":605.4,"v":34.29,"r":1910,"q":0.0,"p":-1.23,"th":0,"bk":13,"la":0.3,"lo":-0.32,"x":513.01,"y":269.68,"rg":true,"prg":5.15,"em":90.5,"s":3},{"t":35.063,"d":607.0,"v":33.65,"r":1874,"q":0.0,"p":-1.04,"th":0,"bk":11,"la":1.45,"lo":-0.27,"x":513.83,"y":270.98,"rg":true,"prg":4.38,"em":93.1,"s":3},{"t":35.227,"d":608.5,"v":33.1,"r":1843,"q":0.0,"p":-0.89,"th":0,"bk":9,"la":-0.46,"lo":-0.23,"x":514.62,"y":272.26,"rg":true,"prg":3.72,"em":91.7,"s":3},{"t":35.391,"d":610.0,"v":32.64,"r":1818,"q":46.9,"p":8.92,"th":19,"bk":0,"la":0.02,"lo":0.47,"x":515.4,"y":273.53,"rg":false,"prg":0,"em":91.4,"s":3},{"t":35.555,"d":611.5,"v":32.24,"r":1795,"q":59.7,"p":11.21,"th":23,"bk":0,"la":0.97,"lo":0.59,"x":516.16,"y":274.78,"rg":false,"prg":0,"em":90.4,"s":3},{"t":35.718,"d":612.9,"v":31.91,"r":1777,"q":63.1,"p":11.74,"th":25,"bk":0,"la":0.41,"lo":0.62,"x":516.9,"y":276.03,"rg":false,"prg":0,"em":93.3,"s":3},{"t":35.882,"d":614.4,"v":31.62,"r":1761,"q":57.1,"p":10.53,"th":22,"bk":0,"la":-0.19,"lo":0.55,"x":517.63,"y":277.27,"rg":false,"prg":0,"em":92.9,"s":3},{"t":36.046,"d":615.8,"v":31.38,"r":1747,"q":64.3,"p":11.76,"th":25,"bk":0,"la":-0.69,"lo":0.62,"x":518.35,"y":278.5,"rg":false,"prg":0,"em":93.2,"s":3},{"t":36.21,"d":617.3,"v":31.17,"r":1736,"q":53.5,"p":9.73,"th":20,"bk":0,"la":-0.05,"lo":0.51,"x":519.06,"y":279.73,"rg":false,"prg":0,"em":91.7,"s":3},{"t":36.374,"d":618.7,"v":30.99,"r":1726,"q":58.9,"p":10.65,"th":22,"bk":0,"la":-0.69,"lo":0.56,"x":519.76,"y":280.96,"rg":false,"prg":0,"em":93.4,"s":3},{"t":36.538,"d":620.1,"v":30.85,"r":1718,"q":61.8,"p":11.12,"th":23,"bk":0,"la":-1.24,"lo":0.58,"x":520.44,"y":282.18,"rg":false,"prg":0,"em":93.5,"s":3},{"t":36.702,"d":621.5,"v":30.72,"r":1711,"q":46.4,"p":8.32,"th":17,"bk":0,"la":-0.11,"lo":0.44,"x":521.12,"y":283.41,"rg":false,"prg":0,"em":92.4,"s":3},{"t":36.865,"d":622.9,"v":30.61,"r":1705,"q":50.2,"p":8.96,"th":19,"bk":0,"la":-1.41,"lo":0.47,"x":521.79,"y":284.63,"rg":false,"prg":0,"em":93.4,"s":3},{"t":37.029,"d":624.3,"v":30.52,"r":1700,"q":45.1,"p":8.03,"th":17,"bk":0,"la":-0.86,"lo":0.42,"x":522.45,"y":285.85,"rg":false,"prg":0,"em":93.2,"s":3},{"t":37.193,"d":625.7,"v":35.24,"r":1963,"q":103.4,"p":47.72,"th":100,"bk":0,"la":3.52,"lo":2.5,"x":523.2,"y":287.26,"rg":false,"prg":0,"em":93.5,"s":3},{"t":37.357,"d":627.3,"v":39.26,"r":2186,"q":103.4,"p":43.42,"th":91,"bk":0,"la":4.6,"lo":2.27,"x":524.04,"y":288.85,"rg":false,"prg":0,"em":91.1,"s":3},{"t":37.521,"d":629.1,"v":42.67,"r":2376,"q":103.4,"p":36.91,"th":77,"bk":0,"la":2.53,"lo":1.93,"x":524.93,"y":290.57,"rg":false,"prg":0,"em":93.8,"s":3},{"t":37.685,"d":631.0,"v":45.57,"r":2538,"q":103.4,"p":31.37,"th":66,"bk":0,"la":2.76,"lo":1.64,"x":525.88,"y":292.41,"rg":false,"prg":0,"em":92.9,"s":3},{"t":37.848,"d":633.1,"v":48.03,"r":2675,"q":95.1,"p":26.66,"th":56,"bk":0,"la":-0.03,"lo":1.4,"x":526.87,"y":294.36,"rg":false,"prg":0,"em":93.0,"s":3},{"t":38.012,"d":635.3,"v":50.13,"r":2792,"q":77.5,"p":22.67,"th":47,"bk":0,"la":0.57,"lo":1.19,"x":527.9,"y":296.4,"rg":false,"prg":0,"em":92.6,"s":3},{"t":38.176,"d":637.6,"v":51.91,"r":2891,"q":63.6,"p":19.26,"th":40,"bk":0,"la":-0.03,"lo":1.01,"x":528.95,"y":298.51,"rg":false,"prg":0,"em":93.2,"s":3},{"t":38.34,"d":639.9,"v":53.42,"r":2975,"q":52.6,"p":16.38,"th":34,"bk":0,"la":-1.22,"lo":0.86,"x":530.02,"y":300.7,"rg":false,"prg":0,"em":90.9,"s":3},{"t":38.504,"d":642.4,"v":54.71,"r":3047,"q":43.6,"p":13.92,"th":29,"bk":0,"la":0.58,"lo":0.73,"x":531.11,"y":302.94,"rg":false,"prg":0,"em":91.2,"s":3},{"t":38.668,"d":644.8,"v":55.8,"r":3108,"q":36.3,"p":11.83,"th":25,"bk":0,"la":0.24,"lo":0.62,"x":532.21,"y":305.23,"rg":false,"prg":0,"em":91.9,"s":3},{"t":38.832,"d":647.4,"v":56.73,"r":3160,"q":30.4,"p":10.05,"th":21,"bk":0,"la":0.09,"lo":0.53,"x":533.32,"y":307.56,"rg":false,"prg":0,"em":91.7,"s":3},{"t":38.995,"d":650.0,"v":57.52,"r":3204,"q":25.5,"p":8.55,"th":18,"bk":0,"la":0.74,"lo":0.45,"x":534.43,"y":309.93,"rg":false,"prg":0,"em":91.3,"s":3},{"t":39.159,"d":652.6,"v":58.19,"r":3241,"q":21.4,"p":7.26,"th":15,"bk":0,"la":0.61,"lo":0.38,"x":535.55,"y":312.33,"rg":false,"prg":0,"em":91.1,"s":3},{"t":39.323,"d":655.2,"v":58.76,"r":3273,"q":18.1,"p":6.17,"th":13,"bk":0,"la":-0.75,"lo":0.32,"x":536.67,"y":314.76,"rg":false,"prg":0,"em":90.5,"s":3},{"t":39.487,"d":657.9,"v":59.25,"r":3300,"q":23.4,"p":8.08,"th":17,"bk":0,"la":-1.14,"lo":0.42,"x":537.79,"y":317.21,"rg":false,"prg":0,"em":92.1,"s":3},{"t":39.651,"d":660.6,"v":59.66,"r":3323,"q":31.0,"p":10.79,"th":23,"bk":0,"la":-0.94,"lo":0.57,"x":538.91,"y":319.68,"rg":false,"prg":0,"em":90.9,"s":3},{"t":39.815,"d":663.3,"v":60.01,"r":3342,"q":27.0,"p":9.47,"th":20,"bk":0,"la":0.67,"lo":0.5,"x":540.03,"y":322.17,"rg":false,"prg":0,"em":93.9,"s":3},{"t":39.978,"d":666.0,"v":60.31,"r":3359,"q":27.4,"p":9.66,"th":20,"bk":0,"la":-0.65,"lo":0.51,"x":541.15,"y":324.68,"rg":false,"prg":0,"em":90.4,"s":3},{"t":40.142,"d":668.8,"v":60.56,"r":3373,"q":22.9,"p":8.08,"th":17,"bk":0,"la":-0.82,"lo":0.42,"x":542.26,"y":327.2,"rg":false,"prg":0,"em":90.7,"s":3},{"t":40.306,"d":671.5,"v":60.78,"r":3385,"q":20.4,"p":7.22,"th":15,"bk":0,"la":0.1,"lo":0.38,"x":543.38,"y":329.73,"rg":false,"prg":0,"em":91.1,"s":3},{"t":40.47,"d":674.3,"v":60.96,"r":3395,"q":33.2,"p":11.81,"th":25,"bk":0,"la":0.16,"lo":0.62,"x":544.48,"y":332.28,"rg":false,"prg":0,"em":92.8,"s":3},{"t":40.634,"d":677.1,"v":61.12,"r":3404,"q":21.8,"p":7.76,"th":16,"bk":0,"la":1.11,"lo":0.41,"x":545.59,"y":334.83,"rg":false,"prg":0,"em":92.0,"s":3},{"t":40.798,"d":679.9,"v":61.25,"r":3411,"q":31.7,"p":11.33,"th":24,"bk":0,"la":0.22,"lo":0.59,"x":546.69,"y":337.39,"rg":false,"prg":0,"em":91.9,"s":3},{"t":40.962,"d":682.7,"v":61.36,"r":3418,"q":25.8,"p":9.26,"th":19,"bk":0,"la":-0.95,"lo":0.49,"x":547.79,"y":339.96,"rg":false,"prg":0,"em":90.2,"s":3},{"t":41.125,"d":685.5,"v":61.46,"r":3423,"q":32.5,"p":11.65,"th":24,"bk":0,"la":-0.07,"lo":0.61,"x":548.88,"y":342.53,"rg":false,"prg":0,"em":93.3,"s":3},{"t":41.289,"d":688.2,"v":61.54,"r":3428,"q":25.3,"p":9.07,"th":19,"bk":0,"la":-1.28,"lo":0.48,"x":549.98,"y":345.11,"rg":false,"prg":0,"em":92.5,"s":3},{"t":41.453,"d":691.0,"v":61.61,"r":3431,"q":20.6,"p":7.41,"th":16,"bk":0,"la":-1.05,"lo":0.39,"x":551.07,"y":347.7,"rg":false,"prg":0,"em":92.3,"s":3},{"t":41.617,"d":693.9,"v":61.67,"r":3435,"q":23.9,"p":8.61,"th":18,"bk":0,"la":1.48,"lo":0.45,"x":552.15,"y":350.28,"rg":false,"prg":0,"em":90.5,"s":3},{"t":41.781,"d":696.7,"v":61.72,"r":3437,"q":30.0,"p":10.81,"th":23,"bk":0,"la":0.32,"lo":0.57,"x":553.24,"y":352.87,"rg":false,"prg":0,"em":93.2,"s":3},{"t":41.945,"d":699.5,"v":61.76,"r":3440,"q":22.8,"p":8.23,"th":17,"bk":0,"la":0.07,"lo":0.43,"x":554.32,"y":355.47,"rg":false,"prg":0,"em":91.8,"s":3},{"t":42.108,"d":702.3,"v":61.8,"r":3442,"q":25.7,"p":9.27,"th":19,"bk":0,"la":1.08,"lo":0.49,"x":555.4,"y":358.06,"rg":false,"prg":0,"em":94.0,"s":3},{"t":42.272,"d":705.1,"v":61.83,"r":3443,"q":23.9,"p":8.61,"th":18,"bk":0,"la":0.36,"lo":0.45,"x":556.49,"y":360.66,"rg":false,"prg":0,"em":92.4,"s":3},{"t":42.436,"d":707.9,"v":61.85,"r":3445,"q":29.7,"p":10.69,"th":22,"bk":0,"la":1.34,"lo":0.56,"x":557.57,"y":363.26,"rg":false,"prg":0,"em":90.8,"s":3},{"t":42.6,"d":710.7,"v":61.87,"r":3446,"q":22.6,"p":8.17,"th":17,"bk":0,"la":0.48,"lo":0.43,"x":558.65,"y":365.86,"rg":false,"prg":0,"em":90.6,"s":3},{"t":42.764,"d":713.5,"v":61.89,"r":3447,"q":22.1,"p":7.99,"th":17,"bk":0,"la":-1.27,"lo":0.42,"x":559.73,"y":368.46,"rg":false,"prg":0,"em":90.0,"s":4},{"t":42.928,"d":716.4,"v":61.91,"r":3448,"q":25.8,"p":9.31,"th":20,"bk":0,"la":0.28,"lo":0.49,"x":560.81,"y":371.06,"rg":false,"prg":0,"em":91.2,"s":4},{"t":43.092,"d":719.2,"v":61.92,"r":3449,"q":22.9,"p":8.26,"th":17,"bk":0,"la":0.62,"lo":0.43,"x":561.9,"y":373.66,"rg":false,"prg":0,"em":92.8,"s":4},{"t":43.255,"d":722.0,"v":61.93,"r":3450,"q":25.8,"p":9.32,"th":20,"bk":0,"la":0.56,"lo":0.49,"x":562.98,"y":376.27,"rg":false,"prg":0,"em":93.7,"s":4},{"t":43.419,"d":724.8,"v":61.94,"r":3450,"q":30.2,"p":10.92,"th":23,"bk":0,"la":0.38,"lo":0.57,"x":564.07,"y":378.87,"rg":false,"prg":0,"em":92.6,"s":4},{"t":43.583,"d":727.6,"v":61.95,"r":3451,"q":32.1,"p":11.61,"th":24,"bk":0,"la":-0.22,"lo":0.61,"x":565.16,"y":381.47,"rg":false,"prg":0,"em":92.2,"s":4},{"t":43.747,"d":730.4,"v":61.96,"r":3451,"q":28.4,"p":10.25,"th":21,"bk":0,"la":1.23,"lo":0.54,"x":566.26,"y":384.07,"rg":false,"prg":0,"em":93.3,"s":4},{"t":43.911,"d":733.3,"v":61.97,"r":3451,"q":20.8,"p":7.5,"th":16,"bk":0,"la":-1.0,"lo":0.39,"x":567.36,"y":386.66,"rg":false,"prg":0,"em":91.2,"s":4},{"t":44.075,"d":736.1,"v":61.97,"r":3452,"q":29.7,"p":10.73,"th":22,"bk":0,"la":0.21,"lo":0.56,"x":568.46,"y":389.26,"rg":false,"prg":0,"em":91.2,"s":4},{"t":44.238,"d":738.9,"v":61.98,"r":3452,"q":21.5,"p":7.75,"th":16,"bk":0,"la":0.57,"lo":0.41,"x":569.56,"y":391.85,"rg":false,"prg":0,"em":92.8,"s":4},{"t":44.402,"d":741.7,"v":61.98,"r":3452,"q":32.2,"p":11.66,"th":24,"bk":0,"la":0.0,"lo":0.61,"x":570.68,"y":394.45,"rg":false,"prg":0,"em":92.0,"s":4},{"t":44.566,"d":744.5,"v":61.98,"r":3452,"q":20.8,"p":7.54,"th":16,"bk":0,"la":-1.38,"lo":0.4,"x":571.79,"y":397.04,"rg":false,"prg":0,"em":91.7,"s":4},{"t":44.73,"d":747.4,"v":61.98,"r":3452,"q":24.0,"p":8.69,"th":18,"bk":0,"la":-0.75,"lo":0.46,"x":572.92,"y":399.62,"rg":false,"prg":0,"em":90.4,"s":4},{"t":44.894,"d":750.2,"v":61.99,"r":3452,"q":32.5,"p":11.75,"th":25,"bk":0,"la":1.01,"lo":0.62,"x":574.05,"y":402.21,"rg":false,"prg":0,"em":92.3,"s":4},{"t":45.058,"d":753.0,"v":61.99,"r":3453,"q":32.4,"p":11.69,"th":25,"bk":0,"la":1.5,"lo":0.61,"x":575.19,"y":404.79,"rg":false,"prg":0,"em":92.7,"s":4},{"t":45.222,"d":755.8,"v":61.99,"r":3453,"q":23.4,"p":8.45,"th":18,"bk":0,"la":-1.38,"lo":0.44,"x":576.33,"y":407.37,"rg":false,"prg":0,"em":93.0,"s":4},{"t":45.385,"d":758.7,"v":61.99,"r":3453,"q":26.0,"p":9.4,"th":20,"bk":0,"la":0.45,"lo":0.49,"x":577.48,"y":409.94,"rg":false,"prg":0,"em":93.7,"s":4},{"t":45.549,"d":761.5,"v":61.99,"r":3453,"q":22.2,"p":8.03,"th":17,"bk":0,"la":0.26,"lo":0.42,"x":578.64,"y":412.52,"rg":false,"prg":0,"em":92.5,"s":4},{"t":45.713,"d":764.3,"v":61.99,"r":3453,"q":26.2,"p":9.5,"th":20,"bk":0,"la":-1.23,"lo":0.5,"x":579.81,"y":415.08,"rg":false,"prg":0,"em":91.4,"s":4},{"t":45.877,"d":767.1,"v":62.0,"r":3453,"q":24.2,"p":8.75,"th":18,"bk":0,"la":0.51,"lo":0.46,"x":580.99,"y":417.65,"rg":false,"prg":0,"em":93.4,"s":4},{"t":46.041,"d":769.9,"v":62.0,"r":3453,"q":24.2,"p":8.73,"th":18,"bk":0,"la":0.58,"lo":0.46,"x":582.18,"y":420.21,"rg":false,"prg":0,"em":91.2,"s":4},{"t":46.205,"d":772.8,"v":62.0,"r":3453,"q":32.3,"p":11.67,"th":24,"bk":0,"la":0.94,"lo":0.61,"x":583.38,"y":422.76,"rg":false,"prg":0,"em":92.2,"s":4},{"t":46.368,"d":775.6,"v":62.0,"r":3453,"q":25.8,"p":9.33,"th":20,"bk":0,"la":-0.56,"lo":0.49,"x":584.58,"y":425.31,"rg":false,"prg":0,"em":91.3,"s":4},{"t":46.532,"d":778.4,"v":62.0,"r":3453,"q":32.6,"p":11.79,"th":25,"bk":0,"la":-0.29,"lo":0.62,"x":585.8,"y":427.86,"rg":false,"prg":0,"em":92.1,"s":4},{"t":46.696,"d":781.2,"v":59.9,"r":3336,"q":0.0,"p":-3.4,"th":0,"bk":36,"la":1.46,"lo":-0.89,"x":586.99,"y":430.31,"rg":true,"prg":14.28,"em":92.6,"s":4},{"t":46.86,"d":784.0,"v":58.11,"r":3237,"q":0.0,"p":-2.9,"th":0,"bk":30,"la":0.13,"lo":-0.76,"x":588.15,"y":432.69,"rg":true,"prg":12.14,"em":91.7,"s":4},{"t":47.024,"d":786.6,"v":56.6,"r":3152,"q":0.0,"p":-2.46,"th":0,"bk":26,"la":-0.94,"lo":-0.64,"x":589.3,"y":435.0,"rg":true,"prg":10.32,"em":91.4,"s":4},{"t":47.188,"d":789.2,"v":55.31,"r":3080,"q":0.0,"p":-2.09,"th":0,"bk":22,"la":0.77,"lo":-0.55,"x":590.42,"y":437.25,"rg":true,"prg":8.77,"em":92.5,"s":4},{"t":47.352,"d":791.7,"v":54.21,"r":3019,"q":0.0,"p":-1.78,"th":0,"bk":19,"la":0.78,"lo":-0.47,"x":591.54,"y":439.45,"rg":true,"prg":7.45,"em":90.8,"s":4},{"t":47.515,"d":794.2,"v":53.28,"r":2967,"q":0.0,"p":-1.51,"th":0,"bk":16,"la":0.15,"lo":-0.4,"x":592.65,"y":441.6,"rg":true,"prg":6.33,"em":93.7,"s":4},{"t":47.679,"d":796.6,"v":52.49,"r":2923,"q":0.0,"p":-1.29,"th":0,"bk":13,"la":-0.19,"lo":-0.34,"x":593.75,"y":443.72,"rg":true,"prg":5.38,"em":92.8,"s":4},{"t":47.843,"d":799.0,"v":51.81,"r":2886,"q":0.0,"p":-1.09,"th":0,"bk":11,"la":-1.14,"lo":-0.29,"x":594.85,"y":445.81,"rg":true,"prg":4.58,"em":93.9,"s":4},{"t":48.007,"d":801.3,"v":51.24,"r":2854,"q":0.0,"p":-0.93,"th":0,"bk":10,"la":0.33,"lo":-0.24,"x":595.94,"y":447.87,"rg":true,"prg":3.89,"em":91.0,"s":4},{"t":48.171,"d":803.7,"v":50.76,"r":2827,"q":26.7,"p":7.91,"th":17,"bk":0,"la":0.15,"lo":0.41,"x":597.04,"y":449.9,"rg":false,"prg":0,"em":92.2,"s":4},{"t":48.335,"d":806.0,"v":50.34,"r":2804,"q":25.9,"p":7.6,"th":16,"bk":0,"la":1.48,"lo":0.4,"x":598.14,"y":451.91,"rg":false,"prg":0,"em":93.7,"s":4},{"t":48.498,"d":808.3,"v":49.99,"r":2784,"q":32.1,"p":9.36,"th":20,"bk":0,"la":-1.15,"lo":0.49,"x":599.24,"y":453.9,"rg":false,"prg":0,"em":93.3,"s":4},{"t":48.662,"d":810.5,"v":49.69,"r":2768,"q":32.9,"p":9.54,"th":20,"bk":0,"la":0.65,"lo":0.5,"x":600.35,"y":455.87,"rg":false,"prg":0,"em":92.0,"s":4},{"t":48.826,"d":812.8,"v":49.44,"r":2753,"q":29.3,"p":8.46,"th":18,"bk":0,"la":1.0,"lo":0.44,"x":601.46,"y":457.83,"rg":false,"prg":0,"em":93.9,"s":4},{"t":48.99,"d":815.1,"v":49.22,"r":2741,"q":29.0,"p":8.32,"th":17,"bk":0,"la":0.15,"lo":0.44,"x":602.58,"y":459.77,"rg":false,"prg":0,"em":91.5,"s":4},{"t":49.154,"d":817.3,"v":49.04,"r":2731,"q":40.4,"p":11.56,"th":24,"bk":0,"la":0.02,"lo":0.61,"x":603.71,"y":461.7,"rg":false,"prg":0,"em":93.5,"s":4},{"t":49.318,"d":819.5,"v":48.88,"r":2723,"q":39.5,"p":11.28,"th":24,"bk":0,"la":-0.67,"lo":0.59,"x":604.84,"y":463.61,"rg":false,"prg":0,"em":93.2,"s":4},{"t":49.482,"d":821.7,"v":48.75,"r":2715,"q":32.1,"p":9.14,"th":19,"bk":0,"la":1.3,"lo":0.48,"x":605.99,"y":465.51,"rg":false,"prg":0,"em":92.0,"s":4},{"t":49.645,"d":824.0,"v":48.64,"r":2709,"q":39.1,"p":11.07,"th":23,"bk":0,"la":-0.65,"lo":0.58,"x":607.14,"y":467.4,"rg":false,"prg":0,"em":91.2,"s":4},{"t":49.809,"d":826.2,"v":48.54,"r":2704,"q":35.2,"p":9.96,"th":21,"bk":0,"la":1.5,"lo":0.52,"x":608.3,"y":469.28,"rg":false,"prg":0,"em":92.0,"s":4},{"t":49.973,"d":828.4,"v":48.46,"r":2699,"q":27.8,"p":7.87,"th":16,"bk":0,"la":0.12,"lo":0.41,"x":609.47,"y":471.15,"rg":false,"prg":0,"em":91.4,"s":4},{"t":50.137,"d":830.6,"v":48.39,"r":2695,"q":34.7,"p":9.79,"th":21,"bk":0,"la":0.13,"lo":0.51,"x":610.65,"y":473.01,"rg":false,"prg":0,"em":91.8,"s":4},{"t":50.301,"d":832.8,"v":48.33,"r":2692,"q":30.9,"p":8.69,"th":18,"bk":0,"la":-0.93,"lo":0.46,"x":611.84,"y":474.86,"rg":false,"prg":0,"em":92.8,"s":4},{"t":50.465,"d":835.0,"v":48.28,"r":2689,"q":35.1,"p":9.89,"th":21,"bk":0,"la":-0.8,"lo":0.52,"x":613.04,"y":476.7,"rg":false,"prg":0,"em":93.1,"s":4},{"t":50.628,"d":837.2,"v":48.24,"r":2687,"q":26.2,"p":7.37,"th":15,"bk":0,"la":0.73,"lo":0.39,"x":614.25,"y":478.54,"rg":false,"prg":0,"em":92.8,"s":4},{"t":50.792,"d":839.4,"v":48.2,"r":2685,"q":39.2,"p":11.03,"th":23,"bk":0,"la":-0.34,"lo":0.58,"x":615.47,"y":480.36,"rg":false,"prg":0,"em":92.7,"s":4},{"t":50.956,"d":841.6,"v":48.17,"r":2683,"q":39.5,"p":11.07,"th":23,"bk":0,"la":1.44,"lo":0.58,"x":616.7,"y":482.17,"rg":false,"prg":0,"em":92.0,"s":4},{"t":51.12,"d":843.8,"v":48.15,"r":2682,"q":26.1,"p":7.33,"th":15,"bk":0,"la":0.01,"lo":0.38,"x":617.94,"y":483.98,"rg":false,"prg":0,"em":92.4,"s":4},{"t":51.284,"d":846.0,"v":48.13,"r":2680,"q":40.2,"p":11.31,"th":24,"bk":0,"la":1.12,"lo":0.59,"x":619.2,"y":485.77,"rg":false,"prg":0,"em":91.8,"s":4},{"t":51.448,"d":848.2,"v":48.11,"r":2679,"q":34.4,"p":9.67,"th":20,"bk":0,"la":-0.13,"lo":0.51,"x":620.46,"y":487.56,"rg":false,"prg":0,"em":92.9,"s":4},{"t":51.612,"d":850.3,"v":48.09,"r":2678,"q":32.5,"p":9.11,"th":19,"bk":0,"la":0.46,"lo":0.48,"x":621.74,"y":489.34,"rg":false,"prg":0,"em":90.6,"s":4},{"t":51.775,"d":852.5,"v":52.58,"r":2928,"q":103.4,"p":47.72,"th":100,"bk":0,"la":3.91,"lo":2.5,"x":623.15,"y":491.27,"rg":false,"prg":0,"em":93.9,"s":4},{"t":51.939,"d":854.9,"v":56.39,"r":3141,"q":103.4,"p":41.25,"th":86,"bk":0,"la":3.52,"lo":2.16,"x":624.68,"y":493.33,"rg":false,"prg":0,"em":92.8,"s":4},{"t":52.103,"d":857.5,"v":59.63,"r":3321,"q":100.8,"p":35.06,"th":73,"bk":0,"la":4.45,"lo":1.84,"x":626.3,"y":495.51,"rg":false,"prg":0,"em":93.4,"s":4},{"t":52.267,"d":860.2,"v":62.39,"r":3475,"q":81.9,"p":29.8,"th":62,"bk":0,"la":5.06,"lo":1.56,"x":628.02,"y":497.77,"rg":false,"prg":0,"em":93.4,"s":4},{"t":52.431,"d":863.1,"v":64.73,"r":3605,"q":67.1,"p":25.33,"th":53,"bk":0,"la":-0.36,"lo":1.33,"x":629.82,"y":500.1,"rg":false,"prg":0,"em":91.3,"s":4},{"t":52.595,"d":866.0,"v":66.72,"r":3716,"q":55.4,"p":21.53,"th":45,"bk":0,"la":0.66,"lo":1.13,"x":631.68,"y":502.5,"rg":false,"prg":0,"em":93.0,"s":4},{"t":52.758,"d":869.0,"v":68.41,"r":3810,"q":45.9,"p":18.3,"th":38,"bk":0,"la":1.12,"lo":0.96,"x":633.61,"y":504.94,"rg":false,"prg":0,"em":90.1,"s":4},{"t":52.922,"d":872.1,"v":69.85,"r":3890,"q":38.2,"p":15.56,"th":33,"bk":0,"la":-1.29,"lo":0.81,"x":635.6,"y":507.42,"rg":false,"prg":0,"em":92.5,"s":4},{"t":53.086,"d":875.3,"v":71.07,"r":3959,"q":31.9,"p":13.23,"th":28,"bk":0,"la":1.26,"lo":0.69,"x":637.64,"y":509.93,"rg":false,"prg":0,"em":94.0,"s":4},{"t":53.25,"d":878.6,"v":72.11,"r":4016,"q":26.7,"p":11.24,"th":24,"bk":0,"la":0.74,"lo":0.59,"x":639.73,"y":512.46,"rg":false,"prg":0,"em":91.7,"s":4},{"t":53.414,"d":881.8,"v":72.99,"r":4066,"q":22.4,"p":9.55,"th":20,"bk":0,"la":-1.2,"lo":0.5,"x":641.86,"y":515.01,"rg":false,"prg":0,"em":92.5,"s":4},{"t":53.578,"d":885.2,"v":73.75,"r":4107,"q":18.9,"p":8.12,"th":17,"bk":0,"la":1.12,"lo":0.43,"x":644.03,"y":517.58,"rg":false,"prg":0,"em":91.8,"s":4},{"t":53.742,"d":888.5,"v":74.38,"r":4143,"q":15.9,"p":6.9,"th":14,"bk":0,"la":0.58,"lo":0.36,"x":646.23,"y":520.15,"rg":false,"prg":0,"em":93.6,"s":4},{"t":53.905,"d":891.9,"v":74.93,"r":4173,"q":13.4,"p":5.87,"th":12,"bk":0,"la":-1.36,"lo":0.31,"x":648.47,"y":522.72,"rg":false,"prg":0,"em":93.2,"s":4},{"t":54.069,"d":895.3,"v":75.39,"r":4199,"q":19.5,"p":8.56,"th":18,"bk":0,"la":-0.38,"lo":0.45,"x":650.74,"y":525.29,"rg":false,"prg":0,"em":90.6,"s":4},{"t":54.233,"d":898.7,"v":75.78,"r":4221,"q":22.0,"p":9.7,"th":20,"bk":0,"la":0.2,"lo":0.51,"x":653.03,"y":527.87,"rg":false,"prg":0,"em":93.2,"s":4},{"t":54.397,"d":902.2,"v":76.11,"r":4239,"q":18.0,"p":7.97,"th":17,"bk":0,"la":-1.26,"lo":0.42,"x":655.35,"y":530.44,"rg":false,"prg":0,"em":93.5,"s":4},{"t":54.561,"d":905.7,"v":76.4,"r":4255,"q":22.7,"p":10.12,"th":21,"bk":0,"la":-0.78,"lo":0.53,"x":657.7,"y":533.0,"rg":false,"prg":0,"em":93.7,"s":4},{"t":54.725,"d":909.1,"v":76.64,"r":4268,"q":17.6,"p":7.84,"th":16,"bk":0,"la":-0.12,"lo":0.41,"x":660.07,"y":535.56,"rg":false,"prg":0,"em":91.0,"s":4},{"t":54.888,"d":912.6,"v":76.84,"r":4280,"q":18.7,"p":8.38,"th":18,"bk":0,"la":-1.47,"lo":0.44,"x":662.46,"y":538.11,"rg":false,"prg":0,"em":93.2,"s":4},{"t":55.052,"d":916.1,"v":77.01,"r":4290,"q":25.5,"p":11.46,"th":24,"bk":0,"la":0.53,"lo":0.6,"x":664.88,"y":540.65,"rg":false,"prg":0,"em":90.6,"s":4},{"t":55.216,"d":919.6,"v":77.16,"r":4298,"q":20.6,"p":9.27,"th":19,"bk":0,"la":-0.46,"lo":0.49,"x":667.31,"y":543.19,"rg":false,"prg":0,"em":92.4,"s":4},{"t":55.38,"d":923.1,"v":77.29,"r":4305,"q":22.7,"p":10.2,"th":21,"bk":0,"la":-0.23,"lo":0.53,"x":669.77,"y":545.71,"rg":false,"prg":0,"em":91.0,"s":4},{"t":55.544,"d":926.7,"v":77.39,"r":4311,"q":24.8,"p":11.19,"th":23,"bk":0,"la":-0.9,"lo":0.59,"x":672.24,"y":548.22,"rg":false,"prg":0,"em":91.5,"s":4},{"t":55.708,"d":930.2,"v":77.49,"r":4316,"q":20.9,"p":9.46,"th":20,"bk":0,"la":-0.79,"lo":0.5,"x":674.73,"y":550.71,"rg":false,"prg":0,"em":92.3,"s":4},{"t":55.872,"d":933.7,"v":77.56,"r":4320,"q":21.9,"p":9.9,"th":21,"bk":0,"la":1.48,"lo":0.52,"x":677.23,"y":553.2,"rg":false,"prg":0,"em":91.2,"s":4},{"t":56.035,"d":937.2,"v":77.63,"r":4324,"q":26.1,"p":11.83,"th":25,"bk":0,"la":0.47,"lo":0.62,"x":679.75,"y":555.68,"rg":false,"prg":0,"em":91.1,"s":4},{"t":56.199,"d":940.8,"v":77.68,"r":4327,"q":21.8,"p":9.86,"th":21,"bk":0,"la":0.56,"lo":0.52,"x":682.29,"y":558.14,"rg":false,"prg":0,"em":93.0,"s":4},{"t":56.363,"d":944.3,"v":77.73,"r":4329,"q":16.3,"p":7.39,"th":15,"bk":0,"la":0.32,"lo":0.39,"x":684.84,"y":560.59,"rg":false,"prg":0,"em":92.0,"s":4},{"t":56.527,"d":947.8,"v":77.77,"r":4332,"q":25.3,"p":11.47,"th":24,"bk":0,"la":-0.64,"lo":0.6,"x":687.41,"y":563.02,"rg":false,"prg":0,"em":93.2,"s":4},{"t":56.691,"d":951.4,"v":77.81,"r":4334,"q":22.2,"p":10.05,"th":21,"bk":0,"la":-0.44,"lo":0.53,"x":689.99,"y":565.45,"rg":false,"prg":0,"em":92.5,"s":5},{"t":56.855,"d":954.9,"v":77.84,"r":4335,"q":22.3,"p":10.13,"th":21,"bk":0,"la":0.53,"lo":0.53,"x":692.59,"y":567.86,"rg":false,"prg":0,"em":92.9,"s":5},{"t":57.018,"d":958.5,"v":77.86,"r":4337,"q":22.7,"p":10.31,"th":22,"bk":0,"la":1.02,"lo":0.54,"x":695.19,"y":570.26,"rg":false,"prg":0,"em":92.5,"s":5},{"t":57.182,"d":962.0,"v":77.88,"r":4338,"q":25.2,"p":11.47,"th":24,"bk":0,"la":0.44,"lo":0.6,"x":697.81,"y":572.65,"rg":false,"prg":0,"em":91.2,"s":5},{"t":57.346,"d":965.6,"v":77.9,"r":4339,"q":20.4,"p":9.26,"th":19,"bk":0,"la":0.24,"lo":0.49,"x":700.44,"y":575.03,"rg":false,"prg":0,"em":92.9,"s":5},{"t":57.51,"d":969.1,"v":79.41,"r":4423,"q":35.4,"p":16.39,"th":34,"bk":0,"la":-1.23,"lo":0.86,"x":703.14,"y":577.43,"rg":false,"prg":0,"em":91.2,"s":5},{"t":57.674,"d":972.7,"v":80.7,"r":4495,"q":29.6,"p":13.93,"th":29,"bk":0,"la":0.74,"lo":0.73,"x":705.89,"y":579.87,"rg":false,"prg":0,"em":90.7,"s":5},{"t":57.838,"d":976.4,"v":81.8,"r":4556,"q":24.8,"p":11.84,"th":25,"bk":0,"la":-1.1,"lo":0.62,"x":708.69,"y":582.33,"rg":false,"prg":0,"em":92.2,"s":5},{"t":58.002,"d":980.1,"v":82.73,"r":4608,"q":20.8,"p":10.07,"th":21,"bk":0,"la":1.41,"lo":0.53,"x":711.53,"y":584.8,"rg":false,"prg":0,"em":92.1,"s":5},{"t":58.165,"d":983.9,"v":83.52,"r":4652,"q":17.6,"p":8.56,"th":18,"bk":0,"la":1.24,"lo":0.45,"x":714.41,"y":587.28,"rg":false,"prg":0,"em":93.3,"s":5},{"t":58.329,"d":987.7,"v":84.19,"r":4689,"q":14.8,"p":7.27,"th":15,"bk":0,"la":-0.73,"lo":0.38,"x":717.32,"y":589.77,"rg":false,"prg":0,"em":93.3,"s":5},{"t":58.493,"d":991.5,"v":84.76,"r":4721,"q":12.5,"p":6.18,"th":13,"bk":0,"la":-0.05,"lo":0.32,"x":720.26,"y":592.26,"rg":false,"prg":0,"em":93.2,"s":5},{"t":58.657,"d":995.4,"v":85.25,"r":4748,"q":21.6,"p":10.72,"th":22,"bk":0,"la":-0.48,"lo":0.56,"x":723.23,"y":594.76,"rg":false,"prg":0,"em":90.5,"s":5},{"t":58.821,"d":999.2,"v":85.66,"r":4771,"q":23.5,"p":11.76,"th":25,"bk":0,"la":-1.08,"lo":0.62,"x":726.22,"y":597.26,"rg":false,"prg":0,"em":93.9,"s":5},{"t":58.985,"d":1003.1,"v":86.01,"r":4791,"q":22.4,"p":11.26,"th":24,"bk":0,"la":0.67,"lo":0.59,"x":729.24,"y":599.75,"rg":false,"prg":0,"em":93.9,"s":5},{"t":59.148,"d":1007.1,"v":86.31,"r":4807,"q":23.4,"p":11.77,"th":25,"bk":0,"la":0.91,"lo":0.62,"x":732.27,"y":602.25,"rg":false,"prg":0,"em":91.5,"s":5},{"t":59.312,"d":1011.0,"v":86.56,"r":4821,"q":21.6,"p":10.93,"th":23,"bk":0,"la":-1.46,"lo":0.57,"x":735.33,"y":604.74,"rg":false,"prg":0,"em":92.1,"s":5},{"t":59.476,"d":1014.9,"v":86.78,"r":4833,"q":18.5,"p":9.33,"th":20,"bk":0,"la":0.52,"lo":0.49,"x":738.4,"y":607.22,"rg":false,"prg":0,"em":92.7,"s":5},{"t":59.64,"d":1018.9,"v":86.96,"r":4844,"q":19.6,"p":9.95,"th":21,"bk":0,"la":0.97,"lo":0.52,"x":741.48,"y":609.7,"rg":false,"prg":0,"em":93.8,"s":5},{"t":59.804,"d":1022.8,"v":79.92,"r":4451,"q":0.0,"p":-9.54,"th":0,"bk":100,"la":-8.17,"lo":-2.5,"x":744.33,"y":611.97,"rg":true,"prg":40,"em":90.9,"s":5},{"t":59.968,"d":1026.5,"v":73.93,"r":4118,"q":0.0,"p":-9.54,"th":0,"bk":100,"la":-8.42,"lo":-2.5,"x":746.96,"y":614.06,"rg":true,"prg":40,"em":93.5,"s":5},{"t":60.132,"d":1029.8,"v":68.84,"r":3834,"q":0.0,"p":-8.26,"th":0,"bk":87,"la":-6.82,"lo":-2.16,"x":749.42,"y":616.0,"rg":true,"prg":34.61,"em":93.7,"s":5},{"t":60.295,"d":1033.0,"v":64.51,"r":3593,"q":0.0,"p":-7.02,"th":0,"bk":74,"la":-7.84,"lo":-1.84,"x":751.74,"y":617.81,"rg":true,"prg":29.42,"em":90.3,"s":5},{"t":60.459,"d":1035.9,"v":60.84,"r":3388,"q":0.0,"p":-5.97,"th":0,"bk":63,"la":-6.03,"lo":-1.56,"x":753.92,"y":619.51,"rg":true,"prg":25.0,"em":93.6,"s":5},{"t":60.623,"d":1038.7,"v":57.71,"r":3214,"q":0.0,"p":-5.07,"th":0,"bk":53,"la":-7.59,"lo":-1.33,"x":756.0,"y":621.11,"rg":true,"prg":21.25,"em":91.6,"s":5},{"t":60.787,"d":1041.3,"v":55.05,"r":3066,"q":0.0,"p":-4.31,"th":0,"bk":45,"la":-1.08,"lo":-1.13,"x":757.99,"y":622.64,"rg":true,"prg":18.07,"em":93.8,"s":5},{"t":60.951,"d":1043.8,"v":52.8,"r":2940,"q":0.0,"p":-3.67,"th":0,"bk":38,"la":-0.59,"lo":-0.96,"x":759.9,"y":624.09,"rg":true,"prg":15.36,"em":92.0,"s":5},{"t":61.115,"d":1046.2,"v":50.88,"r":2834,"q":0.0,"p":-3.12,"th":0,"bk":33,"la":-1.21,"lo":-0.82,"x":761.75,"y":625.49,"rg":true,"prg":13.05,"em":93.5,"s":5},{"t":61.278,"d":1048.5,"v":49.25,"r":2743,"q":0.0,"p":-2.65,"th":0,"bk":28,"la":-1.09,"lo":-0.69,"x":763.54,"y":626.84,"rg":true,"prg":11.09,"em":91.8,"s":5},{"t":61.442,"d":1050.8,"v":47.86,"r":2665,"q":0.0,"p":-2.25,"th":0,"bk":24,"la":0.51,"lo":-0.59,"x":765.28,"y":628.14,"rg":true,"prg":9.43,"em":93.0,"s":5},{"t":61.606,"d":1052.9,"v":46.68,"r":2600,"q":0.0,"p":-1.91,"th":0,"bk":20,"la":1.34,"lo":-0.5,"x":766.99,"y":629.41,"rg":true,"prg":8.02,"em":91.7,"s":5},{"t":61.77,"d":1055.1,"v":45.68,"r":2544,"q":0.0,"p":-1.62,"th":0,"bk":17,"la":0.73,"lo":-0.43,"x":768.66,"y":630.64,"rg":true,"prg":6.81,"em":90.6,"s":5},{"t":61.934,"d":1057.1,"v":44.83,"r":2497,"q":0.0,"p":-1.38,"th":0,"bk":14,"la":-0.26,"lo":-0.36,"x":770.31,"y":631.85,"rg":true,"prg":5.79,"em":90.4,"s":5},{"t":62.098,"d":1059.2,"v":44.1,"r":2456,"q":0.0,"p":-1.18,"th":0,"bk":12,"la":-0.03,"lo":-0.31,"x":771.93,"y":633.03,"rg":true,"prg":4.92,"em":91.6,"s":5},{"t":62.262,"d":1061.2,"v":43.49,"r":2422,"q":0.0,"p":-1.0,"th":0,"bk":10,"la":1.35,"lo":-0.26,"x":773.53,"y":634.2,"rg":true,"prg":4.18,"em":90.1,"s":5},{"t":62.425,"d":1063.2,"v":42.96,"r":2393,"q":35.6,"p":8.92,"th":19,"bk":0,"la":-0.17,"lo":0.47,"x":775.12,"y":635.34,"rg":false,"prg":0,"em":93.8,"s":5},{"t":62.589,"d":1065.1,"v":42.52,"r":2368,"q":45.3,"p":11.24,"th":24,"bk":0,"la":-1.2,"lo":0.59,"x":776.69,"y":636.46,"rg":false,"prg":0,"em":92.7,"s":5},{"t":62.753,"d":1067.1,"v":42.14,"r":2347,"q":39.7,"p":9.76,"th":20,"bk":0,"la":1.43,"lo":0.51,"x":778.25,"y":637.58,"rg":false,"prg":0,"em":91.4,"s":5},{"t":62.917,"d":1069.0,"v":41.82,"r":2329,"q":37.1,"p":9.06,"th":19,"bk":0,"la":-0.93,"lo":0.47,"x":779.81,"y":638.67,"rg":false,"prg":0,"em":90.5,"s":5},{"t":63.081,"d":1070.9,"v":41.55,"r":2314,"q":46.2,"p":11.21,"th":23,"bk":0,"la":-0.14,"lo":0.59,"x":781.36,"y":639.76,"rg":false,"prg":0,"em":92.7,"s":5},{"t":63.245,"d":1072.8,"v":41.32,"r":2301,"q":42.4,"p":10.22,"th":21,"bk":0,"la":0.29,"lo":0.54,"x":782.9,"y":640.84,"rg":false,"prg":0,"em":90.1,"s":5},{"t":63.408,"d":1074.7,"v":41.12,"r":2290,"q":45.5,"p":10.91,"th":23,"bk":0,"la":-0.77,"lo":0.57,"x":784.44,"y":641.9,"rg":false,"prg":0,"em":90.5,"s":5},{"t":63.572,"d":1076.5,"v":40.95,"r":2281,"q":41.3,"p":9.85,"th":21,"bk":0,"la":-1.29,"lo":0.52,"x":785.97,"y":642.96,"rg":false,"prg":0,"em":93.1,"s":5},{"t":63.736,"d":1078.4,"v":40.81,"r":2273,"q":34.2,"p":8.14,"th":17,"bk":0,"la":-0.85,"lo":0.43,"x":787.5,"y":644.01,"rg":false,"prg":0,"em":93.5,"s":5},{"t":63.9,"d":1080.3,"v":45.49,"r":2533,"q":103.4,"p":47.72,"th":100,"bk":0,"la":3.49,"lo":2.5,"x":789.22,"y":645.17,"rg":false,"prg":0,"em":90.6,"s":5},{"t":64.064,"d":1082.3,"v":49.46,"r":2755,"q":103.4,"p":43.02,"th":90,"bk":0,"la":5.2,"lo":2.25,"x":791.08,"y":646.44,"rg":false,"prg":0,"em":90.0,"s":5},{"t":64.228,"d":1084.6,"v":52.84,"r":2943,"q":103.4,"p":36.56,"th":77,"bk":0,"la":5.08,"lo":1.92,"x":793.08,"y":647.78,"rg":false,"prg":0,"em":90.6,"s":5},{"t":64.392,"d":1087.0,"v":55.72,"r":3103,"q":95.6,"p":31.08,"th":65,"bk":0,"la":2.89,"lo":1.63,"x":795.19,"y":649.18,"rg":false,"prg":0,"em":91.0,"s":5},{"t":64.555,"d":1089.5,"v":58.16,"r":3239,"q":77.9,"p":26.42,"th":55,"bk":0,"la":-0.98,"lo":1.38,"x":797.39,"y":650.64,"rg":false,"prg":0,"em":92.6,"s":5},{"t":64.719,"d":1092.2,"v":60.24,"r":3355,"q":63.9,"p":22.45,"th":47,"bk":0,"la":-1.42,"lo":1.18,"x":799.68,"y":652.15,"rg":false,"prg":0,"em":90.1,"s":5},{"t":64.883,"d":1094.9,"v":62.0,"r":3453,"q":52.8,"p":19.09,"th":40,"bk":0,"la":0.87,"lo":1.0,"x":802.05,"y":653.7,"rg":false,"prg":0,"em":91.0,"s":5},{"t":65.047,"d":1097.7,"v":63.5,"r":3537,"q":43.8,"p":16.23,"th":34,"bk":0,"la":-0.53,"lo":0.85,"x":804.47,"y":655.27,"rg":false,"prg":0,"em":90.7,"s":5},{"t":65.211,"d":1100.6,"v":64.78,"r":3608,"q":36.5,"p":13.79,"th":29,"bk":0,"la":-1.34,"lo":0.72,"x":806.95,"y":656.87,"rg":false,"prg":0,"em":93.0,"s":5},{"t":65.375,"d":1103.6,"v":65.86,"r":3668,"q":30.5,"p":11.72,"th":25,"bk":0,"la":0.08,"lo":0.61,"x":809.47,"y":658.48,"rg":false,"prg":0,"em":93.0,"s":5},{"t":65.538,"d":1106.6,"v":66.78,"r":3719,"q":25.6,"p":9.97,"th":21,"bk":0,"la":-0.07,"lo":0.52,"x":812.04,"y":660.11,"rg":false,"prg":0,"em":93.1,"s":5},{"t":65.702,"d":1109.6,"v":67.56,"r":3763,"q":21.5,"p":8.47,"th":18,"bk":0,"la":0.04,"lo":0.44,"x":814.64,"y":661.75,"rg":false,"prg":0,"em":90.4,"s":5},{"t":65.866,"d":1112.7,"v":68.23,"r":3800,"q":18.1,"p":7.2,"th":15,"bk":0,"la":0.01,"lo":0.38,"x":817.27,"y":663.4,"rg":false,"prg":0,"em":93.8,"s":5},{"t":66.03,"d":1115.8,"v":68.79,"r":3832,"q":15.3,"p":6.12,"th":13,"bk":0,"la":-1.37,"lo":0.32,"x":819.93,"y":665.05,"rg":false,"prg":0,"em":93.1,"s":5},{"t":66.194,"d":1118.9,"v":69.28,"r":3858,"q":27.9,"p":11.29,"th":24,"bk":0,"la":0.06,"lo":0.59,"x":822.61,"y":666.71,"rg":false,"prg":0,"em":91.8,"s":5},{"t":66.358,"d":1122.1,"v":69.68,"r":3881,"q":29.0,"p":11.76,"th":25,"bk":0,"la":-1.32,"lo":0.62,"x":825.32,"y":668.36,"rg":false,"prg":0,"em":91.9,"s":5},{"t":66.522,"d":1125.2,"v":70.03,"r":3901,"q":22.2,"p":9.08,"th":19,"bk":0,"la":0.56,"lo":0.48,"x":828.05,"y":670.01,"rg":false,"prg":0,"em":92.0,"s":5},{"t":66.685,"d":1128.4,"v":70.33,"r":3917,"q":28.0,"p":11.5,"th":24,"bk":0,"la":-1.28,"lo":0.6,"x":830.79,"y":671.66,"rg":false,"prg":0,"em":90.3,"s":5},{"t":66.849,"d":1131.6,"v":70.58,"r":3931,"q":24.4,"p":10.06,"th":21,"bk":0,"la":-1.3,"lo":0.53,"x":833.55,"y":673.31,"rg":false,"prg":0,"em":91.1,"s":5},{"t":67.013,"d":1134.8,"v":70.79,"r":3943,"q":24.7,"p":10.18,"th":21,"bk":0,"la":0.15,"lo":0.53,"x":836.32,"y":674.95,"rg":false,"prg":0,"em":91.3,"s":5},{"t":67.177,"d":1138.1,"v":70.97,"r":3953,"q":28.8,"p":11.91,"th":25,"bk":0,"la":0.09,"lo":0.62,"x":839.11,"y":676.58,"rg":false,"prg":0,"em":91.8,"s":5},{"t":67.341,"d":1141.3,"v":71.13,"r":3962,"q":24.2,"p":10.05,"th":21,"bk":0,"la":-1.2,"lo":0.53,"x":841.91,"y":678.21,"rg":false,"prg":0,"em":92.8,"s":5},{"t":67.505,"d":1144.5,"v":71.26,"r":3969,"q":27.0,"p":11.23,"th":24,"bk":0,"la":0.45,"lo":0.59,"x":844.72,"y":679.82,"rg":false,"prg":0,"em":93.1,"s":5},{"t":67.668,"d":1147.8,"v":71.37,"r":3975,"q":25.5,"p":10.6,"th":22,"bk":0,"la":-0.85,"lo":0.56,"x":847.54,"y":681.43,"rg":false,"prg":0,"em":91.8,"s":5},{"t":67.832,"d":1151.0,"v":71.46,"r":3980,"q":19.8,"p":8.25,"th":17,"bk":0,"la":-0.48,"lo":0.43,"x":850.37,"y":683.03,"rg":false,"prg":0,"em":91.8,"s":5},{"t":67.996,"d":1154.3,"v":71.54,"r":3985,"q":21.9,"p":9.15,"th":19,"bk":0,"la":-1.21,"lo":0.48,"x":853.22,"y":684.61,"rg":false,"prg":0,"em":91.7,"s":5},{"t":68.16,"d":1157.5,"v":71.61,"r":3989,"q":24.7,"p":10.33,"th":22,"bk":0,"la":-0.38,"lo":0.54,"x":856.07,"y":686.19,"rg":false,"prg":0,"em":90.6,"s":5},{"t":68.324,"d":1160.8,"v":71.67,"r":3992,"q":27.7,"p":11.56,"th":24,"bk":0,"la":-1.3,"lo":0.61,"x":858.93,"y":687.75,"rg":false,"prg":0,"em":93.3,"s":5},{"t":68.488,"d":1164.0,"v":71.72,"r":3995,"q":18.1,"p":7.6,"th":16,"bk":0,"la":-1.21,"lo":0.4,"x":861.81,"y":689.31,"rg":false,"prg":0,"em":93.0,"s":5},{"t":68.652,"d":1167.3,"v":71.76,"r":3997,"q":26.3,"p":11.03,"th":23,"bk":0,"la":0.17,"lo":0.58,"x":864.69,"y":690.84,"rg":false,"prg":0,"em":92.3,"s":5},{"t":68.815,"d":1170.6,"v":71.8,"r":3999,"q":23.5,"p":9.84,"th":21,"bk":0,"la":-0.51,"lo":0.52,"x":867.58,"y":692.37,"rg":false,"prg":0,"em":90.5,"s":5},{"t":68.979,"d":1173.8,"v":71.83,"r":4001,"q":21.1,"p":8.84,"th":19,"bk":0,"la":0.5,"lo":0.46,"x":870.47,"y":693.88,"rg":false,"prg":0,"em":93.0,"s":5},{"t":69.143,"d":1177.1,"v":71.85,"r":4002,"q":27.0,"p":11.3,"th":24,"bk":0,"la":0.66,"lo":0.59,"x":873.38,"y":695.38,"rg":false,"prg":0,"em":93.9,"s":5},{"t":69.307,"d":1180.4,"v":71.88,"r":4003,"q":23.9,"p":10.02,"th":21,"bk":0,"la":-0.45,"lo":0.53,"x":876.3,"y":696.86,"rg":false,"prg":0,"em":92.3,"s":5},{"t":69.471,"d":1183.7,"v":71.89,"r":4004,"q":19.5,"p":8.18,"th":17,"bk":0,"la":0.47,"lo":0.43,"x":879.22,"y":698.33,"rg":false,"prg":0,"em":90.9,"s":5},{"t":69.635,"d":1186.9,"v":71.91,"r":4005,"q":18.3,"p":7.68,"th":16,"bk":0,"la":1.04,"lo":0.4,"x":882.15,"y":699.79,"rg":false,"prg":0,"em":91.5,"s":6},{"t":69.798,"d":1190.2,"v":71.92,"r":4006,"q":25.8,"p":10.8,"th":23,"bk":0,"la":0.22,"lo":0.57,"x":885.09,"y":701.22,"rg":false,"prg":0,"em":93.2,"s":6},{"t":69.962,"d":1193.5,"v":71.94,"r":4007,"q":26.6,"p":11.19,"th":23,"bk":0,"la":1.42,"lo":0.59,"x":888.04,"y":702.65,"rg":false,"prg":0,"em":93.3,"s":6},{"t":70.126,"d":1196.7,"v":71.94,"r":4007,"q":24.0,"p":10.09,"th":21,"bk":0,"la":0.43,"lo":0.53,"x":891.0,"y":704.05,"rg":false,"prg":0,"em":90.1,"s":6},{"t":70.29,"d":1200.0,"v":71.95,"r":4008,"q":27.6,"p":11.59,"th":24,"bk":0,"la":0.99,"lo":0.61,"x":893.97,"y":705.44,"rg":false,"prg":0,"em":91.1,"s":6},{"t":70.454,"d":1203.3,"v":71.96,"r":4008,"q":19.1,"p":8.02,"th":17,"bk":0,"la":0.61,"lo":0.42,"x":896.94,"y":706.81,"rg":false,"prg":0,"em":91.2,"s":6},{"t":70.618,"d":1206.6,"v":71.97,"r":4008,"q":20.9,"p":8.78,"th":18,"bk":0,"la":-1.48,"lo":0.46,"x":899.92,"y":708.17,"rg":false,"prg":0,"em":93.5,"s":6},{"t":70.782,"d":1209.8,"v":71.97,"r":4009,"q":23.5,"p":9.86,"th":21,"bk":0,"la":-0.3,"lo":0.52,"x":902.91,"y":709.51,"rg":false,"prg":0,"em":90.6,"s":6},{"t":70.945,"d":1213.1,"v":71.98,"r":4009,"q":24.3,"p":10.18,"th":21,"bk":0,"la":-1.41,"lo":0.53,"x":905.91,"y":710.83,"rg":false,"prg":0,"em":93.0,"s":6},{"t":71.109,"d":1216.4,"v":71.98,"r":4009,"q":19.5,"p":8.18,"th":17,"bk":0,"la":-0.24,"lo":0.43,"x":908.92,"y":712.13,"rg":false,"prg":0,"em":91.4,"s":6},{"t":71.273,"d":1219.7,"v":71.98,"r":4009,"q":21.2,"p":8.92,"th":19,"bk":0,"la":0.66,"lo":0.47,"x":911.93,"y":713.41,"rg":false,"prg":0,"em":93.1,"s":6},{"t":71.437,"d":1222.9,"v":73.93,"r":4118,"q":49.0,"p":21.12,"th":44,"bk":0,"la":0.2,"lo":1.11,"x":915.03,"y":714.71,"rg":false,"prg":0,"em":90.3,"s":6},{"t":71.601,"d":1226.3,"v":75.59,"r":4210,"q":40.7,"p":17.95,"th":38,"bk":0,"la":-1.34,"lo":0.94,"x":918.22,"y":716.02,"rg":false,"prg":0,"em":90.6,"s":6},{"t":71.765,"d":1229.8,"v":77.01,"r":4289,"q":34.0,"p":15.26,"th":32,"bk":0,"la":0.35,"lo":0.8,"x":921.47,"y":717.33,"rg":false,"prg":0,"em":92.7,"s":6},{"t":71.928,"d":1233.3,"v":78.2,"r":4356,"q":28.4,"p":12.97,"th":27,"bk":0,"la":-0.68,"lo":0.68,"x":924.78,"y":718.64,"rg":false,"prg":0,"em":92.6,"s":6},{"t":72.092,"d":1236.8,"v":79.22,"r":4413,"q":23.9,"p":11.02,"th":23,"bk":0,"la":-0.04,"lo":0.58,"x":928.14,"y":719.95,"rg":false,"prg":0,"em":91.8,"s":6},{"t":72.256,"d":1240.4,"v":80.09,"r":4461,"q":20.0,"p":9.37,"th":20,"bk":0,"la":-0.68,"lo":0.49,"x":931.54,"y":721.25,"rg":false,"prg":0,"em":93.0,"s":6},{"t":72.42,"d":1244.1,"v":80.83,"r":4502,"q":16.9,"p":7.97,"th":17,"bk":0,"la":-1.16,"lo":0.42,"x":934.99,"y":722.54,"rg":false,"prg":0,"em":91.7,"s":6},{"t":72.584,"d":1247.7,"v":81.45,"r":4537,"q":14.2,"p":6.77,"th":14,"bk":0,"la":-0.65,"lo":0.35,"x":938.47,"y":723.81,"rg":false,"prg":0,"em":92.7,"s":6},{"t":72.748,"d":1251.5,"v":81.98,"r":4566,"q":12.0,"p":5.76,"th":12,"bk":0,"la":-0.04,"lo":0.3,"x":941.98,"y":725.07,"rg":false,"prg":0,"em":92.7,"s":6},{"t":72.912,"d":1255.2,"v":82.44,"r":4592,"q":15.4,"p":7.37,"th":15,"bk":0,"la":-0.31,"lo":0.39,"x":945.52,"y":726.32,"rg":false,"prg":0,"em":92.4,"s":6},{"t":73.075,"d":1258.9,"v":82.82,"r":4613,"q":14.9,"p":7.2,"th":15,"bk":0,"la":-0.6,"lo":0.38,"x":949.08,"y":727.55,"rg":false,"prg":0,"em":90.8,"s":6},{"t":73.239,"d":1262.7,"v":83.15,"r":4631,"q":16.1,"p":7.81,"th":16,"bk":0,"la":-0.73,"lo":0.41,"x":952.67,"y":728.75,"rg":false,"prg":0,"em":91.3,"s":6},{"t":73.403,"d":1266.5,"v":83.43,"r":4647,"q":14.8,"p":7.2,"th":15,"bk":0,"la":0.74,"lo":0.38,"x":956.28,"y":729.94,"rg":false,"prg":0,"em":90.7,"s":6},{"t":73.567,"d":1270.3,"v":83.66,"r":4660,"q":18.4,"p":8.97,"th":19,"bk":0,"la":0.61,"lo":0.47,"x":959.9,"y":731.11,"rg":false,"prg":0,"em":92.0,"s":6},{"t":73.731,"d":1274.1,"v":83.86,"r":4671,"q":22.7,"p":11.14,"th":23,"bk":0,"la":0.92,"lo":0.58,"x":963.54,"y":732.26,"rg":false,"prg":0,"em":90.3,"s":6},{"t":73.895,"d":1277.9,"v":84.03,"r":4681,"q":23.0,"p":11.27,"th":24,"bk":0,"la":-1.37,"lo":0.59,"x":967.2,"y":733.38,"rg":false,"prg":0,"em":90.1,"s":6},{"t":74.058,"d":1281.7,"v":84.18,"r":4689,"q":23.5,"p":11.56,"th":24,"bk":0,"la":1.09,"lo":0.61,"x":970.87,"y":734.48,"rg":false,"prg":0,"em":92.3,"s":6},{"t":74.222,"d":1285.6,"v":84.3,"r":4695,"q":20.1,"p":9.89,"th":21,"bk":0,"la":0.63,"lo":0.52,"x":974.55,"y":735.56,"rg":false,"prg":0,"em":91.7,"s":6},{"t":74.386,"d":1289.4,"v":84.41,"r":4701,"q":15.7,"p":7.71,"th":16,"bk":0,"la":-1.44,"lo":0.4,"x":978.24,"y":736.62,"rg":false,"prg":0,"em":91.3,"s":6},{"t":74.55,"d":1293.2,"v":84.5,"r":4706,"q":22.3,"p":10.98,"th":23,"bk":0,"la":0.35,"lo":0.58,"x":981.94,"y":737.65,"rg":false,"prg":0,"em":93.3,"s":6},{"t":74.714,"d":1297.1,"v":84.57,"r":4710,"q":23.4,"p":11.55,"th":24,"bk":0,"la":-1.24,"lo":0.6,"x":985.66,"y":738.67,"rg":false,"prg":0,"em":93.4,"s":6},{"t":74.878,"d":1300.9,"v":84.64,"r":4714,"q":16.9,"p":8.32,"th":17,"bk":0,"la":0.27,"lo":0.44,"x":989.38,"y":739.65,"rg":false,"prg":0,"em":92.1,"s":6},{"t":75.042,"d":1304.8,"v":84.69,"r":4717,"q":18.3,"p":9.04,"th":19,"bk":0,"la":-0.57,"lo":0.47,"x":993.11,"y":740.62,"rg":false,"prg":0,"em":91.4,"s":6},{"t":75.205,"d":1308.6,"v":85.19,"r":4745,"q":17.6,"p":8.75,"th":18,"bk":0,"la":-1.0,"lo":0.46,"x":996.87,"y":741.57,"rg":false,"prg":0,"em":92.0,"s":6},{"t":75.369,"d":1312.5,"v":85.61,"r":4768,"q":15.4,"p":7.7,"th":16,"bk":0,"la":0.03,"lo":0.4,"x":1000.65,"y":742.5,"rg":false,"prg":0,"em":93.6,"s":6},{"t":75.533,"d":1316.4,"v":85.97,"r":4788,"q":17.6,"p":8.83,"th":18,"bk":0,"la":0.68,"lo":0.46,"x":1004.46,"y":743.41,"rg":false,"prg":0,"em":93.3,"s":6},{"t":75.697,"d":1320.3,"v":86.27,"r":4805,"q":22.0,"p":11.05,"th":23,"bk":0,"la":-0.79,"lo":0.58,"x":1008.28,"y":744.31,"rg":false,"prg":0,"em":90.6,"s":6},{"t":75.861,"d":1324.3,"v":86.53,"r":4820,"q":16.1,"p":8.1,"th":17,"bk":0,"la":0.31,"lo":0.42,"x":1012.12,"y":745.18,"rg":false,"prg":0,"em":93.0,"s":6},{"t":76.025,"d":1328.2,"v":86.75,"r":4832,"q":20.4,"p":10.28,"th":22,"bk":0,"la":-0.97,"lo":0.54,"x":1015.98,"y":746.04,"rg":false,"prg":0,"em":93.1,"s":6},{"t":76.188,"d":1332.1,"v":86.94,"r":4842,"q":18.8,"p":9.51,"th":20,"bk":0,"la":0.76,"lo":0.5,"x":1019.84,"y":746.87,"rg":false,"prg":0,"em":93.0,"s":6},{"t":76.352,"d":1336.1,"v":87.1,"r":4851,"q":18.3,"p":9.3,"th":19,"bk":0,"la":1.27,"lo":0.49,"x":1023.72,"y":747.69,"rg":false,"prg":0,"em":92.3,"s":6},{"t":76.516,"d":1340.1,"v":87.23,"r":4859,"q":20.0,"p":10.19,"th":21,"bk":0,"la":0.37,"lo":0.53,"x":1027.61,"y":748.49,"rg":false,"prg":0,"em":93.5,"s":6},{"t":76.68,"d":1344.0,"v":87.35,"r":4865,"q":19.9,"p":10.15,"th":21,"bk":0,"la":-1.05,"lo":0.53,"x":1031.51,"y":749.27,"rg":false,"prg":0,"em":90.3,"s":6},{"t":76.844,"d":1348.0,"v":87.45,"r":4871,"q":18.1,"p":9.27,"th":19,"bk":0,"la":-0.59,"lo":0.49,"x":1035.42,"y":750.04,"rg":false,"prg":0,"em":91.1,"s":6},{"t":77.008,"d":1352.0,"v":87.53,"r":4875,"q":14.6,"p":7.43,"th":16,"bk":0,"la":0.02,"lo":0.39,"x":1039.33,"y":750.79,"rg":false,"prg":0,"em":91.2,"s":6},{"t":77.172,"d":1356.0,"v":87.6,"r":4879,"q":18.2,"p":9.31,"th":20,"bk":0,"la":-1.33,"lo":0.49,"x":1043.25,"y":751.52,"rg":false,"prg":0,"em":93.3,"s":6},{"t":77.335,"d":1360.0,"v":87.66,"r":4883,"q":14.7,"p":7.52,"th":16,"bk":0,"la":1.09,"lo":0.39,"x":1047.17,"y":752.23,"rg":false,"prg":0,"em":93.4,"s":6},{"t":77.499,"d":1364.0,"v":87.71,"r":4885,"q":19.7,"p":10.09,"th":21,"bk":0,"la":0.02,"lo":0.53,"x":1051.1,"y":752.94,"rg":false,"prg":0,"em":91.9,"s":6},{"t":77.663,"d":1367.9,"v":87.75,"r":4888,"q":19.2,"p":9.81,"th":21,"bk":0,"la":0.88,"lo":0.51,"x":1055.04,"y":753.62,"rg":false,"prg":0,"em":93.6,"s":6},{"t":77.827,"d":1371.9,"v":87.79,"r":4890,"q":18.1,"p":9.31,"th":19,"bk":0,"la":0.93,"lo":0.49,"x":1058.98,"y":754.3,"rg":false,"prg":0,"em":92.6,"s":6},{"t":77.991,"d":1375.9,"v":87.82,"r":4892,"q":16.9,"p":8.69,"th":18,"bk":0,"la":-0.07,"lo":0.46,"x":1062.92,"y":754.96,"rg":false,"prg":0,"em":90.6,"s":6},{"t":78.155,"d":1379.9,"v":85.45,"r":4759,"q":0.0,"p":-3.85,"th":0,"bk":40,"la":-1.31,"lo":-1.01,"x":1066.75,"y":755.59,"rg":true,"prg":16.14,"em":90.4,"s":6},{"t":78.318,"d":1383.8,"v":83.43,"r":4647,"q":0.0,"p":-3.28,"th":0,"bk":34,"la":1.2,"lo":-0.86,"x":1070.5,"y":756.2,"rg":true,"prg":13.72,"em":91.4,"s":6},{"t":78.482,"d":1387.6,"v":81.72,"r":4551,"q":0.0,"p":-2.78,"th":0,"bk":29,"la":0.64,"lo":-0.73,"x":1074.17,"y":756.79,"rg":true,"prg":11.66,"em":92.0,"s":6},{"t":78.646,"d":1391.3,"v":80.26,"r":4470,"q":0.0,"p":-2.36,"th":0,"bk":25,"la":-0.98,"lo":-0.62,"x":1077.78,"y":757.36,"rg":true,"prg":9.91,"em":91.0,"s":6},{"t":78.81,"d":1395.0,"v":79.02,"r":4401,"q":0.0,"p":-2.01,"th":0,"bk":21,"la":-0.19,"lo":-0.53,"x":1081.34,"y":757.91,"rg":true,"prg":8.42,"em":91.8,"s":6},{"t":78.974,"d":1398.6,"v":77.97,"r":4343,"q":0.0,"p":-1.71,"th":0,"bk":18,"la":0.07,"lo":-0.45,"x":1084.84,"y":758.45,"rg":true,"prg":7.16,"em":90.6,"s":6},{"t":79.138,"d":1402.1,"v":77.07,"r":4293,"q":0.0,"p":-1.46,"th":0,"bk":15,"la":-0.38,"lo":-0.38,"x":1088.31,"y":758.98,"rg":true,"prg":6.09,"em":91.1,"s":6},{"t":79.302,"d":1405.6,"v":76.31,"r":4250,"q":0.0,"p":-1.23,"th":0,"bk":13,"la":-0.27,"lo":-0.32,"x":1091.75,"y":759.5,"rg":true,"prg":5.17,"em":91.4,"s":6},{"t":79.465,"d":1409.1,"v":75.66,"r":4214,"q":0.0,"p":-1.05,"th":0,"bk":11,"la":0.29,"lo":-0.27,"x":1095.15,"y":760.01,"rg":true,"prg":4.4,"em":93.2,"s":6},{"t":79.629,"d":1412.6,"v":75.12,"r":4184,"q":0.0,"p":-0.89,"th":0,"bk":9,"la":0.44,"lo":-0.23,"x":1098.53,"y":760.51,"rg":true,"prg":3.74,"em":90.3,"s":6},{"t":79.793,"d":1416.0,"v":74.65,"r":4158,"q":17.5,"p":7.61,"th":16,"bk":0,"la":0.54,"lo":0.4,"x":1101.89,"y":761.01,"rg":false,"prg":0,"em":91.1,"s":6},{"t":79.957,"d":1419.4,"v":74.25,"r":4136,"q":24.5,"p":10.61,"th":22,"bk":0,"la":0.47,"lo":0.56,"x":1105.24,"y":761.51,"rg":false,"prg":0,"em":93.6,"s":6}],"endurance":[{"l":1,"t":98.3,"soc":91.51,"tc":16.3,"tm":32.98,"ti":28.33,"e":230.0,"er":13.2,"el":230.0},{"l":2,"t":196.6,"soc":88.14,"tc":18.08,"tm":34.0,"ti":29.04,"e":452.9,"er":25.9,"el":222.9},{"l":3,"t":294.9,"soc":84.71,"tc":19.46,"tm":34.51,"ti":29.58,"e":679.2,"er":38.9,"el":226.2},{"l":4,"t":393.2,"soc":81.24,"tc":20.79,"tm":35.77,"ti":30.4,"e":908.1,"er":52.0,"el":228.9},{"l":5,"t":491.5,"soc":77.78,"tc":22.11,"tm":36.53,"ti":30.84,"e":1136.3,"er":65.1,"el":228.2},{"l":6,"t":589.8,"soc":74.39,"tc":23.32,"tm":37.26,"ti":31.11,"e":1360.2,"er":77.9,"el":223.9},{"l":7,"t":688.2,"soc":71.04,"tc":25.07,"tm":38.29,"ti":31.69,"e":1581.3,"er":90.6,"el":221.1},{"l":8,"t":786.5,"soc":67.7,"tc":25.95,"tm":39.54,"ti":32.16,"e":1801.3,"er":103.2,"el":220.1},{"l":9,"t":884.8,"soc":64.24,"tc":27.8,"tm":40.48,"ti":32.67,"e":2030.0,"er":116.3,"el":228.6},{"l":10,"t":983.1,"soc":60.86,"tc":29.16,"tm":40.63,"ti":33.43,"e":2252.7,"er":129.1,"el":222.8},{"l":11,"t":1081.4,"soc":57.52,"tc":30.6,"tm":42.17,"ti":34.24,"e":2473.1,"er":141.7,"el":220.4},{"l":12,"t":1179.7,"soc":54.18,"tc":31.76,"tm":42.71,"ti":34.71,"e":2693.6,"er":154.3,"el":220.4},{"l":13,"t":1278.0,"soc":50.83,"tc":33.17,"tm":43.48,"ti":35.3,"e":2915.0,"er":167.0,"el":221.4},{"l":14,"t":1376.3,"soc":47.43,"tc":34.62,"tm":44.41,"ti":35.89,"e":3139.3,"er":179.9,"el":224.3},{"l":15,"t":1474.6,"soc":44.02,"tc":36.2,"tm":45.37,"ti":36.52,"e":3363.8,"er":192.7,"el":224.5},{"l":16,"t":1572.9,"soc":40.52,"tc":37.38,"tm":46.18,"ti":36.73,"e":3595.3,"er":206.0,"el":231.5},{"l":17,"t":1671.2,"soc":37.1,"tc":39.08,"tm":47.62,"ti":37.53,"e":3820.6,"er":218.9,"el":225.3},{"l":18,"t":1769.5,"soc":33.77,"tc":40.05,"tm":48.34,"ti":38.12,"e":4040.7,"er":231.5,"el":220.1},{"l":19,"t":1867.8,"soc":30.35,"tc":41.36,"tm":49.45,"ti":38.66,"e":4266.4,"er":244.4,"el":225.7},{"l":20,"t":1966.2,"soc":26.98,"tc":43.16,"tm":49.77,"ti":39.24,"e":4488.5,"er":257.2,"el":222.1},{"l":21,"t":2064.5,"soc":23.64,"tc":44.36,"tm":51.35,"ti":39.38,"e":4708.7,"er":269.8,"el":220.2},{"l":22,"t":2162.8,"soc":20.25,"tc":45,"tm":51.33,"ti":39.83,"e":4933.0,"er":282.6,"el":224.3}]}');
+    const LAP = RAW.lap;
+    const END = RAW.endurance;
+    const SUM = RAW.summary;
+    const SECTORS = RAW.sectors;
+    const PP = SUM;
+
+    const $ = id => document.getElementById(id);
+    const fmt = (v, d = 1) => (typeof v === 'number' && !isNaN(v)) ? v.toFixed(d) : '?';
+
+    // Update header stats periodically
+    function updateHeader(st) {
+      $('hSOC').textContent = fmt(st.soc, 1) + '%';
+      $('hSOC').className = 'hv' + (st.soc < 20 ? ' hot' : st.soc < 40 ? ' warn' : ' acc');
+      $('hSpd').textContent = fmt(st.v, 1) + ' km/h';
+      $('hRPM').textContent = Math.round(st.r || 0);
+      $('hPwr').textContent = fmt(st.p, 1) + ' kW';
+      $('hTc').textContent = fmt(st.tc, 1) + '?C';
+      $('hTm').textContent = fmt(st.tm, 1) + '?C';
+    }
+
+
+    // ===== TRACK MAP ? shape from reference image =====
+    const TRACK_PTS = [[148, 342], [148, 328], [149, 315], [154, 304], [163, 295], [175, 289], [190, 287], [206, 287], [222, 288], [238, 290], [252, 294], [264, 298], [272, 300], [280, 308], [290, 312], [300, 308], [308, 302], [316, 302], [324, 310], [334, 316], [344, 314], [354, 308], [366, 308], [380, 314], [398, 322], [418, 328], [440, 330], [462, 328], [482, 324], [498, 318], [510, 308], [516, 292], [510, 278], [500, 268], [506, 258], [516, 246], [520, 228], [512, 210], [496, 196], [476, 187], [454, 182], [428, 180], [400, 179], [370, 179], [340, 180], [310, 181], [280, 183], [252, 185], [225, 187], [200, 190], [178, 194], [160, 200], [146, 208], [134, 218], [130, 230], [138, 242], [148, 254], [150, 268], [142, 282], [132, 298], [118, 308], [100, 314], [82, 324], [72, 338], [72, 354], [84, 366], [100, 368], [118, 362], [135, 352], [148, 342]];
+
+    // Cardinal spline path
+    function cardinalPath(pts, t = 0.4) {
+      const n = pts.length;
+      let d = `M${pts[0][0]},${pts[0][1]}`;
+      for (let i = 1; i < n; i++) {
+        const p0 = pts[Math.max(0, i - 2)], p1 = pts[i - 1], p2 = pts[i], p3 = pts[Math.min(n - 1, i + 1)];
+        const cp1x = p1[0] + (p2[0] - p0[0]) * t / 2, cp1y = p1[1] + (p2[1] - p0[1]) * t / 2;
+        const cp2x = p2[0] - (p3[0] - p1[0]) * t / 2, cp2y = p2[1] - (p3[1] - p1[1]) * t / 2;
+        d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0]},${p2[1]}`;
+      }
+      return d;
+    }
+
+    const svgEl = document.getElementById('trackSvg');
+
+    // Defs for arrow marker and glow filter
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `
+  <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L0,6 L8,3 z" fill="#ff6d00"/>
+  </marker>
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="2.5" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+`;
+    svgEl.appendChild(defs);
+
+    // Background track (thick dark stroke)
+    const bgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    bgPath.setAttribute('d', cardinalPath(TRACK_PTS));
+    bgPath.setAttribute('fill', 'none');
+    bgPath.setAttribute('stroke', '#1e2e50');
+    bgPath.setAttribute('stroke-width', '18');
+    bgPath.setAttribute('stroke-linejoin', 'round');
+    bgPath.setAttribute('stroke-linecap', 'round');
+    svgEl.appendChild(bgPath);
+
+    // Mid track line (dark grey, slightly thinner)
+    const midPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    midPath.setAttribute('d', cardinalPath(TRACK_PTS));
+    midPath.setAttribute('fill', 'none');
+    midPath.setAttribute('stroke', '#0f1828');
+    midPath.setAttribute('stroke-width', '12');
+    midPath.setAttribute('stroke-linejoin', 'round');
+    midPath.setAttribute('stroke-linecap', 'round');
+    svgEl.appendChild(midPath);
+
+    // Map LAP data onto track shape (interpolate track position)
+    const N = LAP.length;
+    const M = TRACK_PTS.length - 1;
+    function getTrackXY(idx) {
+      const frac = idx / (N - 1);
+      const ti = frac * M;
+      const i = Math.min(Math.floor(ti), M - 1);
+      const f = ti - i;
+      const a = TRACK_PTS[i], b = TRACK_PTS[i + 1] || TRACK_PTS[i];
+      return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+    }
+
+    // Draw colored lap segments
+    const segG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    svgEl.appendChild(segG);
+    for (let i = 1; i < N; i++) {
+      const p = LAP[i];
+      let col;
+      if (p.rg) col = '#00e5d4';
+      else if (p.bk > 30) col = '#ff6d00';
+      else if (p.th > 60) col = '#00d4ff';
+      else col = '#ff1744';
+      const [x1, y1] = getTrackXY(i - 1), [x2, y2] = getTrackXY(i);
+      const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      ln.setAttribute('x1', x1); ln.setAttribute('y1', y1);
+      ln.setAttribute('x2', x2); ln.setAttribute('y2', y2);
+      ln.setAttribute('stroke', col); ln.setAttribute('stroke-width', '7');
+      ln.setAttribute('stroke-linecap', 'round');
+      segG.appendChild(ln);
+    }
+
+    // Sector labels at midpoints
+    const SECTORS_DATA = [{ "start": 0, "end": 237, "name": "Pit Straight" }, { "start": 237, "end": 475, "name": "T1-T3 Chicane" }, { "start": 475, "end": 712, "name": "Back Straight" }, { "start": 712, "end": 949, "name": "Hairpin" }, { "start": 949, "end": 1186, "name": "Sweeper & Esses" }, { "start": 1186, "end": 1420, "name": "Final Corner + S/F" }];
+    const sectorOffsets = [
+      { idx: 5, ox: 0, oy: -14 },   // S1 near hairpin exit
+      { idx: 13, ox: -20, oy: -12 }, // S2 chicane
+      { idx: 23, ox: 0, oy: -14 },  // S3 top straight
+      { idx: 37, ox: 14, oy: -12 },  // S4 right side
+      { idx: 50, ox: 0, oy: -14 },  // S5 bottom wave
+      { idx: 62, ox: -14, oy: -10 }, // S6 return
+    ];
+    sectorOffsets.forEach((s, si) => {
+      const [sx, sy] = getTrackXY(Math.min(s.idx * Math.floor(N / M), N - 1));
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      lbl.setAttribute('x', sx + s.ox); lbl.setAttribute('y', sy + s.oy);
+      lbl.setAttribute('fill', '#8899b8');
+      lbl.setAttribute('font-family', 'Share Tech Mono');
+      lbl.setAttribute('font-size', '10');
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.textContent = `S${si + 1}`;
+      svgEl.appendChild(lbl);
+    });
+
+    // Start/Finish line
+    const sf = TRACK_PTS[0];
+    const sfLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    sfLine.setAttribute('x1', sf[0] - 6); sfLine.setAttribute('y1', sf[1] - 8);
+    sfLine.setAttribute('x2', sf[0] + 6); sfLine.setAttribute('y2', sf[1] + 8);
+    sfLine.setAttribute('stroke', '#ffca28'); sfLine.setAttribute('stroke-width', '3');
+    svgEl.appendChild(sfLine);
+    const arrLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    arrLine.setAttribute('x1', sf[0]); arrLine.setAttribute('y1', sf[1]);
+    arrLine.setAttribute('x2', sf[0] + 20); arrLine.setAttribute('y2', sf[1] - 12);
+    arrLine.setAttribute('stroke', '#ff6d00'); arrLine.setAttribute('stroke-width', '2');
+    arrLine.setAttribute('marker-end', 'url(#arr)');
+    svgEl.appendChild(arrLine);
+    const sfTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    sfTxt.setAttribute('x', sf[0] + 26); sfTxt.setAttribute('y', sf[1] - 8);
+    sfTxt.setAttribute('fill', '#ff6d00');
+    sfTxt.setAttribute('font-family', 'Share Tech Mono');
+    sfTxt.setAttribute('font-size', '9');
+    sfTxt.textContent = 'S/F';
+    svgEl.appendChild(sfTxt);
+
+    // Car marker (on top)
+    const carG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const carCirc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    carCirc.setAttribute('r', '7');
+    carCirc.setAttribute('fill', '#ff1744');
+    carCirc.setAttribute('stroke', '#fff');
+    carCirc.setAttribute('stroke-width', '1.5');
+    carCirc.style.filter = 'drop-shadow(0 0 5px #ff1744)';
+    carG.appendChild(carCirc);
+    // Direction dot
+    const carDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    carDot.setAttribute('r', '2'); carDot.setAttribute('fill', '#fff');
+    carG.appendChild(carDot);
+    svgEl.appendChild(carG);
+
+    // Override setCurrentIdx car position to use track shape
+    const _origSetIdx = setCurrentIdx;
+
+    // Car position from track shape
+    function updateCarPos(idx) {
+      const [cx, cy] = getTrackXY(idx);
+      carG.setAttribute('transform', `translate(${cx},${cy})`);
+    }
+    svgEl.addEventListener('click', e => {
+      const rect = svgEl.getBoundingClientRect();
+      const svgX = (e.clientX - rect.left) / rect.width * 600;
+      const svgY = (e.clientY - rect.top) / rect.height * 420;
+      let best = 0, bd = 1e9;
+      const N2 = LAP.length;
+      for (let i = 0; i < N2; i++) {
+        const [tx2, ty2] = getTrackXY(i);
+        const dist = Math.hypot(tx2 - svgX, ty2 - svgY);
+        if (dist < bd) { bd = dist; best = i; }
+      }
+      isPlaying = false; $('btnPlay').textContent = '? PLAY'; $('btnPlay').classList.remove('active');
+      setCurrentIdx(best);
+    });
+
+    // ===== STATE =====
+    let currentIdx = 0; let currentLap = 1;
+
+    function getStateAt(t_sim, lapNum) {
+      const en = END[lapNum - 1] || END[END.length - 1];
+      return { soc: en.soc, tc: en.tc, tm: en.tm, ti: en.ti };
+    }
+
+    function setCurrentIdx(i) {
+      currentIdx = Math.max(0, Math.min(i, LAP.length - 1));
+      const p = LAP[currentIdx];
+      const st = getStateAt(p.t, currentLap);
+
+      // Car position
+      updateCarPos(currentIdx);
+      $('trackBadge').textContent = `pt ${currentIdx + 1} / ${LAP.length}`;
+
+      // Header
+      updateHeader({ ...st, ...p });
+
+      // Instant metrics
+      $('tBadge').textContent = `t = ${fmt(p.t, 2)} s ? d = ${Math.round(p.d)} m`;
+      $('mSpd').innerHTML = `${fmt(p.v, 1)}<small>km/h</small>`;
+      $('mSpdMs').textContent = `${fmt(p.v / 3.6, 1)} m/s ? limit 90`;
+      $('mSpd').parentElement.className = 'metric' + (p.v > 85 ? ' warn' : ' accent');
+      $('mRpm').textContent = fmt(p.r, 0);
+      $('mRpmPct').textContent = `${fmt(p.r / 50, 1)}% of 5000 limit`;
+      $('mRpm').parentElement.className = 'metric' + (p.r > 4800 ? ' warn' : '');
+      $('mTq').innerHTML = `${fmt(p.q, 1)}<small>Nm</small>`;
+      $('mPwr2').innerHTML = `${fmt(Math.abs(p.p), 1)}<small>kW</small>`;
+      $('mPwrPct').textContent = `${fmt(Math.abs(p.p) / 0.6, 1)}% of 60 kW cap`;
+      $('mThr').innerHTML = `${fmt(p.th, 0)}<small>%</small>`;
+      $('mThrSub').textContent = p.rg ? 'mode: regen braking' : 'mode: drive';
+      $('mBrk').innerHTML = `${fmt(p.bk, 0)}<small>%</small>`;
+      $('mBrkSub').textContent = `regen ${fmt(p.prg * 0.3, 1)} kW`;
+      $('mBrk').parentElement.className = 'metric' + (p.rg ? ' regen' : '');
+      $('mG').textContent = `${fmt(Math.abs(p.la), 1)}g / ${fmt(Math.abs(p.lo), 1)}g`;
+      $('mCorner').textContent = Math.abs(p.la) > 3 ? `corner lat ${fmt(p.la, 1)}g` : 'straight';
+      $('mSec').textContent = `S${p.s}`;
+      $('mSecName').textContent = SECTORS[p.s - 1]?.name || '?';
+
+      // Progress bars
+      $('mSpd').parentElement.style.setProperty('--w', `${Math.min(100, p.v / 90 * 100)}%`);
+      $('mSpd').parentElement.style.cssText += '';
+      document.querySelectorAll('.metric::after').forEach(e => e.style && (e.style.width = '50%'));
+
+      // Gauges
+      const arcLen = 172;
+      function setArc(id, frac, col) {
+        const el = $(id);
+        const offset = arcLen * (1 - frac);
+        el.style.strokeDashoffset = offset;
+        if (col) el.setAttribute('stroke', col);
+      }
+      const socFrac = st.soc / 100;
+      setArc('socArc', socFrac, st.soc < 20 ? '#ff1744' : st.soc < 40 ? '#ffca28' : '#76ff03');
+      $('socTxt').textContent = Math.round(st.soc);
+      $('gSOC').innerHTML = `${fmt(st.soc, 1)}<small>%</small>`;
+      $('gSOCBar').style.width = `${st.soc}%`;
+      $('gSOCBar').className = 'bar' + (st.soc < 20 ? ' hot' : st.soc < 40 ? ' warn' : '');
+
+      const tcFrac = Math.min(1, st.tc / 65);
+      setArc('tcArc', tcFrac, st.tc < 15 ? '#ff4800' : st.tc < 45 ? '#00d4ff' : '#ff1744');
+      $('tcTxt').textContent = fmt(st.tc, 1);
+      $('gTc').innerHTML = `${fmt(st.tc, 1)}<small>?C</small>`;
+      $('gTcBar').style.width = `${tcFrac * 100}%`;
+      $('gTcBar').className = 'bar' + (st.tc < 15 ? ' heat' : st.tc > 50 ? ' hot' : '');
+
+      const tmFrac = Math.min(1, st.tm / 100);
+      setArc('tmArc', tmFrac, st.tm > 80 ? '#ff1744' : st.tm > 60 ? '#ffca28' : '#ff6d00');
+      $('tmTxt').textContent = fmt(st.tm, 1);
+      $('gTm').innerHTML = `${fmt(st.tm, 1)}<small>?C</small>`;
+      $('gTmBar').style.width = `${tmFrac * 100}%`;
+      $('gTmBar').className = 'bar' + (st.tm > 80 ? ' hot' : st.tm > 60 ? ' warn' : '');
+
+      const tiFrac = Math.min(1, st.ti / 60);
+      setArc('tiArc', tiFrac, '#76ff03');
+      $('tiTxt').textContent = fmt(st.ti, 1);
+      $('gTi').innerHTML = `${fmt(st.ti, 1)}<small>?C</small>`;
+      $('gTiBar').style.width = `${tiFrac * 100}%`;
+
+      $('lapBadge').textContent = `LAP ${currentLap} / 22`;
+
+      // Scrubber
+      const frac = currentIdx / (LAP.length - 1);
+      $('scrubProg').style.width = `${frac * 100}%`;
+      $('scrubMid').textContent = fmt(p.t, 2) + ' s';
+      $('scrubEnd').textContent = fmt(SUM.lap_time_s, 2) + ' s';
+
+      // Heat strip
+      const isHeating = st.tc < 15;
+      $('heatStrip').style.display = isHeating ? 'flex' : 'none';
+      $('hbCell').textContent = fmt(st.tc, 1) + '?C';
+      $('hbCell').className = 'hbv' + (st.tc < 5 ? ' hot' : ' cold');
+      $('hbETA').textContent = isHeating ? `~${Math.round((15 - st.tc) * 2)} min` : 'OFF';
+      $('heatPill').style.display = isHeating ? 'flex' : 'none';
+      $('effHeat').textContent = isHeating ? (st.tc < 5 ? '1200W' : '800W') : '0 W';
+
+      // BMS policy highlight
+      const soc = st.soc;
+      let socCap = 60, socRow = 0;
+      if (soc > 80) { socCap = 60; socRow = 0; }
+      else if (soc > 50) { socCap = 55; socRow = 1; }
+      else if (soc > 30) { socCap = 50; socRow = 2; }
+      else if (soc > 15) { socCap = 40; socRow = 3; }
+      else { socCap = 0; socRow = 4; }
+      document.querySelectorAll('#socTable tr').forEach((tr, i) => tr.classList.toggle('active', i === socRow));
+      $('socChip').textContent = socCap + ' kW';
+      let tempDerate = 1, tempRow = 2;
+      if (st.tc < 5) { tempDerate = 0; tempRow = 0; }
+      else if (st.tc < 15) { tempDerate = 0.3; tempRow = 1; }
+      else if (st.tc < 45) { tempDerate = 1; tempRow = 2; }
+      else if (st.tc < 60) { tempDerate = 0.7; tempRow = 3; }
+      else { tempDerate = 0.2; tempRow = 4; }
+      document.querySelectorAll('#tempTable tr').forEach((tr, i) => tr.classList.toggle('active', i === tempRow));
+      $('tempChip').textContent = st.tc < 15 ? 'HEATING' : st.tc > 45 ? 'DERATE' : 'NORMAL';
+      $('tempChip').className = 'chip' + (st.tc < 15 ? ' heat' : st.tc > 45 ? ' hot' : ' ok');
+      const effCap = socCap * tempDerate;
+      $('effSocCap').textContent = socCap + ' kW';
+      $('effTempD').textContent = tempDerate.toFixed(2) + '?';
+      $('effCap').textContent = effCap.toFixed(0) + ' kW';
+      $('effDemand').textContent = fmt(Math.abs(p.p), 1) + ' kW';
+
+      // Chip
+      const battOk = st.soc > 15 && st.tc > 5;
+      $('battChip').textContent = st.tc < 15 ? 'HEATING' : socRow >= 4 ? 'LOW SOC' : 'NOMINAL';
+      $('battChip').className = 'badge' + (st.tc < 15 ? ' heat' : socRow >= 4 ? ' hot' : ' ok');
+
+      // BMS status
+      const bms = $('bmsStatus');
+      if (socRow >= 4) { bms.className = 'batt-status warn'; bms.innerHTML = '<b>?</b> BMS: LOW SOC ? SHUTDOWN IMMINENT'; }
+      else if (st.tc < 5) { bms.className = 'batt-status heat'; bms.innerHTML = '<b>?</b> BMS: COLD ? NO DISCHARGE'; }
+      else if (st.tc < 15) { bms.className = 'batt-status heat'; bms.innerHTML = '<b>?</b> BMS: HEATING ? 30% POWER LIMIT'; }
+      else { bms.className = 'batt-status ok'; bms.innerHTML = '<b>?</b> BMS: all limits clear'; }
+
+      // Alerts
+      const alerts = [];
+      if (p.v > 85) alerts.push({ t: 'SPEED LIMIT', cls: 'warn' });
+      if (p.r > 4700) alerts.push({ t: 'RPM HIGH', cls: 'warn' });
+      if (st.soc < 25) alerts.push({ t: 'SOC LOW', cls: 'warn' });
+      if (st.soc < 15) alerts.push({ t: 'SOC CRITICAL', cls: 'hot' });
+      if (st.tc < 15) alerts.push({ t: 'CELL COLD ? HEATING', cls: 'heat' });
+      if (st.tm > 70) alerts.push({ t: 'MOTOR HOT', cls: 'warn' });
+      if (!alerts.length) alerts.push({ t: 'ALL NOMINAL', cls: '' });
+      $('alertList').innerHTML = alerts.map(a => `<div class="alert ${a.cls}">${a.t}</div>`).join('');
+
+      // VI chart update: add now markers
+      if (chVI) {
+        const VocPack = PP.Ns * ocv(soc / 100);
+        let I = 0, V = VocPack;
+        if (p.p > 0) { const Pw = p.p * 1000; const disc = VocPack * VocPack - 4 * PP.R_pack * Pw; if (disc >= 0) { I = (VocPack - Math.sqrt(disc)) / (2 * PP.R_pack); V = VocPack - I * PP.R_pack; } }
+        else if (p.rg) { const Pr = p.prg * 0.3 * 1000; const Im = (-VocPack + Math.sqrt(VocPack * VocPack + 4 * PP.R_pack * Pr)) / (2 * PP.R_pack); I = -Math.min(Im, 80); V = VocPack + Math.abs(I) * PP.R_pack; }
+        chVI.data.datasets[2].data = [{ x: p.t, y: V }];
+        chVI.data.datasets[3].data = [{ x: p.t, y: I }];
+        chVI.update('none');
+      }
+    }
+
+    function ocv(soc) {
+      const bp = [[0, 2.5], [0.05, 3.2], [0.1, 3.45], [0.2, 3.55], [0.3, 3.62], [0.4, 3.65], [0.5, 3.68], [0.6, 3.72], [0.7, 3.75], [0.8, 3.80], [0.9, 3.85], [1.0, 4.20]];
+      for (let i = 0; i < bp.length - 1; i++) { if (soc >= bp[i][0] && soc <= bp[i + 1][0]) { const f = (soc - bp[i][0]) / (bp[i + 1][0] - bp[i][0]); return bp[i][1] + f * (bp[i + 1][1] - bp[i][1]); } }
+      return 2.5;
+    }
+
+    // ===== SECTORS =====
+    const sectorStats = SECTORS.map((s, si) => {
+      const pts = LAP.filter(p => p.s === si + 1);
+      if (!pts.length) return { ...s, avgV: 0, maxV: 0, avgP: 0, maxP: 0 };
+      return {
+        ...s,
+        avgV: pts.reduce((a, p) => a + p.v, 0) / pts.length,
+        maxV: Math.max(...pts.map(p => p.v)),
+        avgP: pts.reduce((a, p) => a + p.p, 0) / pts.length,
+        maxP: Math.max(...pts.map(p => p.p)),
+      };
+    });
+    const sg = $('sectorGrid');
+    sectorStats.forEach((s, si) => {
+      const el = document.createElement('div');
+      el.className = 'sector-chip' + (si === 0 ? ' active' : '');
+      el.dataset.sec = si + 1;
+      el.innerHTML = `<div class="sname">Sector ${si + 1}: ${s.name}</div>
+    <div class="sstat"><span>Avg speed</span><b>${fmt(s.avgV, 1)} km/h</b></div>
+    <div class="sstat"><span>Max speed</span><b>${fmt(s.maxV, 1)} km/h</b></div>
+    <div class="sstat"><span>Avg power</span><b>${fmt(s.avgP, 1)} kW</b></div>
+    <div class="sstat"><span>Max power</span><b>${fmt(s.maxP, 1)} kW</b></div>`;
+      sg.appendChild(el);
+    });
+    document.querySelectorAll('.sector-chip').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.sector-chip').forEach(e => e.classList.remove('active'));
+        el.classList.add('active');
+        const sn = parseInt(el.dataset.sec);
+        const i = LAP.findIndex(p => p.s === sn);
+        if (i >= 0) { isPlaying = false; $('btnPlay').textContent = '? PLAY'; $('btnPlay').classList.remove('active'); setCurrentIdx(i); }
+      });
+    });
+
+    // ===== ENDURANCE TOTALS =====
+    const endItems = [
+      ['lap time', fmt(SUM.lap_time_s, 1) + ' s'],
+      ['lap dist', fmt(SUM.lap_dist_m, 0) + ' m'],
+      ['E per lap', fmt(SUM.E_lap_Wh, 0) + ' Wh'],
+      ['laps done', SUM.laps_done + ' / 22'],
+      ['regen %', fmt(SUM.regen_pct, 1) + ' %'],
+      ['avg power', fmt(SUM.avg_power_kW, 2) + ' kW'],
+      ['SOC end', fmt(SUM.SOC_end, 1) + ' %'],
+      ['range', fmt(SUM.range_km, 1) + ' km'],
+      ['Wh/km', fmt(SUM.E_per_km, 0) + ' Wh/km'],
+      ['T_cell max', fmt(SUM.T_cell_max, 1) + ' ?C'],
+      ['T_motor max', fmt(SUM.T_motor_max, 1) + ' ?C'],
+      ['pack energy', fmt(SUM.E_pack_Wh, 0) + ' Wh'],
+    ];
+    const eg = $('endGrid');
+    endItems.forEach(([k, v]) => eg.insertAdjacentHTML('beforeend', `<div class="cell"><div class="k">${k}</div><div class="v">${v}</div></div>`));
+
+    // ===== CHARTS =====
+    Chart.defaults.color = '#8899b8';
+    Chart.defaults.font.family = 'Share Tech Mono';
+    Chart.defaults.font.size = 9;
+    Chart.defaults.animation = false;
+    Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    Chart.defaults.plugins.legend.labels.padding = 6;
+
+    const tArr = LAP.map(p => p.t);
+    const vArr = LAP.map(p => p.v);
+    const pArr = LAP.map(p => p.p);
+
+    const chTrace = new Chart($('chTrace'), {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: 'Speed [km/h]', data: tArr.map((t, i) => ({ x: t, y: vArr[i] })), borderColor: '#00d4ff', yAxisID: 'y', pointRadius: 0, borderWidth: 1.3, tension: 0.05 },
+          { label: 'Power [kW]', data: tArr.map((t, i) => ({ x: t, y: pArr[i] })), borderColor: '#ff6d00', yAxisID: 'y1', pointRadius: 0, borderWidth: 1.3, tension: 0.05 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', align: 'end' } },
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 't [s]', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 8 } },
+          y: { position: 'left', title: { display: true, text: 'km/h', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 5 }, suggestedMax: 95 },
+          y1: { position: 'right', title: { display: true, text: 'kW', font: { size: 9 } }, grid: { display: false }, ticks: { maxTicksLimit: 5 } }
+        }
+      }
+    });
+
+    // VI chart
+    const VI = [];
+    for (const p of LAP) {
+      const soc = (END[0]?.soc || 90) / 100;
+      const Voc = PP.Ns * ocv(soc);
+      let I = 0, V = Voc;
+      if (p.p > 0) { const Pw = p.p * 1000; const disc = Voc * Voc - 4 * PP.R_pack * Pw; if (disc >= 0) { I = (Voc - Math.sqrt(disc)) / (2 * PP.R_pack); V = Voc - I * PP.R_pack; } }
+      else if (p.rg) { const Pr = p.prg * 0.3 * 1000; const Im = (-Voc + Math.sqrt(Voc * Voc + 4 * PP.R_pack * Pr)) / (2 * PP.R_pack); I = -Math.min(Im, 80); V = Voc + Math.abs(I) * PP.R_pack; }
+      VI.push({ t: p.t, V, I });
+    }
+    let chVI = new Chart($('chVI'), {
+      type: 'line',
+      data: {
+        datasets: [
+          { label: 'V', data: VI.map(d => ({ x: d.t, y: d.V })), borderColor: '#76ff03', yAxisID: 'y', pointRadius: 0, borderWidth: 1.1, tension: 0.05 },
+          { label: 'I', data: VI.map(d => ({ x: d.t, y: d.I })), borderColor: '#ff1744', yAxisID: 'y1', pointRadius: 0, borderWidth: 1.1, tension: 0.05 },
+          { label: 'V now', data: [], borderColor: '#76ff03', backgroundColor: '#76ff03', yAxisID: 'y', pointRadius: 5, showLine: false },
+          { label: 'I now', data: [], borderColor: '#ff1744', backgroundColor: '#ff1744', yAxisID: 'y1', pointRadius: 5, showLine: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', align: 'end', labels: { filter: item => !item.text.includes('now') } } },
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 't [s]', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 6 } },
+          y: { position: 'left', title: { display: true, text: 'V', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 5 }, suggestedMin: 300, suggestedMax: 410 },
+          y1: { position: 'right', title: { display: true, text: 'A', font: { size: 9 } }, grid: { display: false }, ticks: { maxTicksLimit: 5 }, suggestedMin: -80, suggestedMax: 130 }
+        }
+      }
+    });
+
+    const lapNums = END.map(e => e.l);
+    const socSeries = [95].concat(END.map(e => e.soc));
+    const lapNumsExt = [0].concat(lapNums);
+
+    new Chart($('chSoc'), {
+      type: 'line',
+      data: {
+        labels: lapNumsExt, datasets: [
+          { label: 'SOC %', data: socSeries, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)', fill: true, pointRadius: 2, borderWidth: 1.4, tension: 0.15 },
+          { label: 'Target 20%', data: lapNumsExt.map(() => 20), borderColor: 'rgba(255,202,40,0.5)', pointRadius: 0, borderWidth: 1, borderDash: [4, 4] }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', align: 'end' } },
+        scales: {
+          x: { title: { display: true, text: 'lap #', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 8 } },
+          y: { title: { display: true, text: 'SOC %', font: { size: 9 } }, min: 0, max: 100, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 5 } }
+        }
+      }
+    });
+
+    new Chart($('chTherm'), {
+      type: 'line',
+      data: {
+        labels: lapNums, datasets: [
+          { label: 'Cell', data: END.map(e => e.tc), borderColor: '#ff6d00', pointRadius: 1, borderWidth: 1.4, tension: 0.15 },
+          { label: 'Motor', data: END.map(e => e.tm), borderColor: '#00d4ff', pointRadius: 1, borderWidth: 1.4, tension: 0.15 },
+          { label: 'Inv', data: END.map(e => e.ti), borderColor: '#76ff03', pointRadius: 1, borderWidth: 1.4, tension: 0.15 },
+          { label: 'Heat limit 15?C', data: lapNums.map(() => 15), borderColor: 'rgba(255,72,0,0.5)', pointRadius: 0, borderWidth: 1, borderDash: [4, 4] }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', align: 'end' } },
+        scales: {
+          x: { title: { display: true, text: 'lap #', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 8 } },
+          y: { title: { display: true, text: '?C', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 5 } }
+        }
+      }
+    });
+
+    new Chart($('chLap'), {
+      type: 'bar',
+      data: { labels: lapNums, datasets: [{ label: 'E [Wh]', data: END.map(e => e.el), backgroundColor: END.map(e => e.el < 250 ? '#00e5d4' : '#ff6d00') }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'lap', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 8 } },
+          y: { title: { display: true, text: 'Wh', font: { size: 9 } }, grid: { color: 'rgba(22,32,56,0.4)' }, ticks: { maxTicksLimit: 5 } }
+        }
+      }
+    });
+
+    // ===== SCRUBBER =====
+    $('scrubber').addEventListener('click', e => {
+      isPlaying = false; $('btnPlay').textContent = '? PLAY'; $('btnPlay').classList.remove('active');
+      const rect = $('scrubber').getBoundingClientRect();
+      const frac = (e.clientX - rect.left) / rect.width;
+      setCurrentIdx(Math.round(frac * (LAP.length - 1)));
+    });
+
+    // ===== PLAYBACK =====
+    let isPlaying = true, playSpeed = 1, lastTs = 0, t_lap_sim = 0;
+    function tick(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = (ts - lastTs) / 1000; lastTs = ts;
+      if (isPlaying) {
+        t_lap_sim += dt * playSpeed * 4;
+        if (t_lap_sim > SUM.lap_time_s) {
+          t_lap_sim = 0;
+          currentLap = currentLap >= END.length ? 1 : currentLap + 1;
+        }
+        let lo = 0, hi = LAP.length - 1;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (LAP[mid].t < t_lap_sim) lo = mid + 1; else hi = mid; }
+        setCurrentIdx(lo);
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    $('btnPlay').addEventListener('click', () => {
+      isPlaying = !isPlaying;
+      $('btnPlay').textContent = isPlaying ? '?? PAUSE' : '? PLAY';
+      $('btnPlay').classList.toggle('active', isPlaying);
+    });
+    $('btnRew').addEventListener('click', () => { t_lap_sim = 0; currentLap = 1; setCurrentIdx(0); });
+    $('btnSpd').addEventListener('click', e => {
+      const speeds = [1, 2, 5, 10, 0.5];
+      playSpeed = speeds[(speeds.indexOf(playSpeed) + 1) % speeds.length];
+      e.target.textContent = playSpeed + '?';
+    });
+
+    setCurrentIdx(0);
+  </script>
+</body>
+
+</html>
