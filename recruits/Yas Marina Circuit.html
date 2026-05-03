@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Yas Marina EV ? Full Endurance Telemetry</title>
+<style>
+:root {
+  --bg: #06080d;
+  --bg-panel: #0e1627;
+  --bg-metric: #0c1220;
+  --accent: #00e0ff;
+  --accent-2: #ff9500;
+  --success: #8cff4d;
+  --danger: #ff3355;
+  --text: #d8e4f0;
+  --text-dim: #5a7090;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+  background: var(--bg); color: var(--text); font-family: sans-serif;
+  display: flex; flex-direction: column; padding: 10px; gap: 10px;
+}
+.card { background: var(--bg-panel); border: 1px solid #1c2a46; border-radius: 6px; padding: 12px; }
+h3 { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.15em; border-bottom: 1px solid #1c2a46; padding-bottom: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; }
+
+/* Grid Layouts */
+.top-row { display: grid; grid-template-columns: 320px 1fr 320px; gap: 10px; height: 450px; }
+.bms-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.endurance-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.sector-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+
+/* Components */
+.metric-box { background: var(--bg-metric); border: 1px solid #1c2a46; padding: 8px; border-radius: 4px; margin-bottom: 6px; }
+.val { font-family: var(--mono); font-weight: 700; font-size: 18px; color: var(--text); }
+.label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; }
+
+canvas { width: 100%; height: 100%; cursor: crosshair; }
+#speed-hud { position: absolute; top: 20px; left: 20px; font-family: var(--mono); font-size: 3.5rem; font-weight: 900; color: var(--accent); pointer-events: none; }
+
+.bms-table { width: 100%; font-size: 11px; border-collapse: collapse; font-family: var(--mono); }
+.bms-table td { padding: 4px; border-bottom: 1px solid #1c2a46; }
+.active-row { background: rgba(255, 149, 0, 0.15); color: var(--accent-2); }
+
+.media-ctrl { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+button { background: #1c2a46; border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-family: var(--mono); }
+input[type=range] { flex: 1; accent-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- HEADER & MEDIA -->
+<div class="card">
+  <div class="media-ctrl">
+    <div style="font-weight:bold; color:var(--accent); margin-right:20px">YAS MARINA PRO_TLM</div>
+    <button id="playBtn">PAUSE</button>
+    <select id="speedSelect" style="background:#1c2a46; color:white; border:none; font-size:10px; padding:5px;"><option value="1">1.0x</option><option value="5">5.0x</option></select>
+    <input type="range" id="scrub" min="0" max="1000" value="0">
+    <span id="timer" style="font-family:var(--mono); font-size:11px">T = 0.00 S</span>
+  </div>
+</div>
+
+<div class="top-row">
+  <div class="card">
+    <h3>Instantaneous</h3>
+    <div class="metric-box"><span class="label">Speed</span><div class="val" id="mSpeed">0 km/h</div></div>
+    <div class="metric-box"><span class="label">Motor RPM</span><div class="val" id="mRpm">0</div></div>
+    <div class="metric-box"><span class="label">Torque</span><div class="val" id="mTq">0 Nm</div></div>
+    <div class="metric-box"><span class="label">Power</span><div class="val" id="mPwr">0 kW</div></div>
+    <div class="metric-box"><span class="label">Throttle</span><div class="val" id="mThr">0%</div></div>
+  </div>
+  
+  <div class="card" style="position:relative">
+    <div id="speed-hud">0</div>
+    <canvas id="trackCanvas"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Powertrain Health</h3>
+    <div class="metric-box"><span class="label">Pack SOC</span><div class="val" id="gSoc">81.2%</div></div>
+    <div class="metric-box"><span class="label">Cell Temp</span><div class="val" id="gCell">40.5?C</div></div>
+    <div class="metric-box"><span class="label">Motor Temp</span><div class="val" id="gMotor">49.1?C</div></div>
+    <div class="metric-box"><span class="label">Inverter Temp</span><div class="val" id="gInv">38.0?C</div></div>
+  </div>
+</div>
+
+<!-- BMS DERATE POLICY -->
+<div class="card">
+  <h3>BMS Derate Policy ? Live Application</h3>
+  <div class="bms-row">
+    <div class="metric-box">
+      <span class="label">SOC Power Cap</span>
+      <table class="bms-table" id="socTable">
+        <tr id="rSoc1"><td>SOC > 80%</td><td>80 kW</td></tr>
+        <tr id="rSoc2"><td>80% - 50%</td><td>70 kW</td></tr>
+        <tr id="rSoc3"><td>50% - 10%</td><td>50 kW</td></tr>
+      </table>
+    </div>
+    <div class="metric-box">
+      <span class="label">Cell Temp Action</span>
+      <table class="bms-table" id="tempTable">
+        <tr id="rTmp1"><td>T < 50?C</td><td>Full Power</td></tr>
+        <tr id="rTmp2"><td>50 - 60?C</td><td>Reduce (0.7x)</td></tr>
+        <tr id="rTmp3"><td>> 70?C</td><td>Limp (0.1x)</td></tr>
+      </table>
+    </div>
+    <div class="metric-box" style="border-left: 2px solid var(--accent-2)">
+      <span class="label">Effective Limits</span>
+      <div style="font-size:11px; margin-top:5px">
+        <div>Effective Cap: <span id="effCap" style="color:var(--accent-2)">75.0 kW</span></div>
+        <div>Delivered: <span id="effDel" style="color:var(--success)">0.0 kW</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTOR BREAKDOWN -->
+<div class="sector-grid">
+  <div class="card" id="s1"><h3>S1 - North</h3><div class="val" style="font-size:12px">Time: 28.44s</div></div>
+  <div class="card" id="s2"><h3>S2 - Hairpin</h3><div class="val" style="font-size:12px">Time: 20.71s</div></div>
+  <div class="card" id="s3"><h3>S3 - Straight</h3><div class="val" style="font-size:12px">Time: 15.59s</div></div>
+  <div class="card" id="s4"><h3>S4 - Marina</h3><div class="val" style="font-size:12px">Time: 19.89s</div></div>
+  <div class="card" id="s5"><h3>S5 - Hotel</h3><div class="val" style="font-size:12px">Time: 18.68s</div></div>
+  <div class="card" id="s6"><h3>S6 - Finish</h3><div class="val" style="font-size:12px">Time: 20.22s</div></div>
+</div>
+
+<!-- ENDURANCE TOTALS -->
+<div class="card">
+  <h3>Endurance Totals</h3>
+  <div class="endurance-grid">
+    <div class="metric-box"><span class="label">Lap Time</span><div class="val" style="font-size:14px">112.22s</div></div>
+    <div class="metric-box"><span class="label">Lap Dist</span><div class="val" style="font-size:14px">1424m</div></div>
+    <div class="metric-box"><span class="label">E per Lap</span><div class="val" style="font-size:14px">314.5Wh</div></div>
+    <div class="metric-box"><span class="label">Regen %</span><div class="val" style="font-size:14px">29.1%</div></div>
+    <div class="metric-box"><span class="label">Ah Used</span><div class="val" style="font-size:14px">15.17Ah</div></div>
+    <div class="metric-box"><span class="label">Wh / km</span><div class="val" style="font-size:14px">219.2</div></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('trackCanvas');
+const ctx = canvas.getContext('2d');
+const scrub = document.getElementById('scrub');
+const playBtn = document.getElementById('playBtn');
+
+const yasMarina = [
+  {x:20, y:80, v:129, s:1}, {x:80, y:80, v:129, s:3}, {x:90, y:70, v:66, s:2}, 
+  {x:85, y:40, v:129, s:3}, {x:70, y:20, v:110, s:4}, {x:30, y:20, v:75, s:5}, 
+  {x:10, y:40, v:85, s:6}, {x:20, y:80, v:129, s:1}
+];
+
+let isPlaying = true, progress = 0, curV = 66, pwr = 0;
+
+playBtn.onclick = () => { isPlaying = !isPlaying; playBtn.textContent = isPlaying ? "PAUSE" : "PLAY"; };
+
+function updateUI() {
+  ctx.clearRect(0,0, canvas.width, canvas.height);
+  ctx.beginPath(); ctx.lineWidth = 14; ctx.strokeStyle = '#161b22'; ctx.lineJoin = 'round';
+  yasMarina.forEach((p, i) => { if(i===0) ctx.moveTo(p.x*canvas.width/100, p.y*canvas.height/100); else ctx.lineTo(p.x*canvas.width/100, p.y*canvas.height/100); });
+  ctx.stroke();
+
+  const idx = Math.floor(progress * (yasMarina.length - 1)), p1 = yasMarina[idx], p2 = yasMarina[idx+1], sub = (progress * (yasMarina.length - 1)) % 1;
+  if (isPlaying) { 
+    curV += (p1.v - curV) * 0.05; progress += (curV / 80000); 
+    if(progress >= 1) progress = 0; scrub.value = progress * 1000; 
+  }
+  const cx = (p1.x + (p2.x - p1.x) * sub) * canvas.width / 100, cy = (p1.y + (p2.y - p1.y) * sub) * canvas.height / 100;
+  ctx.fillStyle = '#00f2ff'; ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI*2); ctx.fill();
+
+  const rpm = Math.round((curV / 129) * 6500); // 6500 RPM Peak
+  const trq = curV < 80 ? 220 : 130; // Peak 220Nm[cite: 1]
+  pwr = Math.round((rpm * trq) / 9548);
+
+  document.getElementById('speed-hud').textContent = Math.round(curV);
+  document.getElementById('mSpeed').textContent = Math.round(curV) + " km/h";
+  document.getElementById('mRpm').textContent = rpm;
+  document.getElementById('mTq').textContent = trq + " Nm";
+  document.getElementById('mPwr').textContent = pwr + " kW";
+  document.getElementById('mThr').textContent = (curV > 100 ? 100 : Math.round(curV)) + "%";
+  document.getElementById('timer').textContent = "T = " + (progress * 112.22).toFixed(2) + " S";
+  document.getElementById('effDel').textContent = pwr + " kW";
+
+  // Highlight Sector
+  document.querySelectorAll('.sector-grid .card').forEach(c => c.style.borderColor = "#1c2a46");
+  document.getElementById('s'+p1.s).style.borderColor = "var(--accent-2)";
+
+  // BMS Logic
+  document.querySelectorAll('.bms-table tr').forEach(r => r.className = "");
+  if (pwr > 75) document.getElementById('rSoc1').className = "active-row";
+  else document.getElementById('rSoc2').className = "active-row";
+  document.getElementById('rTmp1').className = "active-row";
+}
+
+function animate() { updateUI(); requestAnimationFrame(animate); }
+function resize() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
+window.onresize = resize; resize(); animate();
+</script>
+</body>
+</html>
