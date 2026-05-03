@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FSAE EV Endurance Dashboard ? Germany 2010</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#04080f;--p1:#090f1c;--p2:#0d1528;
+  --bdr:#162440;--acc:#00d4ff;--or:#ff5500;
+  --gr:#00ff9f;--yl:#ffd700;--rd:#ff2d55;--pu:#bf5af2;
+  --tx:#b8cceb;--mu:#3a5070;--wh:#ddeeff;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;}
+
+/* ??? HEADER ??????????????????????????????????????????? */
+#hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 18px;flex-shrink:0;
+  background:linear-gradient(90deg,#030710,#0a1830,#030710);
+  border-bottom:2px solid var(--acc);
+  box-shadow:0 0 18px rgba(0,212,255,.18);
+}
+.logo{font-size:20px;font-weight:900;letter-spacing:3px;color:var(--acc);}
+.logo em{color:var(--or);font-style:normal;}
+.hcells{display:flex;gap:18px;}
+.hc{text-align:center;}
+.hv{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;}
+.hl{font-size:8px;letter-spacing:2px;color:var(--mu);text-transform:uppercase;margin-top:1px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gr);display:inline-block;box-shadow:0 0 6px var(--gr);animation:p 1.4s infinite;}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ??? LAP BAR ?????????????????????????????????????????? */
+#lapbar{
+  display:flex;align-items:center;gap:6px;padding:5px 14px;
+  background:var(--p1);border-bottom:1px solid var(--bdr);
+  flex-shrink:0;flex-wrap:wrap;
+}
+.lbtn{background:var(--p2);border:1px solid var(--bdr);color:var(--mu);font-size:11px;font-weight:600;
+  padding:3px 9px;cursor:pointer;border-radius:2px;min-width:28px;text-align:center;transition:all .1s;}
+.lbtn:hover{border-color:var(--acc);color:var(--acc);}
+.lbtn.on{background:rgba(0,212,255,.14);border-color:var(--acc);color:var(--acc);}
+#sld{flex:1;min-width:160px;-webkit-appearance:none;height:4px;background:var(--bdr);border-radius:2px;cursor:pointer;}
+#sld::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--acc);box-shadow:0 0 5px var(--acc);}
+#stime{font-size:12px;font-variant-numeric:tabular-nums;color:var(--acc);min-width:50px;}
+#pbtn{background:none;border:1px solid var(--acc);color:var(--acc);padding:4px 10px;cursor:pointer;border-radius:2px;font-size:14px;}
+#pbtn:hover{background:var(--acc);color:#000;}
+.lb{font-size:9px;letter-spacing:1.5px;color:var(--mu);text-transform:uppercase;white-space:nowrap;}
+.vsep{width:1px;height:18px;background:var(--bdr);}
+
+/* ??? MAIN LAYOUT ?????????????????????????????????????? */
+#main{display:flex;flex:1;gap:5px;padding:5px;overflow:hidden;min-height:0;}
+.col{display:flex;flex-direction:column;gap:5px;overflow:hidden;min-height:0;}
+#cl{width:238px;flex-shrink:0;}
+#cc{flex:1;min-width:0;}
+#cr{width:238px;flex-shrink:0;}
+
+/* ??? PANELS ??????????????????????????????????????????? */
+.pnl{background:var(--p1);border:1px solid var(--bdr);border-radius:3px;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
+.ph{padding:5px 10px;background:linear-gradient(90deg,rgba(0,212,255,.07),transparent);
+    border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.pt{font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);font-weight:700;}
+
+/* ??? GAUGES ??????????????????????????????????????????? */
+.gaugerow{display:flex;justify-content:center;gap:2px;padding:5px 2px 2px;flex-shrink:0;}
+
+/* ??? METRIC GRID ?????????????????????????????????????? */
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;}
+.met{background:var(--p2);border:1px solid var(--bdr);border-radius:2px;padding:4px 7px;}
+.mv{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;}
+.ml{font-size:8px;letter-spacing:1.5px;color:var(--mu);text-transform:uppercase;margin-top:1px;}
+
+/* ??? BAR ROWS ????????????????????????????????????????? */
+.brs{display:flex;flex-direction:column;gap:4px;padding:4px 9px;}
+.br{display:flex;align-items:center;gap:6px;}
+.bn{font-size:8.5px;letter-spacing:1px;color:var(--mu);text-transform:uppercase;width:60px;flex-shrink:0;}
+.bt2{flex:1;height:7px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;border:1px solid var(--bdr);}
+.bf{height:100%;border-radius:2px;transition:width .09s linear;}
+.bv{font-size:10.5px;font-variant-numeric:tabular-nums;color:#fff;width:40px;text-align:right;}
+
+/* ??? TEMP BARS ???????????????????????????????????????? */
+.tbs{display:flex;flex-direction:column;gap:5px;padding:5px 9px;}
+.trow{display:flex;flex-direction:column;gap:2px;}
+.th{display:flex;justify-content:space-between;}
+.tn{font-size:8.5px;letter-spacing:1px;color:var(--mu);text-transform:uppercase;}
+.tv{font-size:12px;font-variant-numeric:tabular-nums;}
+.ttb{height:8px;background:rgba(255,255,255,.05);border-radius:2px;border:1px solid var(--bdr);overflow:hidden;}
+.ttbf{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gr),var(--yl),var(--rd));transition:width .09s;}
+.tlims{display:flex;justify-content:space-between;}
+.tlim{font-size:7px;color:var(--mu);}
+
+/* ??? SECTOR GRID ?????????????????????????????????????? */
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;}
+.sc{background:var(--p2);border:1px solid var(--bdr);border-radius:2px;padding:5px;text-align:center;transition:border-color .1s;}
+.sc.on{border-color:var(--yl);box-shadow:0 0 6px rgba(255,215,0,.25);}
+.sn{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;}
+.sv{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;}
+
+/* ??? SOC BAR ?????????????????????????????????????????? */
+.socob{height:16px;background:rgba(255,255,255,.05);border-radius:2px;border:1px solid var(--bdr);overflow:hidden;margin:0 8px;}
+.socib{height:100%;background:linear-gradient(90deg,var(--rd),var(--yl) 40%,var(--gr));transition:width .12s;}
+.soclg{display:grid;grid-template-columns:repeat(11,1fr);gap:2px;margin:4px 8px 2px;}
+.slc{height:20px;border-radius:2px;display:flex;align-items:center;justify-content:center;
+     font-size:7.5px;font-variant-numeric:tabular-nums;cursor:pointer;border:1px solid transparent;transition:border-color .1s;}
+.slc:hover,.slc.cur{border-color:var(--acc);}
+
+/* ??? SPECS ???????????????????????????????????????????? */
+.specs{display:flex;flex-wrap:wrap;gap:3px;padding:4px 7px;}
+.sp{background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.18);border-radius:2px;
+    padding:2px 6px;font-size:7.5px;letter-spacing:1px;color:var(--acc);text-transform:uppercase;}
+.sp.o{background:rgba(255,85,0,.07);border-color:rgba(255,85,0,.25);color:var(--or);}
+.sp.g{background:rgba(0,255,159,.07);border-color:rgba(0,255,159,.2);color:var(--gr);}
+
+/* ??? BMS STATUS ??????????????????????????????????????? */
+.bms{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:4px 7px;}
+.bmsc{background:var(--p2);border:1px solid var(--bdr);border-radius:2px;padding:4px;text-align:center;}
+.bmsv{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;}
+.bmsl{font-size:7px;letter-spacing:1px;color:var(--mu);text-transform:uppercase;margin-top:1px;}
+.bmsc.act{border-color:var(--gr);background:rgba(0,255,159,.08);}
+
+/* ??? CANVAS CONTAINERS ???????????????????????????????? */
+.cw{flex:1;min-height:0;position:relative;}
+canvas{display:block;}
+
+/* ??? LEGEND ??????????????????????????????????????????? */
+.leg{display:flex;gap:9px;flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:3px;font-size:8.5px;color:var(--mu);}
+.ld{width:10px;height:3px;border-radius:1px;}
+
+/* ??? WARNING ?????????????????????????????????????????? */
+.warn{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--yl);display:none;}
+.warn.on{display:inline;animation:p 0.6s infinite;}
+
+/* ??? TCS BADGE ???????????????????????????????????????? */
+.tcsb{font-size:8.5px;letter-spacing:1px;font-weight:700;padding:2px 7px;border-radius:2px;text-transform:uppercase;}
+.tcson{background:rgba(191,90,242,.18);border:1px solid var(--pu);color:var(--pu);}
+.tcsof{background:rgba(255,255,255,.04);border:1px solid var(--bdr);color:var(--mu);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div>
+    <div class="logo">FSAE<em>EV</em> <span style="font-size:11px;color:var(--mu);font-weight:400;letter-spacing:1px;">ENDURANCE</span></div>
+    <div style="font-size:9px;color:var(--mu);letter-spacing:2px;margin-top:1px;">GERMANY 2010 ? 120S3P ? EMRAX 228</div>
+  </div>
+  <div class="hcells">
+    <div class="hc"><div class="hv" id="hLapT" style="color:var(--yl)">112.22</div><div class="hl">Lap Time s</div></div>
+    <div class="hc"><div class="hv" id="hLap">LAP 1/22</div><div class="hl">Current Lap</div></div>
+    <div class="hc"><div class="hv" id="hSOC" style="color:var(--gr)">100.0%</div><div class="hl">Battery SOC</div></div>
+    <div class="hc"><div class="hv" id="hPwr" style="color:var(--or)">0.0 kW</div><div class="hl">Motor Power</div></div>
+    <div class="hc"><div class="hv" id="hSpd" style="color:var(--gr)">0 km/h</div><div class="hl">Speed</div></div>
+    <div class="hc"><div class="hv" id="hRpm" style="color:var(--yl)">0 RPM</div><div class="hl">Motor RPM</div></div>
+    <div class="hc"><div class="hv" id="hPkPwr" style="color:var(--acc)">80 kW</div><div class="hl">Peak Power</div></div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:10px;color:var(--acc);letter-spacing:1px;">432V ? 13.5Ah ? 5832Wh</div>
+    <div style="font-size:9px;margin-top:3px;"><span class="dot"></span><span style="color:var(--gr);font-size:10px;">LIVE SIM</span></div>
+  </div>
+</div>
+
+<!-- LAP BAR -->
+<div id="lapbar">
+  <span class="lb">Lap:</span>
+  <div id="lapbtns" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+  <div class="vsep"></div>
+  <button id="pbtn">?</button>
+  <span class="lb">Pos:</span>
+  <input type="range" id="sld" min="0" max="531" value="0" step="1">
+  <span id="stime" class="lb">0.000s</span>
+  <div class="vsep"></div>
+  <span class="lb" id="dlbl">0.0 m / 1423.5 m</span>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+<!-- ?? LEFT COLUMN ????????????????????????????????????? -->
+<div class="col" id="cl">
+
+  <!-- Gauges -->
+  <div class="pnl" style="flex-shrink:0;">
+    <div class="ph">
+      <span class="pt">Powertrain</span>
+      <span id="tcsb" class="tcsb tcsof">TCS OFF</span>
+    </div>
+    <div class="gaugerow">
+      <canvas id="gSpd" width="112" height="112"></canvas>
+      <canvas id="gRpm" width="112" height="112"></canvas>
+    </div>
+    <div class="mg">
+      <div class="met"><div class="mv" id="mTq" style="color:var(--acc)">0</div><div class="ml">Torque Nm</div></div>
+      <div class="met"><div class="mv" id="mPw" style="color:var(--or)">0.0</div><div class="ml">Power kW</div></div>
+    </div>
+    <div class="brs">
+      <div class="br"><span class="bn">Throttle</span><div class="bt2"><div class="bf" id="bThr" style="background:var(--gr);width:0%"></div></div><span class="bv" id="vThr">0%</span></div>
+      <div class="br"><span class="bn">Brake</span><div class="bt2"><div class="bf" id="bBrk" style="background:var(--rd);width:0%"></div></div><span class="bv" id="vBrk">0%</span></div>
+      <div class="br"><span class="bn">Regen</span><div class="bt2"><div class="bf" id="bReg" style="background:var(--pu);width:0%"></div></div><span class="bv" id="vReg">0%</span></div>
+      <div class="br"><span class="bn">Traction</span><div class="bt2"><div class="bf" id="bTcs" style="background:var(--pu);width:0%"></div></div><span class="bv" id="vTcs">0%</span></div>
+    </div>
+  </div>
+
+  <!-- Thermal -->
+  <div class="pnl" style="flex-shrink:0;">
+    <div class="ph"><span class="pt">Thermal</span><span id="twarn" class="warn">? DERATE</span></div>
+    <div class="tbs">
+      <div class="trow">
+        <div class="th"><span class="tn">Motor Winding</span><span class="tv" id="tMot">30?C</span></div>
+        <div class="ttb"><div class="ttbf" id="tbMot" style="width:28%"></div></div>
+        <div class="tlims"><span class="tlim">30?C</span><span class="tlim" style="color:var(--yl)">50? derate</span><span class="tlim" style="color:var(--rd)">100?C</span></div>
+      </div>
+      <div class="trow">
+        <div class="th"><span class="tn">Battery Pack</span><span class="tv" id="tBat">23?C</span></div>
+        <div class="ttb"><div class="ttbf" id="tbBat" style="width:20%"></div></div>
+        <div class="tlims"><span class="tlim">23?C</span><span class="tlim" style="color:var(--rd)">60?C cut</span></div>
+      </div>
+    </div>
+    <div style="padding:2px 8px 5px;height:62px;position:relative;">
+      <canvas id="cTemp" style="display:block;"></canvas>
+    </div>
+  </div>
+
+  <!-- Sector Times -->
+  <div class="pnl" style="flex-shrink:0;">
+    <div class="ph"><span class="pt">Sector Times</span></div>
+    <div class="sg" id="secgrid"></div>
+    <div style="padding:2px 9px 7px;">
+      <div style="font-size:8px;letter-spacing:1px;color:var(--mu);text-transform:uppercase;">Total Lap</div>
+      <div style="font-size:22px;font-weight:700;color:var(--yl);font-variant-numeric:tabular-nums;" id="lapTot">112.22s</div>
+      <div style="font-size:9px;color:var(--mu);margin-top:1px;">Race: <span style="color:#fff" id="raceTot">?</span></div>
+    </div>
+  </div>
+
+  <!-- G-Force -->
+  <div class="pnl" style="flex:1;min-height:120px;">
+    <div class="ph">
+      <span class="pt">G-Force</span>
+      <div style="display:flex;gap:10px;font-size:9px;">
+        <span style="color:var(--acc)">Lat: <span id="gLat">0.00</span>G</span>
+        <span style="color:var(--or)">Long: <span id="gLng">0.00</span>G</span>
+      </div>
+    </div>
+    <div class="cw" style="display:flex;align-items:center;justify-content:center;">
+      <canvas id="cG"></canvas>
+    </div>
+  </div>
+
+</div><!-- end left -->
+
+<!-- ?? CENTER COLUMN ??????????????????????????????????? -->
+<div class="col" id="cc">
+
+  <!-- Track Map -->
+  <div class="pnl" style="height:225px;flex-shrink:0;">
+    <div class="ph">
+      <span class="pt">Track Map ? FSAE Germany 2010</span>
+      <div class="leg">
+        <div class="li"><div class="ld" style="background:var(--gr)"></div>Fast</div>
+        <div class="li"><div class="ld" style="background:var(--rd)"></div>Slow</div>
+        <div class="li"><div class="ld" style="background:var(--acc)"></div>Car</div>
+      </div>
+    </div>
+    <div class="cw" style="height:193px;"><canvas id="cTrack"></canvas></div>
+  </div>
+
+  <!-- Torque / RPM chart -->
+  <div class="pnl" style="height:118px;flex-shrink:0;">
+    <div class="ph">
+      <span class="pt">Torque ? RPM ? Speed vs Distance</span>
+      <div class="leg">
+        <div class="li"><div class="ld" style="background:var(--acc)"></div>Torque Nm</div>
+        <div class="li"><div class="ld" style="background:var(--yl)"></div>RPM?30</div>
+        <div class="li"><div class="ld" style="background:var(--gr)"></div>Speed km/h</div>
+      </div>
+    </div>
+    <div class="cw" style="height:85px;"><canvas id="cTqRpm"></canvas></div>
+  </div>
+
+  <!-- Power chart -->
+  <div class="pnl" style="height:108px;flex-shrink:0;">
+    <div class="ph">
+      <span class="pt">Power vs Distance</span>
+      <div class="leg">
+        <div class="li"><div class="ld" style="background:var(--or)"></div>Power kW</div>
+        <div class="li"><div class="ld" style="background:var(--pu)"></div>Cum. Energy Wh?10</div>
+        <div class="li"><div class="ld" style="background:rgba(255,215,0,.4);height:1px;border-top:1px dashed var(--yl)"></div>BMS Limit</div>
+      </div>
+    </div>
+    <div class="cw" style="height:75px;"><canvas id="cPwr"></canvas></div>
+  </div>
+
+  <!-- Lap Trace -->
+  <div class="pnl" style="flex:1;min-height:90px;">
+    <div class="ph">
+      <span class="pt">Lap Trace ? Speed &amp; Power</span>
+      <div class="leg">
+        <div class="li"><div class="ld" style="background:var(--gr)"></div>Speed km/h</div>
+        <div class="li"><div class="ld" style="background:var(--or)"></div>Power kW</div>
+      </div>
+    </div>
+    <div class="cw" style="min-height:70px;"><canvas id="cTrace"></canvas></div>
+  </div>
+
+</div><!-- end center -->
+
+<!-- ?? RIGHT COLUMN ???????????????????????????????????? -->
+<div class="col" id="cr">
+
+  <!-- SOC -->
+  <div class="pnl" style="flex-shrink:0;">
+    <div class="ph">
+      <span class="pt">State of Charge</span>
+      <span style="font-size:11px;font-variant-numeric:tabular-nums;color:var(--gr);" id="socPct">100.0%</span>
+    </div>
+    <div style="padding:5px 8px 3px;">
+      <div class="socob"><div class="socib" id="socBar" style="width:100%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:2px;">
+        <span style="font-size:7.5px;color:var(--mu);">?10% reserve</span>
+        <span style="font-size:7.5px;color:var(--mu);">5832 Wh</span>
+      </div>
+      <div style="font-size:8px;letter-spacing:1px;color:var(--mu);text-transform:uppercase;margin:5px 0 2px;">SOC Per Lap</div>
+      <div class="soclg" id="soclg"></div>
+      <div style="margin-top:4px;height:66px;position:relative;">
+        <canvas id="cSOC" style="display:block;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- BMS Status -->
+  <div class="pnl" style="flex-shrink:0;">
+    <div class="ph"><span class="pt">BMS Status</span><span id="bmsLbl" style="font-size:9px;color:var(--gr);">FULL POWER</span></div>
+    <div class="bms" id="bmsGrid">
+      <div class="bmsc" id="bms80"><div class="bmsv" style="color:var(--gr)">80kW</div><div class="bmsl">?80% SOC</div></div>
+      <div class="bmsc" id="bms70"><div class="bmsv" style="color:var(--yl)">70kW</div><div class="bmsl">50?80%</div></div>
+      <div class="bmsc" id="bms60"><div class="bmsv" style="color:var(--or)">60kW</div><div class="bmsl">30?50%</div></div>
+      <div class="bmsc" id="bms50"><div class="bmsv" style="color:var(--rd)">50kW</div><div class="bmsl">10?30%</div></div>
+    </div>
+    <div class="mg" style="padding:3px 5px;">
+      <div class="met" style="padding:4px 6px;"><div class="mv" id="mPkV" style="font-size:14px;color:var(--acc)">432.0</div><div class="ml">Pack V</div></div>
+      <div class="met" style="padding:4px 6px;"><div class="mv" id="mCI" style="font-size:14px;color:var(--yl)">0.0</div><div class="ml">Cell A</div></div>
+      <div class="met" style="padding:4px 6px;"><div class="mv" id="mTD" style="font-size:14px;color:var(--gr)">100%</div><div class="ml">BMS Derate</div></div>
+      <div class="met" style="padding:4px 6px;"><div class="mv" id="mEff" style="font-size:14px;color:var(--gr)">96%</div><div class="ml">Motor Eff.</div></div>
+    </div>
+  </div>
+
+  <!-- Specs -->
+  <div class="pnl" style="flex-shrink:0;">
+    <div class="ph"><span class="pt">Car Parameters</span></div>
+    <div class="specs">
+      <div class="sp o">EMRAX 228</div><div class="sp">80 kW MAX</div>
+      <div class="sp">100 Nm CAP</div><div class="sp">3100 RPM LIM</div>
+      <div class="sp">66.9 km/h MAX</div><div class="sp o">120S3P PACK</div>
+      <div class="sp">432 V NOM</div><div class="sp">13.5 Ah</div>
+      <div class="sp">5832 Wh</div><div class="sp o">Molicel P45B</div>
+      <div class="sp">45A/CELL</div><div class="sp">7m?/CELL</div>
+      <div class="sp g">RWD ? FDR 1:1</div><div class="sp g">96% EFF</div>
+    </div>
+    <div class="mg" style="padding:3px 5px;">
+      <div class="met" style="padding:4px 6px;"><div class="mv" id="mLat" style="font-size:14px;color:var(--acc)">0.00</div><div class="ml">Lat G</div></div>
+      <div class="met" style="padding:4px 6px;"><div class="mv" id="mLng" style="font-size:14px;color:var(--or)">0.00</div><div class="ml">Long G</div></div>
+    </div>
+  </div>
+
+  <!-- Dynamics -->
+  <div class="pnl" style="flex-shrink:0;">
+    <div class="ph"><span class="pt">Dynamics</span></div>
+    <div class="brs">
+      <div class="br"><span class="bn">Lat G</span><div class="bt2"><div class="bf" id="bLat" style="background:var(--acc);width:0%"></div></div><span class="bv" id="vLat">0.00</span></div>
+      <div class="br"><span class="bn">Long G</span><div class="bt2"><div class="bf" id="bLng2" style="background:var(--or);width:0%"></div></div><span class="bv" id="vLng2">0.00</span></div>
+      <div class="br"><span class="bn">Total G</span><div class="bt2"><div class="bf" id="bTotG" style="background:var(--yl);width:0%"></div></div><span class="bv" id="vTotG">0.00</span></div>
+    </div>
+  </div>
+
+  <!-- Efficiency Map -->
+  <div class="pnl" style="flex:1;min-height:100px;">
+    <div class="ph"><span class="pt">Motor Efficiency Map (EMRAX 228)</span></div>
+    <div class="cw" style="min-height:90px;"><canvas id="cEff"></canvas></div>
+  </div>
+
+</div><!-- end right -->
+</div><!-- end main -->
+
+<script>
+const RAW={"trackData":[{"d":0.2,"t":0.011,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.091,"lng":0.51,"thr":15.7,"brk":0.0,"x":0.11,"y":-0.0,"tcs":0.0,"sec":1,"mt":44.2,"bt":28.6,"ce":2.66,"soc":1.0,"td":1.0,"pf":1.0},{"d":2.9,"t":0.203,"v":63.16,"rpm":2926.5,"tq":100.0,"pwr":0.0,"latg":1.183,"lng":-1.167,"thr":0.0,"brk":67.9,"x":1.68,"y":0.03,"tcs":89.0,"sec":1,"mt":30.1,"bt":23.0,"ce":2.66,"soc":0.9999,"td":1.0,"pf":1.0},{"d":5.5,"t":0.405,"v":59.39,"rpm":2751.6,"tq":100.0,"pwr":0.0,"latg":-1.185,"lng":-1.139,"thr":0.0,"brk":66.7,"x":3.23,"y":0.15,"tcs":0.0,"sec":1,"mt":30.2,"bt":23.1,"ce":2.66,"soc":0.9997,"td":1.0,"pf":1.0},{"d":8.2,"t":0.621,"v":55.87,"rpm":2588.6,"tq":100.0,"pwr":0.0,"latg":-1.328,"lng":-0.938,"thr":0.0,"brk":54.5,"x":4.66,"y":0.24,"tcs":0.0,"sec":1,"mt":30.2,"bt":23.1,"ce":2.66,"soc":0.9996,"td":1.0,"pf":1.0},{"d":10.9,"t":0.848,"v":53.76,"rpm":2490.7,"tq":100.0,"pwr":26.08,"latg":-1.599,"lng":-0.062,"thr":92.9,"brk":0.0,"x":6.1,"y":0.22,"tcs":100.0,"sec":1,"mt":41.7,"bt":26.8,"ce":4.8,"soc":0.9995,"td":1.0,"pf":1.0},{"d":13.6,"t":1.077,"v":53.77,"rpm":2491.2,"tq":100.0,"pwr":26.09,"latg":-1.591,"lng":0.019,"thr":92.9,"brk":0.0,"x":7.54,"y":0.06,"tcs":86.8,"sec":1,"mt":41.8,"bt":26.8,"ce":6.94,"soc":0.9993,"td":1.0,"pf":1.0},{"d":16.2,"t":1.306,"v":53.99,"rpm":2501.4,"tq":100.0,"pwr":26.19,"latg":-1.422,"lng":0.266,"thr":92.8,"brk":0.0,"x":8.96,"y":-0.24,"tcs":47.0,"sec":1,"mt":41.9,"bt":26.9,"ce":9.09,"soc":0.9992,"td":1.0,"pf":1.0},{"d":18.9,"t":1.532,"v":55.52,"rpm":2572.5,"tq":100.0,"pwr":26.94,"latg":-1.063,"lng":0.525,"thr":92.4,"brk":0.0,"x":10.34,"y":-0.67,"tcs":4.8,"sec":1,"mt":42.3,"bt":27.1,"ce":11.3,"soc":0.9991,"td":1.0,"pf":1.0},{"d":21.6,"t":1.753,"v":55.45,"rpm":2569.2,"tq":100.0,"pwr":0.0,"latg":-0.923,"lng":-1.379,"thr":0.0,"brk":82.1,"x":11.66,"y":-1.18,"tcs":0.0,"sec":1,"mt":30.6,"bt":23.3,"ce":11.3,"soc":0.999,"td":1.0,"pf":1.0},{"d":24.3,"t":1.988,"v":50.3,"rpm":2330.5,"tq":100.0,"pwr":0.0,"latg":-0.76,"lng":-1.47,"thr":0.0,"brk":88.4,"x":12.96,"y":-1.76,"tcs":2.5,"sec":1,"mt":30.7,"bt":23.3,"ce":11.3,"soc":0.9988,"td":1.0,"pf":1.0},{"d":27.0,"t":2.242,"v":47.58,"rpm":2204.8,"tq":100.0,"pwr":0.0,"latg":1.5,"lng":-0.603,"thr":0.0,"brk":34.4,"x":14.36,"y":-2.37,"tcs":0.0,"sec":1,"mt":30.8,"bt":23.4,"ce":11.3,"soc":0.9987,"td":1.0,"pf":1.0},{"d":29.6,"t":2.509,"v":45.35,"rpm":2101.3,"tq":100.0,"pwr":0.0,"latg":1.536,"lng":-0.491,"thr":0.0,"brk":27.6,"x":15.84,"y":-2.8,"tcs":0.0,"sec":1,"mt":30.8,"bt":23.4,"ce":11.3,"soc":0.9986,"td":1.0,"pf":1.0},{"d":32.3,"t":2.788,"v":43.6,"rpm":2020.0,"tq":100.0,"pwr":0.0,"latg":1.588,"lng":-0.047,"thr":0.0,"brk":0.0,"x":17.35,"y":-3.01,"tcs":0.0,"sec":1,"mt":30.9,"bt":23.5,"ce":11.3,"soc":0.9984,"td":1.0,"pf":1.0},{"d":35.0,"t":3.072,"v":43.37,"rpm":2009.4,"tq":100.0,"pwr":21.04,"latg":1.6,"lng":0.0,"thr":7.1,"brk":0.0,"x":18.87,"y":-2.97,"tcs":0.0,"sec":1,"mt":40.2,"bt":25.8,"ce":13.02,"soc":0.9983,"td":1.0,"pf":1.0},{"d":37.7,"t":3.357,"v":43.54,"rpm":2017.2,"tq":100.0,"pwr":21.12,"latg":1.479,"lng":0.242,"thr":95.3,"brk":0.0,"x":20.36,"y":-2.69,"tcs":53.5,"sec":1,"mt":40.3,"bt":25.9,"ce":14.76,"soc":0.9982,"td":1.0,"pf":1.0},{"d":40.4,"t":3.636,"v":44.99,"rpm":2084.5,"tq":100.0,"pwr":21.83,"latg":1.328,"lng":0.393,"thr":95.0,"brk":0.0,"x":21.8,"y":-2.17,"tcs":28.9,"sec":1,"mt":40.7,"bt":26.1,"ce":16.55,"soc":0.998,"td":1.0,"pf":1.0},{"d":43.0,"t":3.904,"v":47.29,"rpm":2191.1,"tq":100.0,"pwr":22.94,"latg":0.37,"lng":0.569,"thr":94.5,"brk":0.0,"x":23.22,"y":-1.48,"tcs":0.0,"sec":1,"mt":41.2,"bt":26.4,"ce":18.43,"soc":0.9979,"td":1.0,"pf":1.0},{"d":45.7,"t":4.159,"v":49.52,"rpm":2294.7,"tq":100.0,"pwr":24.03,"latg":0.299,"lng":0.565,"thr":94.0,"brk":0.0,"x":24.7,"y":-0.68,"tcs":0.0,"sec":1,"mt":41.8,"bt":26.7,"ce":20.4,"soc":0.9978,"td":1.0,"pf":1.0},{"d":48.4,"t":4.404,"v":51.65,"rpm":2393.2,"tq":100.0,"pwr":25.06,"latg":0.325,"lng":0.562,"thr":93.4,"brk":0.0,"x":26.17,"y":0.16,"tcs":0.0,"sec":1,"mt":42.3,"bt":27.0,"ce":22.45,"soc":0.9977,"td":1.0,"pf":1.0},{"d":51.1,"t":4.638,"v":53.66,"rpm":2486.4,"tq":100.0,"pwr":26.04,"latg":-1.083,"lng":0.533,"thr":92.9,"brk":0.0,"x":27.43,"y":0.87,"tcs":4.1,"sec":1,"mt":42.8,"bt":27.3,"ce":24.59,"soc":0.9975,"td":1.0,"pf":1.0},{"d":53.7,"t":4.865,"v":55.33,"rpm":2563.4,"tq":100.0,"pwr":26.84,"latg":-1.297,"lng":0.414,"thr":92.5,"brk":0.0,"x":28.72,"y":1.49,"tcs":22.8,"sec":1,"mt":43.2,"bt":27.6,"ce":26.79,"soc":0.9974,"td":1.0,"pf":1.0},{"d":56.4,"t":5.085,"v":56.66,"rpm":2625.2,"tq":100.0,"pwr":27.49,"latg":-1.329,"lng":0.379,"thr":92.1,"brk":0.0,"x":30.05,"y":2.01,"tcs":28.0,"sec":1,"mt":43.6,"bt":27.8,"ce":29.04,"soc":0.9973,"td":1.0,"pf":1.0},{"d":59.1,"t":5.301,"v":57.88,"rpm":2681.9,"tq":100.0,"pwr":28.08,"latg":-1.355,"lng":0.357,"thr":91.8,"brk":0.0,"x":31.41,"y":2.43,"tcs":31.2,"sec":1,"mt":43.9,"bt":28.0,"ce":31.35,"soc":0.9971,"td":1.0,"pf":1.0},{"d":61.8,"t":5.511,"v":59.25,"rpm":2745.4,"tq":100.0,"pwr":28.75,"latg":-1.165,"lng":0.471,"thr":91.4,"brk":0.0,"x":32.8,"y":2.74,"tcs":12.4,"sec":1,"mt":44.3,"bt":28.2,"ce":33.7,"soc":0.997,"td":1.0,"pf":1.0},{"d":64.5,"t":5.717,"v":60.86,"rpm":2819.8,"tq":100.0,"pwr":29.53,"latg":-1.041,"lng":0.529,"thr":90.9,"brk":0.0,"x":34.19,"y":2.97,"tcs":2.5,"sec":1,"mt":44.7,"bt":28.5,"ce":36.13,"soc":0.9969,"td":1.0,"pf":1.0},{"d":67.1,"t":5.917,"v":62.53,"rpm":2897.0,"tq":100.0,"pwr":30.34,"latg":-1.005,"lng":0.542,"thr":90.4,"brk":0.0,"x":35.58,"y":3.12,"tcs":0.0,"sec":1,"mt":45.2,"bt":28.8,"ce":38.61,"soc":0.9968,"td":1.0,"pf":1.0},{"d":69.8,"t":6.112,"v":64.15,"rpm":2972.4,"tq":100.0,"pwr":31.13,"latg":-0.98,"lng":0.538,"thr":89.9,"brk":0.0,"x":36.97,"y":3.21,"tcs":0.0,"sec":1,"mt":45.6,"bt":29.1,"ce":41.17,"soc":0.9966,"td":1.0,"pf":1.0},{"d":72.5,"t":6.302,"v":65.73,"rpm":3045.4,"tq":100.0,"pwr":31.89,"latg":-1.019,"lng":0.533,"thr":89.4,"brk":0.0,"x":38.36,"y":3.24,"tcs":0.4,"sec":1,"mt":46.0,"bt":29.4,"ce":43.78,"soc":0.9965,"td":1.0,"pf":1.0},{"d":75.2,"t":6.488,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":-1.066,"lng":0.51,"thr":88.9,"brk":0.0,"x":39.74,"y":3.21,"tcs":3.6,"sec":1,"mt":46.3,"bt":29.6,"ce":46.44,"soc":0.9964,"td":1.0,"pf":1.0},{"d":77.8,"t":6.67,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.0,"lng":0.529,"thr":100.0,"brk":0.0,"x":41.2,"y":3.13,"tcs":0.0,"sec":1,"mt":46.4,"bt":29.7,"ce":49.11,"soc":0.9962,"td":1.0,"pf":1.0},{"d":80.5,"t":6.848,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.0,"lng":0.525,"thr":100.0,"brk":0.0,"x":42.69,"y":3.04,"tcs":0.0,"sec":1,"mt":46.5,"bt":29.7,"ce":51.77,"soc":0.9961,"td":1.0,"pf":1.0},{"d":83.2,"t":7.022,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.051,"lng":0.522,"thr":87.4,"brk":0.0,"x":44.52,"y":2.93,"tcs":0.0,"sec":1,"mt":46.5,"bt":29.7,"ce":54.43,"soc":0.996,"td":1.0,"pf":1.0},{"d":85.9,"t":7.193,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.053,"lng":0.519,"thr":86.9,"brk":0.0,"x":48.52,"y":2.74,"tcs":0.0,"sec":1,"mt":46.6,"bt":29.8,"ce":57.09,"soc":0.9958,"td":1.0,"pf":1.0},{"d":88.6,"t":7.36,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.055,"lng":0.516,"thr":86.4,"brk":0.0,"x":52.52,"y":2.56,"tcs":0.0,"sec":1,"mt":46.7,"bt":29.8,"ce":59.75,"soc":0.9957,"td":1.0,"pf":1.0},{"d":91.2,"t":7.525,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":-0.089,"lng":0.513,"thr":86.0,"brk":0.0,"x":54.34,"y":2.47,"tcs":0.0,"sec":1,"mt":46.8,"bt":29.9,"ce":62.42,"soc":0.9956,"td":1.0,"pf":1.0},{"d":93.9,"t":7.687,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":-0.092,"lng":0.51,"thr":85.5,"brk":0.0,"x":54.23,"y":2.46,"tcs":0.0,"sec":1,"mt":46.8,"bt":29.9,"ce":65.08,"soc":0.9955,"td":1.0,"pf":1.0},{"d":96.6,"t":7.847,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":-0.095,"lng":0.506,"thr":85.0,"brk":0.0,"x":54.12,"y":2.44,"tcs":0.0,"sec":1,"mt":46.9,"bt":29.9,"ce":67.74,"soc":0.9953,"td":1.0,"pf":1.0},{"d":99.3,"t":8.003,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.0,"lng":0.503,"thr":100.0,"brk":0.0,"x":55.4,"y":2.38,"tcs":0.0,"sec":1,"mt":47.0,"bt":30.0,"ce":70.4,"soc":0.9952,"td":1.0,"pf":1.0},{"d":101.9,"t":8.158,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.0,"lng":0.5,"thr":100.0,"brk":0.0,"x":56.89,"y":2.31,"tcs":0.0,"sec":1,"mt":47.1,"bt":30.0,"ce":73.06,"soc":0.9951,"td":1.0,"pf":1.0},{"d":104.6,"t":8.31,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.0,"lng":0.497,"thr":100.0,"brk":0.0,"x":58.39,"y":2.24,"tcs":0.0,"sec":1,"mt":47.1,"bt":30.0,"ce":75.73,"soc":0.9949,"td":1.0,"pf":1.0},{"d":107.3,"t":8.46,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.0,"lng":0.494,"thr":100.0,"brk":0.0,"x":59.88,"y":2.17,"tcs":0.0,"sec":1,"mt":47.2,"bt":30.1,"ce":78.39,"soc":0.9948,"td":1.0,"pf":1.0},{"d":110.0,"t":8.608,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.0,"lng":0.491,"thr":100.0,"brk":0.0,"x":61.38,"y":2.1,"tcs":0.0,"sec":1,"mt":47.3,"bt":30.1,"ce":81.05,"soc":0.9947,"td":1.0,"pf":1.0},{"d":112.7,"t":8.754,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.0,"lng":0.488,"thr":100.0,"brk":0.0,"x":62.87,"y":2.03,"tcs":0.0,"sec":1,"mt":47.4,"bt":30.2,"ce":83.71,"soc":0.9945,"td":1.0,"pf":1.0},{"d":115.3,"t":8.898,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":-0.083,"lng":0.485,"thr":81.7,"brk":0.0,"x":61.95,"y":2.04,"tcs":0.0,"sec":1,"mt":47.4,"bt":30.2,"ce":86.37,"soc":0.9944,"td":1.0,"pf":1.0},{"d":118.0,"t":9.04,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":-0.104,"lng":0.482,"thr":81.3,"brk":0.0,"x":61.43,"y":2.04,"tcs":0.0,"sec":1,"mt":47.5,"bt":30.2,"ce":89.04,"soc":0.9943,"td":1.0,"pf":1.0},{"d":120.7,"t":9.182,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.133,"lng":-1.731,"thr":0.0,"brk":99.6,"x":61.31,"y":2.02,"tcs":0.0,"sec":1,"mt":33.4,"bt":24.7,"ce":89.04,"soc":0.9942,"td":1.0,"pf":1.0},{"d":123.4,"t":9.328,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.179,"lng":-1.716,"thr":0.0,"brk":99.3,"x":61.63,"y":2.0,"tcs":0.0,"sec":1,"mt":33.5,"bt":24.7,"ce":89.04,"soc":0.994,"td":1.0,"pf":1.0},{"d":126.0,"t":9.481,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.306,"lng":-1.683,"thr":0.0,"brk":97.9,"x":62.41,"y":1.95,"tcs":0.0,"sec":1,"mt":33.5,"bt":24.8,"ce":89.04,"soc":0.9939,"td":1.0,"pf":1.0},{"d":128.7,"t":9.642,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.623,"lng":-1.578,"thr":0.0,"brk":92.0,"x":63.59,"y":1.88,"tcs":0.0,"sec":1,"mt":33.6,"bt":24.8,"ce":89.04,"soc":0.9938,"td":1.0,"pf":1.0},{"d":131.4,"t":9.812,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.708,"lng":-1.528,"thr":0.0,"brk":89.5,"x":64.89,"y":1.79,"tcs":12.4,"sec":1,"mt":33.7,"bt":24.8,"ce":89.04,"soc":0.9936,"td":1.0,"pf":1.0},{"d":134.1,"t":9.992,"v":66.75,"rpm":3092.9,"tq":100.0,"pwr":0.0,"latg":-0.86,"lng":-1.437,"thr":0.0,"brk":84.4,"x":66.22,"y":1.66,"tcs":0.0,"sec":1,"mt":33.8,"bt":24.9,"ce":89.04,"soc":0.9935,"td":1.0,"pf":1.0},{"d":136.8,"t":10.184,"v":62.6,"rpm":2900.6,"tq":100.0,"pwr":0.0,"latg":-0.951,"lng":-1.358,"thr":0.0,"brk":80.0,"x":67.59,"y":1.48,"tcs":0.0,"sec":1,"mt":33.8,"bt":24.9,"ce":89.04,"soc":0.9934,"td":1.0,"pf":1.0},{"d":139.4,"t":10.39,"v":58.53,"rpm":2712.0,"tq":100.0,"pwr":0.0,"latg":-1.135,"lng":-1.18,"thr":0.0,"brk":69.4,"x":68.98,"y":1.24,"tcs":0.0,"sec":1,"mt":33.9,"bt":25.0,"ce":89.04,"soc":0.9932,"td":1.0,"pf":1.0},{"d":142.1,"t":10.609,"v":54.76,"rpm":2537.2,"tq":100.0,"pwr":0.0,"latg":-1.251,"lng":-1.052,"thr":0.0,"brk":61.7,"x":70.38,"y":0.91,"tcs":0.0,"sec":1,"mt":34.0,"bt":25.0,"ce":89.04,"soc":0.9931,"td":1.0,"pf":1.0},{"d":144.8,"t":10.843,"v":51.35,"rpm":2379.2,"tq":100.0,"pwr":0.0,"latg":-1.419,"lng":-0.763,"thr":0.0,"brk":44.1,"x":71.76,"y":0.47,"tcs":0.0,"sec":1,"mt":34.1,"bt":25.0,"ce":89.04,"soc":0.993,"td":1.0,"pf":1.0},{"d":147.5,"t":11.092,"v":48.65,"rpm":2254.0,"tq":100.0,"pwr":0.0,"latg":-1.485,"lng":-0.638,"thr":0.0,"brk":36.5,"x":73.1,"y":-0.1,"tcs":0.0,"sec":1,"mt":34.1,"bt":25.1,"ce":89.04,"soc":0.9929,"td":1.0,"pf":1.0},{"d":150.2,"t":11.352,"v":46.68,"rpm":2162.7,"tq":100.0,"pwr":0.0,"latg":-1.576,"lng":-0.329,"thr":0.0,"brk":17.4,"x":74.37,"y":-0.83,"tcs":0.0,"sec":1,"mt":34.2,"bt":25.1,"ce":89.04,"soc":0.9927,"td":1.0,"pf":1.0},{"d":152.8,"t":11.621,"v":45.37,"rpm":2102.0,"tq":100.0,"pwr":0.0,"latg":-1.581,"lng":-0.286,"thr":0.0,"brk":14.8,"x":75.54,"y":-1.73,"tcs":0.0,"sec":1,"mt":34.3,"bt":25.1,"ce":89.04,"soc":0.9926,"td":1.0,"pf":1.0},{"d":155.5,"t":11.895,"v":45.12,"rpm":2090.7,"tq":100.0,"pwr":21.89,"latg":-1.493,"lng":0.222,"thr":95.0,"brk":0.0,"x":76.57,"y":-2.78,"tcs":56.4,"sec":1,"mt":43.9,"bt":27.7,"ce":90.83,"soc":0.9925,"td":1.0,"pf":1.0},{"d":158.2,"t":12.165,"v":46.43,"rpm":2151.5,"tq":100.0,"pwr":22.53,"latg":-1.354,"lng":0.37,"thr":94.7,"brk":0.0,"x":77.45,"y":-3.96,"tcs":32.2,"sec":1,"mt":44.3,"bt":27.9,"ce":92.68,"soc":0.9923,"td":1.0,"pf":1.0},{"d":160.9,"t":12.426,"v":48.52,"rpm":2248.0,"tq":100.0,"pwr":23.54,"latg":-0.656,"lng":0.567,"thr":94.2,"brk":0.0,"x":78.19,"y":-5.21,"tcs":0.0,"sec":1,"mt":44.8,"bt":28.2,"ce":94.61,"soc":0.9922,"td":1.0,"pf":1.0},{"d":163.5,"t":12.675,"v":50.69,"rpm":2348.7,"tq":100.0,"pwr":24.6,"latg":-0.496,"lng":0.563,"thr":93.7,"brk":0.0,"x":78.83,"y":-6.45,"tcs":0.0,"sec":1,"mt":45.3,"bt":28.5,"ce":96.63,"soc":0.9921,"td":1.0,"pf":1.0},{"d":166.2,"t":12.914,"v":52.76,"rpm":2444.7,"tq":100.0,"pwr":25.6,"latg":-0.538,"lng":0.56,"thr":93.2,"brk":0.0,"x":79.42,"y":-7.7,"tcs":0.0,"sec":1,"mt":45.9,"bt":28.8,"ce":98.73,"soc":0.992,"td":1.0,"pf":1.0},{"d":168.9,"t":13.144,"v":54.75,"rpm":2536.6,"tq":100.0,"pwr":26.56,"latg":0.998,"lng":0.556,"thr":92.6,"brk":0.0,"x":80.04,"y":-9.08,"tcs":0.0,"sec":1,"mt":46.4,"bt":29.1,"ce":100.9,"soc":0.9918,"td":1.0,"pf":1.0},{"d":171.6,"t":13.365,"v":56.65,"rpm":2624.6,"tq":100.0,"pwr":27.49,"latg":0.994,"lng":0.553,"thr":92.1,"brk":0.0,"x":80.78,"y":-10.49,"tcs":0.0,"sec":1,"mt":46.8,"bt":29.4,"ce":103.16,"soc":0.9917,"td":1.0,"pf":1.0},{"d":174.3,"t":13.58,"v":58.47,"rpm":2709.3,"tq":100.0,"pwr":28.37,"latg":0.657,"lng":0.55,"thr":91.6,"brk":0.0,"x":81.61,"y":-11.87,"tcs":0.0,"sec":1,"mt":47.3,"bt":29.7,"ce":105.49,"soc":0.9916,"td":1.0,"pf":1.0},{"d":176.9,"t":13.788,"v":60.24,"rpm":2791.0,"tq":100.0,"pwr":29.23,"latg":0.45,"lng":0.546,"thr":91.1,"brk":0.0,"x":82.53,"y":-13.28,"tcs":0.0,"sec":1,"mt":47.7,"bt":30.0,"ce":107.88,"soc":0.9914,"td":1.0,"pf":1.0},{"d":179.6,"t":13.99,"v":61.94,"rpm":2869.8,"tq":100.0,"pwr":30.05,"latg":0.493,"lng":0.543,"thr":90.6,"brk":0.0,"x":83.52,"y":-14.69,"tcs":0.0,"sec":1,"mt":48.2,"bt":30.3,"ce":110.35,"soc":0.9913,"td":1.0,"pf":1.0},{"d":182.3,"t":14.187,"v":63.58,"rpm":2946.0,"tq":100.0,"pwr":30.85,"latg":0.677,"lng":0.54,"thr":90.1,"brk":0.0,"x":84.52,"y":-16.04,"tcs":0.0,"sec":1,"mt":48.6,"bt":30.6,"ce":112.88,"soc":0.9912,"td":1.0,"pf":1.0},{"d":185.0,"t":14.379,"v":65.18,"rpm":3019.9,"tq":100.0,"pwr":31.62,"latg":0.82,"lng":0.536,"thr":89.6,"brk":0.0,"x":85.54,"y":-17.33,"tcs":0.0,"sec":1,"mt":49.0,"bt":30.9,"ce":115.47,"soc":0.991,"td":1.0,"pf":1.0},{"d":187.6,"t":14.566,"v":66.72,"rpm":3091.5,"tq":100.0,"pwr":32.37,"latg":0.851,"lng":0.533,"thr":89.0,"brk":0.0,"x":86.61,"y":-18.57,"tcs":0.0,"sec":1,"mt":49.4,"bt":31.2,"ce":118.12,"soc":0.9909,"td":1.0,"pf":1.0},{"d":190.3,"t":14.749,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.701,"lng":0.53,"thr":88.6,"brk":0.0,"x":87.73,"y":-19.78,"tcs":0.0,"sec":1,"mt":49.5,"bt":31.2,"ce":120.79,"soc":0.9908,"td":1.0,"pf":1.0},{"d":193.0,"t":14.928,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.412,"lng":0.526,"thr":88.1,"brk":0.0,"x":88.97,"y":-21.01,"tcs":0.0,"sec":1,"mt":49.6,"bt":31.3,"ce":123.45,"soc":0.9907,"td":1.0,"pf":1.0},{"d":195.7,"t":15.103,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.298,"lng":0.523,"thr":87.6,"brk":0.0,"x":90.31,"y":-22.31,"tcs":0.0,"sec":1,"mt":49.7,"bt":31.3,"ce":126.11,"soc":0.9905,"td":1.0,"pf":1.0},{"d":198.4,"t":15.275,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.296,"lng":0.52,"thr":87.1,"brk":0.0,"x":91.74,"y":-23.64,"tcs":0.0,"sec":1,"mt":49.8,"bt":31.4,"ce":128.77,"soc":0.9904,"td":1.0,"pf":1.0},{"d":201.0,"t":15.444,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":0.308,"lng":0.517,"thr":86.6,"brk":0.0,"x":93.18,"y":-24.95,"tcs":0.0,"sec":1,"mt":49.8,"bt":31.4,"ce":131.43,"soc":0.9903,"td":1.0,"pf":1.0},{"d":203.7,"t":15.609,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":-0.172,"lng":0.514,"thr":86.1,"brk":0.0,"x":94.33,"y":-25.97,"tcs":0.0,"sec":1,"mt":49.9,"bt":31.4,"ce":134.1,"soc":0.9901,"td":1.0,"pf":1.0},{"d":206.4,"t":15.772,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":32.46,"latg":-0.178,"lng":0.511,"thr":85.6,"brk":0.0,"x":94.84,"y":-26.43,"tcs":0.0,"sec":1,"mt":50.0,"bt":31.5,"ce":136.76,"soc":0.99,"td":1.0,"pf":1.0},{"d":209.1,"t":15.932,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.184,"lng":0.507,"thr":85.1,"brk":0.0,"x":95.34,"y":-26.9,"tcs":0.0,"sec":1,"mt":50.1,"bt":31.5,"ce":138.62,"soc":0.9899,"td":0.7,"pf":1.0},{"d":211.7,"t":16.096,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.36,"lng":-1.66,"thr":0.0,"brk":97.3,"x":96.69,"y":-28.09,"tcs":0.0,"sec":1,"mt":35.9,"bt":26.0,"ce":138.62,"soc":0.9897,"td":1.0,"pf":1.0},{"d":214.4,"t":16.269,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.686,"lng":-1.513,"thr":0.0,"brk":88.8,"x":98.04,"y":-29.24,"tcs":0.0,"sec":1,"mt":36.0,"bt":26.0,"ce":138.62,"soc":0.9896,"td":1.0,"pf":1.0},{"d":217.1,"t":16.452,"v":65.94,"rpm":3055.4,"tq":100.0,"pwr":0.0,"latg":1.179,"lng":-1.156,"thr":0.0,"brk":66.9,"x":99.3,"y":-30.26,"tcs":0.0,"sec":1,"mt":36.1,"bt":26.0,"ce":138.62,"soc":0.9895,"td":1.0,"pf":1.0},{"d":219.8,"t":16.645,"v":62.88,"rpm":2913.5,"tq":100.0,"pwr":0.0,"latg":1.397,"lng":-0.821,"thr":0.0,"brk":46.4,"x":100.59,"y":-31.18,"tcs":0.0,"sec":1,"mt":36.2,"bt":26.1,"ce":138.62,"soc":0.9894,"td":1.0,"pf":1.0},{"d":222.5,"t":16.844,"v":61.24,"rpm":2837.6,"tq":100.0,"pwr":0.0,"latg":1.56,"lng":-0.428,"thr":0.0,"brk":22.0,"x":101.93,"y":-32.0,"tcs":0.0,"sec":1,"mt":36.2,"bt":26.1,"ce":138.62,"soc":0.9892,"td":1.0,"pf":1.0},{"d":225.1,"t":17.048,"v":59.96,"rpm":2778.3,"tq":100.0,"pwr":0.0,"latg":1.571,"lng":-0.371,"thr":0.0,"brk":18.6,"x":103.32,"y":-32.71,"tcs":0.0,"sec":1,"mt":36.3,"bt":26.2,"ce":138.62,"soc":0.9891,"td":1.0,"pf":1.0},{"d":227.8,"t":17.257,"v":58.61,"rpm":2715.7,"tq":100.0,"pwr":0.0,"latg":1.529,"lng":-0.563,"thr":0.0,"brk":30.8,"x":104.76,"y":-33.3,"tcs":92.3,"sec":1,"mt":36.4,"bt":26.2,"ce":138.62,"soc":0.989,"td":1.0,"pf":1.0},{"d":230.5,"t":17.472,"v":56.31,"rpm":2608.8,"tq":100.0,"pwr":0.0,"latg":1.412,"lng":-0.836,"thr":0.0,"brk":48.1,"x":106.25,"y":-33.75,"tcs":90.3,"sec":1,"mt":36.5,"bt":26.2,"ce":138.62,"soc":0.9888,"td":1.0,"pf":1.0},{"d":233.2,"t":17.698,"v":53.44,"rpm":2476.1,"tq":100.0,"pwr":0.0,"latg":1.441,"lng":-0.743,"thr":0.0,"brk":42.6,"x":107.77,"y":-34.07,"tcs":0.0,"sec":1,"mt":36.5,"bt":26.3,"ce":138.62,"soc":0.9887,"td":1.0,"pf":1.0},{"d":235.9,"t":17.935,"v":51.43,"rpm":2382.9,"tq":100.0,"pwr":24.95,"latg":1.6,"lng":0.0,"thr":9.0,"brk":0.0,"x":109.3,"y":-34.24,"tcs":0.0,"sec":1,"mt":47.5,"bt":29.6,"ce":140.67,"soc":0.9886,"td":1.0,"pf":1.0},{"d":238.5,"t":18.175,"v":51.48,"rpm":2385.1,"tq":100.0,"pwr":24.98,"latg":1.59,"lng":0.029,"thr":93.5,"brk":0.0,"x":110.83,"y":-34.23,"tcs":85.8,"sec":2,"mt":47.6,"bt":29.6,"ce":142.72,"soc":0.9884,"td":1.0,"pf":1.0},{"d":241.2,"t":18.414,"v":51.67,"rpm":2394.2,"tq":100.0,"pwr":25.07,"latg":1.527,"lng":0.157,"thr":93.4,"brk":0.0,"x":112.36,"y":-34.04,"tcs":65.3,"sec":2,"mt":47.7,"bt":29.7,"ce":144.77,"soc":0.9883,"td":1.0,"pf":1.0},{"d":243.9,"t":18.651,"v":52.69,"rpm":2441.2,"tq":100.0,"pwr":25.56,"latg":1.37,"lng":0.346,"thr":93.2,"brk":0.0,"x":113.85,"y":-33.68,"tcs":34.5,"sec":2,"mt":48.0,"bt":29.9,"ce":146.87,"soc":0.9882,"td":1.0,"pf":1.0},{"d":246.6,"t":18.882,"v":54.11,"rpm":2507.1,"tq":100.0,"pwr":26.25,"latg":1.2,"lng":0.458,"thr":92.8,"brk":0.0,"x":115.31,"y":-33.17,"tcs":16.1,"sec":2,"mt":48.4,"bt":30.1,"ce":149.02,"soc":0.9881,"td":1.0,"pf":1.0},{"d":249.2,"t":19.107,"v":55.88,"rpm":2589.1,"tq":100.0,"pwr":27.11,"latg":1.027,"lng":0.544,"thr":92.3,"brk":0.0,"x":116.73,"y":-32.54,"tcs":1.7,"sec":2,"mt":48.9,"bt":30.4,"ce":151.24,"soc":0.9879,"td":1.0,"pf":1.0},{"d":251.9,"t":19.324,"v":57.73,"rpm":2674.9,"tq":100.0,"pwr":28.01,"latg":1.025,"lng":0.547,"thr":91.8,"brk":0.0,"x":118.11,"y":-31.81,"tcs":0.7,"sec":2,"mt":49.3,"bt":30.7,"ce":153.54,"soc":0.9878,"td":1.0,"pf":1.0},{"d":254.6,"t":19.537,"v":57.11,"rpm":2646.3,"tq":100.0,"pwr":0.0,"latg":1.004,"lng":-1.322,"thr":0.0,"brk":78.4,"x":119.45,"y":-30.99,"tcs":5.1,"sec":2,"mt":37.1,"bt":26.6,"ce":153.54,"soc":0.9877,"td":1.0,"pf":1.0},{"d":257.3,"t":19.763,"v":53.29,"rpm":2469.1,"tq":100.0,"pwr":0.0,"latg":-1.306,"lng":-0.972,"thr":0.0,"brk":56.9,"x":120.67,"y":-30.2,"tcs":0.0,"sec":2,"mt":37.2,"bt":26.6,"ce":153.54,"soc":0.9875,"td":1.0,"pf":1.0},{"d":260.0,"t":20.003,"v":50.35,"rpm":2333.1,"tq":100.0,"pwr":0.0,"latg":-1.539,"lng":-0.384,"thr":0.0,"brk":20.5,"x":121.94,"y":-29.52,"tcs":0.0,"sec":2,"mt":37.3,"bt":26.6,"ce":153.54,"soc":0.9874,"td":1.0,"pf":1.0},{"d":262.6,"t":20.247,"v":50.89,"rpm":2357.7,"tq":100.0,"pwr":24.69,"latg":-1.409,"lng":0.311,"thr":93.6,"brk":0.0,"x":123.28,"y":-28.98,"tcs":40.6,"sec":2,"mt":48.2,"bt":29.9,"ce":155.57,"soc":0.9873,"td":1.0,"pf":1.0},{"d":265.3,"t":20.487,"v":52.27,"rpm":2422.0,"tq":100.0,"pwr":25.36,"latg":-1.301,"lng":0.417,"thr":93.3,"brk":0.0,"x":124.66,"y":-28.58,"tcs":23.1,"sec":2,"mt":48.5,"bt":30.1,"ce":157.65,"soc":0.9872,"td":1.0,"pf":1.0},{"d":268.0,"t":20.73,"v":49.64,"rpm":2300.2,"tq":100.0,"pwr":0.0,"latg":-1.431,"lng":-0.75,"thr":0.0,"brk":43.4,"x":126.08,"y":-28.3,"tcs":0.0,"sec":2,"mt":37.5,"bt":26.8,"ce":157.65,"soc":0.987,"td":1.0,"pf":1.0},{"d":270.7,"t":20.984,"v":48.04,"rpm":2225.8,"tq":100.0,"pwr":23.31,"latg":-1.591,"lng":0.018,"thr":94.3,"brk":0.0,"x":127.53,"y":-28.18,"tcs":88.5,"sec":2,"mt":47.8,"bt":29.7,"ce":159.56,"soc":0.9869,"td":1.0,"pf":1.0},{"d":273.3,"t":21.241,"v":48.32,"rpm":2239.0,"tq":100.0,"pwr":23.45,"latg":-1.57,"lng":0.099,"thr":94.3,"brk":0.0,"x":128.98,"y":-28.25,"tcs":75.5,"sec":2,"mt":47.9,"bt":29.7,"ce":161.48,"soc":0.9868,"td":1.0,"pf":1.0},{"d":276.0,"t":21.501,"v":46.4,"rpm":2149.7,"tq":100.0,"pwr":0.0,"latg":-1.518,"lng":-0.55,"thr":0.0,"brk":31.2,"x":130.42,"y":-28.5,"tcs":0.0,"sec":2,"mt":37.7,"bt":26.9,"ce":161.48,"soc":0.9866,"td":1.0,"pf":1.0},{"d":278.7,"t":21.775,"v":44.39,"rpm":2056.7,"tq":100.0,"pwr":0.0,"latg":-1.571,"lng":-0.311,"thr":0.0,"brk":16.5,"x":131.82,"y":-28.93,"tcs":0.0,"sec":2,"mt":37.8,"bt":26.9,"ce":161.48,"soc":0.9865,"td":1.0,"pf":1.0},{"d":281.4,"t":22.052,"v":45.11,"rpm":2090.2,"tq":100.0,"pwr":21.89,"latg":-1.325,"lng":0.388,"thr":95.0,"brk":0.0,"x":133.15,"y":-29.56,"tcs":29.6,"sec":2,"mt":47.5,"bt":29.5,"ce":163.28,"soc":0.9864,"td":1.0,"pf":1.0},{"d":284.1,"t":22.321,"v":46.99,"rpm":2177.2,"tq":100.0,"pwr":22.8,"latg":-1.227,"lng":0.468,"thr":94.6,"brk":0.0,"x":134.38,"y":-30.35,"tcs":16.3,"sec":2,"mt":47.9,"bt":29.7,"ce":165.15,"soc":0.9862,"td":1.0,"pf":1.0},{"d":286.7,"t":22.579,"v":48.64,"rpm":2253.8,"tq":100.0,"pwr":23.6,"latg":-1.376,"lng":0.363,"thr":94.2,"brk":0.0,"x":135.52,"y":-31.26,"tcs":32.8,"sec":2,"mt":48.4,"bt":30.0,"ce":167.08,"soc":0.9861,"td":1.0,"pf":1.0},{"d":289.4,"t":22.834,"v":47.61,"rpm":2205.9,"tq":100.0,"pwr":0.0,"latg":-1.475,"lng":-0.662,"thr":0.0,"brk":38.1,"x":136.57,"y":-32.29,"tcs":0.0,"sec":2,"mt":38.1,"bt":27.1,"ce":167.08,"soc":0.986,"td":1.0,"pf":1.0},{"d":292.1,"t":23.101,"v":45.42,"rpm":2104.4,"tq":100.0,"pwr":0.0,"latg":-1.582,"lng":-0.049,"thr":0.0,"brk":0.0,"x":137.48,"y":-33.45,"tcs":0.0,"sec":2,"mt":38.2,"bt":27.1,"ce":167.08,"soc":0.9859,"td":1.0,"pf":1.0},{"d":294.8,"t":23.371,"v":46.06,"rpm":2134.0,"tq":100.0,"pwr":22.35,"latg":-1.48,"lng":0.247,"thr":94.8,"brk":0.0,"x":138.24,"y":-34.72,"tcs":52.1,"sec":2,"mt":48.0,"bt":29.8,"ce":168.91,"soc":0.9857,"td":1.0,"pf":1.0},{"d":297.4,"t":23.636,"v":47.23,"rpm":2188.5,"tq":100.0,"pwr":22.92,"latg":-1.442,"lng":0.298,"thr":94.5,"brk":0.0,"x":138.82,"y":-36.08,"tcs":43.6,"sec":2,"mt":48.4,"bt":30.0,"ce":170.79,"soc":0.9856,"td":1.0,"pf":1.0},{"d":300.1,"t":23.894,"v":48.32,"rpm":2238.9,"tq":100.0,"pwr":23.45,"latg":-1.481,"lng":0.252,"thr":94.3,"brk":0.0,"x":139.24,"y":-37.49,"tcs":50.8,"sec":2,"mt":48.7,"bt":30.1,"ce":172.72,"soc":0.9855,"td":1.0,"pf":1.0},{"d":302.8,"t":24.147,"v":49.65,"rpm":2300.6,"tq":100.0,"pwr":24.09,"latg":-1.147,"lng":0.489,"thr":93.9,"brk":0.0,"x":139.49,"y":-38.94,"tcs":12.2,"sec":2,"mt":49.0,"bt":30.3,"ce":174.69,"soc":0.9853,"td":1.0,"pf":1.0},{"d":305.5,"t":24.391,"v":51.72,"rpm":2396.3,"tq":100.0,"pwr":25.09,"latg":-0.894,"lng":0.562,"thr":93.4,"brk":0.0,"x":139.61,"y":-40.39,"tcs":0.0,"sec":2,"mt":49.5,"bt":30.6,"ce":176.75,"soc":0.9852,"td":1.0,"pf":1.0},{"d":308.2,"t":24.625,"v":53.73,"rpm":2489.6,"tq":100.0,"pwr":18.25,"latg":-1.075,"lng":0.537,"thr":92.9,"brk":0.0,"x":139.64,"y":-41.84,"tcs":3.4,"sec":2,"mt":50.1,"bt":30.9,"ce":178.25,"soc":0.9851,"td":0.7,"pf":1.0},{"d":310.8,"t":24.851,"v":55.4,"rpm":2566.8,"tq":100.0,"pwr":18.82,"latg":-1.232,"lng":0.438,"thr":92.5,"brk":0.0,"x":139.57,"y":-43.29,"tcs":18.9,"sec":2,"mt":50.5,"bt":31.2,"ce":179.79,"soc":0.9849,"td":0.7,"pf":1.0},{"d":313.5,"t":25.071,"v":57.04,"rpm":2642.9,"tq":100.0,"pwr":19.37,"latg":-1.088,"lng":0.515,"thr":92.0,"brk":0.0,"x":139.4,"y":-44.73,"tcs":6.0,"sec":2,"mt":50.9,"bt":31.5,"ce":181.38,"soc":0.9848,"td":0.7,"pf":1.0},{"d":316.2,"t":25.284,"v":58.81,"rpm":2724.7,"tq":100.0,"pwr":19.97,"latg":-1.037,"lng":0.54,"thr":91.5,"brk":0.0,"x":139.14,"y":-46.15,"tcs":1.4,"sec":2,"mt":51.4,"bt":31.7,"ce":183.02,"soc":0.9847,"td":0.7,"pf":1.0},{"d":318.9,"t":25.491,"v":60.47,"rpm":2801.9,"tq":100.0,"pwr":20.54,"latg":-1.113,"lng":0.503,"thr":91.0,"brk":0.0,"x":138.81,"y":-47.55,"tcs":6.9,"sec":2,"mt":51.8,"bt":32.0,"ce":184.7,"soc":0.9846,"td":0.7,"pf":1.0},{"d":321.6,"t":25.693,"v":61.97,"rpm":2871.5,"tq":100.0,"pwr":21.05,"latg":-1.188,"lng":0.462,"thr":90.6,"brk":0.0,"x":138.41,"y":-48.93,"tcs":13.1,"sec":2,"mt":52.2,"bt":32.3,"ce":186.43,"soc":0.9844,"td":0.7,"pf":1.0},{"d":324.2,"t":25.89,"v":63.3,"rpm":2932.8,"tq":100.0,"pwr":21.5,"latg":-1.27,"lng":0.41,"thr":90.1,"brk":0.0,"x":137.93,"y":-50.28,"tcs":20.9,"sec":2,"mt":52.5,"bt":32.5,"ce":188.19,"soc":0.9843,"td":0.7,"pf":1.0},{"d":326.9,"t":26.083,"v":64.43,"rpm":2985.4,"tq":100.0,"pwr":21.88,"latg":-1.349,"lng":0.352,"thr":89.8,"brk":0.0,"x":137.37,"y":-51.61,"tcs":29.9,"sec":2,"mt":52.9,"bt":32.8,"ce":189.98,"soc":0.9842,"td":0.7,"pf":1.0},{"d":329.6,"t":26.273,"v":65.41,"rpm":3030.7,"tq":100.0,"pwr":22.22,"latg":-1.386,"lng":0.317,"thr":89.5,"brk":0.0,"x":136.73,"y":-52.91,"tcs":35.3,"sec":2,"mt":53.1,"bt":33.0,"ce":191.81,"soc":0.984,"td":0.7,"pf":1.0},{"d":332.3,"t":26.46,"v":66.28,"rpm":3070.9,"tq":100.0,"pwr":22.51,"latg":-1.42,"lng":0.285,"thr":89.2,"brk":0.0,"x":136.02,"y":-54.16,"tcs":40.1,"sec":2,"mt":53.4,"bt":33.1,"ce":193.65,"soc":0.9839,"td":0.7,"pf":1.0},{"d":334.9,"t":26.646,"v":66.02,"rpm":3058.8,"tq":100.0,"pwr":0.0,"latg":-1.488,"lng":-0.668,"thr":0.0,"brk":36.4,"x":135.24,"y":-55.38,"tcs":60.1,"sec":2,"mt":39.4,"bt":27.7,"ce":193.65,"soc":0.9838,"td":1.0,"pf":1.0},{"d":337.6,"t":26.836,"v":64.2,"rpm":2974.6,"tq":100.0,"pwr":0.0,"latg":-1.528,"lng":-0.547,"thr":0.0,"brk":29.1,"x":134.39,"y":-56.55,"tcs":0.0,"sec":2,"mt":39.5,"bt":27.7,"ce":193.65,"soc":0.9837,"td":1.0,"pf":1.0},{"d":340.3,"t":27.031,"v":62.77,"rpm":2908.3,"tq":100.0,"pwr":0.0,"latg":-1.551,"lng":-0.477,"thr":0.0,"brk":24.9,"x":133.45,"y":-57.66,"tcs":0.0,"sec":2,"mt":39.5,"bt":27.8,"ce":193.65,"soc":0.9835,"td":1.0,"pf":1.0},{"d":343.0,"t":27.231,"v":61.15,"rpm":2833.4,"tq":100.0,"pwr":0.0,"latg":-1.52,"lng":-0.584,"thr":0.0,"brk":31.8,"x":132.44,"y":-58.7,"tcs":0.0,"sec":2,"mt":39.6,"bt":27.8,"ce":193.65,"soc":0.9834,"td":1.0,"pf":1.0},{"d":345.7,"t":27.436,"v":59.16,"rpm":2741.3,"tq":100.0,"pwr":0.0,"latg":-1.5,"lng":-0.626,"thr":0.0,"brk":34.6,"x":131.35,"y":-59.67,"tcs":0.0,"sec":2,"mt":39.7,"bt":27.8,"ce":193.65,"soc":0.9833,"td":1.0,"pf":1.0},{"d":348.3,"t":27.649,"v":57.23,"rpm":2651.5,"tq":100.0,"pwr":0.0,"latg":-1.527,"lng":-0.538,"thr":0.0,"brk":29.3,"x":130.19,"y":-60.55,"tcs":0.0,"sec":2,"mt":39.8,"bt":27.9,"ce":193.65,"soc":0.9831,"td":1.0,"pf":1.0},{"d":351.0,"t":27.868,"v":55.67,"rpm":2579.2,"tq":100.0,"pwr":0.0,"latg":-1.562,"lng":-0.408,"thr":0.0,"brk":21.4,"x":128.96,"y":-61.34,"tcs":0.0,"sec":2,"mt":39.8,"bt":27.9,"ce":193.65,"soc":0.983,"td":1.0,"pf":1.0},{"d":353.7,"t":28.093,"v":54.35,"rpm":2518.3,"tq":100.0,"pwr":0.0,"latg":-1.577,"lng":-0.325,"thr":0.0,"brk":16.3,"x":127.65,"y":-62.01,"tcs":0.0,"sec":2,"mt":39.9,"bt":28.0,"ce":193.65,"soc":0.9829,"td":1.0,"pf":1.0},{"d":356.4,"t":28.322,"v":53.96,"rpm":2500.1,"tq":100.0,"pwr":18.33,"latg":-1.565,"lng":0.093,"thr":92.8,"brk":0.0,"x":126.29,"y":-62.54,"tcs":74.8,"sec":2,"mt":51.5,"bt":31.6,"ce":195.16,"soc":0.9827,"td":0.7,"pf":1.0},{"d":359.0,"t":28.55,"v":53.93,"rpm":2499.0,"tq":100.0,"pwr":0.0,"latg":-1.49,"lng":-0.679,"thr":0.0,"brk":38.5,"x":124.88,"y":-62.94,"tcs":60.4,"sec":2,"mt":40.1,"bt":28.0,"ce":195.16,"soc":0.9826,"td":1.0,"pf":1.0},{"d":361.7,"t":28.786,"v":51.2,"rpm":2372.0,"tq":100.0,"pwr":0.0,"latg":-1.457,"lng":-0.708,"thr":0.0,"brk":40.6,"x":123.45,"y":-63.21,"tcs":0.0,"sec":2,"mt":40.2,"bt":28.1,"ce":195.16,"soc":0.9825,"td":1.0,"pf":1.0},{"d":364.4,"t":29.034,"v":49.05,"rpm":2272.5,"tq":100.0,"pwr":0.0,"latg":-1.581,"lng":-0.055,"thr":0.0,"brk":0.0,"x":121.99,"y":-63.33,"tcs":0.0,"sec":2,"mt":40.2,"bt":28.1,"ce":195.16,"soc":0.9824,"td":1.0,"pf":1.0},{"d":367.1,"t":29.283,"v":50.51,"rpm":2340.5,"tq":100.0,"pwr":17.16,"latg":-0.968,"lng":0.563,"thr":93.7,"brk":0.0,"x":120.54,"y":-63.28,"tcs":0.0,"sec":2,"mt":51.0,"bt":31.3,"ce":196.56,"soc":0.9822,"td":0.7,"pf":1.0},{"d":369.8,"t":29.522,"v":52.59,"rpm":2436.9,"tq":100.0,"pwr":17.86,"latg":-0.749,"lng":0.56,"thr":93.2,"brk":0.0,"x":119.12,"y":-63.14,"tcs":0.0,"sec":2,"mt":51.5,"bt":31.6,"ce":198.03,"soc":0.9821,"td":0.7,"pf":1.0},{"d":372.4,"t":29.753,"v":54.58,"rpm":2529.0,"tq":100.0,"pwr":18.54,"latg":-0.807,"lng":0.557,"thr":92.7,"brk":0.0,"x":117.73,"y":-62.93,"tcs":0.0,"sec":2,"mt":52.0,"bt":31.9,"ce":199.55,"soc":0.982,"td":0.7,"pf":1.0},{"d":375.1,"t":29.975,"v":56.42,"rpm":2614.2,"tq":100.0,"pwr":19.16,"latg":1.163,"lng":0.486,"thr":92.2,"brk":0.0,"x":116.28,"y":-62.64,"tcs":10.9,"sec":2,"mt":52.5,"bt":32.2,"ce":201.12,"soc":0.9818,"td":0.7,"pf":1.0},{"d":377.8,"t":30.191,"v":57.95,"rpm":2685.0,"tq":100.0,"pwr":19.68,"latg":1.251,"lng":0.433,"thr":91.7,"brk":0.0,"x":114.73,"y":-62.41,"tcs":19.0,"sec":2,"mt":52.9,"bt":32.5,"ce":202.73,"soc":0.9817,"td":0.7,"pf":1.0},{"d":380.5,"t":30.402,"v":59.29,"rpm":2747.2,"tq":100.0,"pwr":20.14,"latg":1.253,"lng":0.422,"thr":91.4,"brk":0.0,"x":113.17,"y":-62.29,"tcs":20.4,"sec":2,"mt":53.3,"bt":32.7,"ce":204.39,"soc":0.9816,"td":0.7,"pf":1.0},{"d":383.1,"t":30.608,"v":60.71,"rpm":2813.0,"tq":100.0,"pwr":20.62,"latg":1.178,"lng":0.464,"thr":90.9,"brk":0.0,"x":111.59,"y":-62.28,"tcs":13.1,"sec":2,"mt":53.6,"bt":33.0,"ce":206.08,"soc":0.9814,"td":0.7,"pf":1.0},{"d":385.8,"t":30.809,"v":62.2,"rpm":2881.8,"tq":100.0,"pwr":21.12,"latg":1.134,"lng":0.486,"thr":90.5,"brk":0.0,"x":110.0,"y":-62.37,"tcs":9.1,"sec":2,"mt":54.0,"bt":33.2,"ce":207.81,"soc":0.9813,"td":0.7,"pf":1.0},{"d":388.5,"t":31.005,"v":63.68,"rpm":2950.6,"tq":100.0,"pwr":21.63,"latg":1.115,"lng":0.492,"thr":90.0,"brk":0.0,"x":108.42,"y":-62.56,"tcs":7.6,"sec":2,"mt":54.4,"bt":33.5,"ce":209.58,"soc":0.9812,"td":0.7,"pf":1.0},{"d":391.2,"t":31.196,"v":65.14,"rpm":3018.3,"tq":100.0,"pwr":22.13,"latg":1.12,"lng":0.489,"thr":89.6,"brk":0.0,"x":106.84,"y":-62.84,"tcs":7.7,"sec":2,"mt":54.8,"bt":33.8,"ce":211.4,"soc":0.9811,"td":0.7,"pf":1.0},{"d":393.9,"t":31.384,"v":66.53,"rpm":3082.5,"tq":100.0,"pwr":22.6,"latg":1.154,"lng":0.468,"thr":89.1,"brk":0.0,"x":105.28,"y":-63.2,"tcs":10.5,"sec":2,"mt":55.2,"bt":34.0,"ce":213.25,"soc":0.9809,"td":0.7,"pf":1.0},{"d":396.5,"t":31.568,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":1.137,"lng":0.462,"thr":88.7,"brk":0.0,"x":103.73,"y":-63.65,"tcs":11.0,"sec":2,"mt":55.3,"bt":34.1,"ce":215.11,"soc":0.9808,"td":0.7,"pf":1.0},{"d":399.2,"t":31.748,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.9,"lng":0.527,"thr":88.2,"brk":0.0,"x":102.19,"y":-64.17,"tcs":0.0,"sec":2,"mt":55.4,"bt":34.2,"ce":216.98,"soc":0.9807,"td":0.7,"pf":1.0},{"d":401.9,"t":31.924,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.756,"lng":0.524,"thr":87.7,"brk":0.0,"x":100.64,"y":-64.77,"tcs":0.0,"sec":2,"mt":55.5,"bt":34.2,"ce":218.84,"soc":0.9805,"td":0.7,"pf":1.0},{"d":404.6,"t":32.097,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.512,"lng":0.521,"thr":87.2,"brk":0.0,"x":99.06,"y":-65.44,"tcs":0.0,"sec":2,"mt":55.6,"bt":34.3,"ce":220.7,"soc":0.9804,"td":0.7,"pf":1.0},{"d":407.2,"t":32.267,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.372,"lng":0.518,"thr":86.7,"brk":0.0,"x":97.39,"y":-66.18,"tcs":0.0,"sec":2,"mt":55.6,"bt":34.3,"ce":222.57,"soc":0.9803,"td":0.7,"pf":1.0},{"d":409.9,"t":32.433,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.289,"lng":0.515,"thr":86.2,"brk":0.0,"x":95.64,"y":-67.0,"tcs":0.0,"sec":2,"mt":55.7,"bt":34.3,"ce":224.43,"soc":0.9801,"td":0.7,"pf":1.0},{"d":412.6,"t":32.597,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.22,"lng":0.511,"thr":85.8,"brk":0.0,"x":93.76,"y":-67.91,"tcs":0.0,"sec":2,"mt":55.8,"bt":34.4,"ce":226.29,"soc":0.98,"td":0.7,"pf":1.0},{"d":415.3,"t":32.758,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.18,"lng":0.508,"thr":85.3,"brk":0.0,"x":91.74,"y":-68.91,"tcs":0.0,"sec":2,"mt":55.9,"bt":34.4,"ce":228.16,"soc":0.9799,"td":0.7,"pf":1.0},{"d":418.0,"t":32.916,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.17,"lng":0.505,"thr":84.8,"brk":0.0,"x":89.59,"y":-70.0,"tcs":0.0,"sec":2,"mt":55.9,"bt":34.4,"ce":230.02,"soc":0.9798,"td":0.7,"pf":1.0},{"d":420.6,"t":33.072,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.175,"lng":0.502,"thr":84.3,"brk":0.0,"x":87.44,"y":-71.11,"tcs":0.0,"sec":2,"mt":56.0,"bt":34.5,"ce":231.88,"soc":0.9796,"td":0.7,"pf":1.0},{"d":423.3,"t":33.225,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":0.18,"lng":0.499,"thr":83.9,"brk":0.0,"x":85.29,"y":-72.24,"tcs":0.0,"sec":2,"mt":56.1,"bt":34.5,"ce":233.75,"soc":0.9795,"td":0.7,"pf":1.0},{"d":426.0,"t":33.377,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.289,"lng":0.496,"thr":83.4,"brk":0.0,"x":84.11,"y":-72.88,"tcs":0.0,"sec":2,"mt":56.2,"bt":34.6,"ce":235.61,"soc":0.9794,"td":0.7,"pf":1.0},{"d":428.7,"t":33.526,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.256,"lng":0.493,"thr":82.9,"brk":0.0,"x":83.33,"y":-73.3,"tcs":0.0,"sec":2,"mt":56.2,"bt":34.6,"ce":237.47,"soc":0.9792,"td":0.7,"pf":1.0},{"d":431.4,"t":33.673,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.231,"lng":0.49,"thr":82.5,"brk":0.0,"x":82.64,"y":-73.68,"tcs":0.0,"sec":2,"mt":56.3,"bt":34.6,"ce":239.34,"soc":0.9791,"td":0.7,"pf":1.0},{"d":434.0,"t":33.818,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.257,"lng":0.487,"thr":82.0,"brk":0.0,"x":81.97,"y":-74.04,"tcs":0.0,"sec":2,"mt":56.4,"bt":34.7,"ce":241.2,"soc":0.979,"td":0.7,"pf":1.0},{"d":436.7,"t":33.962,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.307,"lng":0.484,"thr":81.6,"brk":0.0,"x":81.21,"y":-74.44,"tcs":0.0,"sec":2,"mt":56.5,"bt":34.7,"ce":243.06,"soc":0.9789,"td":0.7,"pf":1.0},{"d":439.4,"t":34.103,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.377,"lng":0.481,"thr":81.1,"brk":0.0,"x":80.36,"y":-74.88,"tcs":0.0,"sec":2,"mt":56.5,"bt":34.7,"ce":244.93,"soc":0.9787,"td":0.7,"pf":1.0},{"d":442.1,"t":34.243,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.408,"lng":0.478,"thr":80.7,"brk":0.0,"x":79.44,"y":-75.35,"tcs":0.0,"sec":2,"mt":56.6,"bt":34.8,"ce":246.79,"soc":0.9786,"td":0.7,"pf":1.0},{"d":444.7,"t":34.382,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.419,"lng":0.475,"thr":80.2,"brk":0.0,"x":78.52,"y":-75.81,"tcs":0.0,"sec":2,"mt":56.7,"bt":34.8,"ce":248.65,"soc":0.9785,"td":0.7,"pf":1.0},{"d":447.4,"t":34.519,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.43,"lng":0.472,"thr":79.8,"brk":0.0,"x":77.59,"y":-76.27,"tcs":0.0,"sec":2,"mt":56.8,"bt":34.9,"ce":250.52,"soc":0.9783,"td":0.7,"pf":1.0},{"d":450.1,"t":34.654,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.404,"lng":0.469,"thr":79.3,"brk":0.0,"x":76.67,"y":-76.72,"tcs":0.0,"sec":2,"mt":56.8,"bt":34.9,"ce":252.38,"soc":0.9782,"td":0.7,"pf":1.0},{"d":452.8,"t":34.788,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.357,"lng":0.467,"thr":78.9,"brk":0.0,"x":75.82,"y":-77.13,"tcs":0.0,"sec":2,"mt":56.9,"bt":34.9,"ce":254.24,"soc":0.9781,"td":0.7,"pf":1.0},{"d":455.5,"t":34.92,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.321,"lng":0.464,"thr":78.4,"brk":0.0,"x":75.03,"y":-77.51,"tcs":0.0,"sec":2,"mt":57.0,"bt":35.0,"ce":256.11,"soc":0.9779,"td":0.7,"pf":1.0},{"d":458.1,"t":35.051,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.316,"lng":0.461,"thr":78.0,"brk":0.0,"x":74.31,"y":-77.85,"tcs":0.0,"sec":2,"mt":57.1,"bt":35.0,"ce":257.97,"soc":0.9778,"td":0.7,"pf":1.0},{"d":460.8,"t":35.181,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.394,"lng":0.458,"thr":77.6,"brk":0.0,"x":73.52,"y":-78.22,"tcs":0.0,"sec":2,"mt":57.1,"bt":35.0,"ce":259.83,"soc":0.9777,"td":0.7,"pf":1.0},{"d":463.5,"t":35.31,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.516,"lng":0.455,"thr":77.2,"brk":0.0,"x":72.61,"y":-78.64,"tcs":0.0,"sec":2,"mt":57.2,"bt":35.1,"ce":261.7,"soc":0.9776,"td":0.7,"pf":1.0},{"d":466.2,"t":35.437,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":22.72,"latg":-0.728,"lng":0.452,"thr":76.7,"brk":0.0,"x":71.57,"y":-79.1,"tcs":0.0,"sec":2,"mt":57.3,"bt":35.1,"ce":263.56,"soc":0.9774,"td":0.7,"pf":1.0},{"d":468.8,"t":35.565,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.819,"lng":-1.535,"thr":0.0,"brk":85.7,"x":70.46,"y":-79.58,"tcs":0.0,"sec":2,"mt":43.2,"bt":29.6,"ce":263.56,"soc":0.9773,"td":1.0,"pf":1.0},{"d":471.5,"t":35.696,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.907,"lng":-1.468,"thr":0.0,"brk":82.1,"x":69.31,"y":-80.07,"tcs":0.2,"sec":2,"mt":43.2,"bt":29.6,"ce":263.56,"soc":0.9772,"td":1.0,"pf":1.0},{"d":474.2,"t":35.831,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-1.011,"lng":-1.394,"thr":0.0,"brk":78.0,"x":68.1,"y":-80.55,"tcs":20.0,"sec":2,"mt":43.3,"bt":29.7,"ce":263.56,"soc":0.977,"td":1.0,"pf":1.0},{"d":476.9,"t":35.971,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.866,"lng":-1.488,"thr":0.0,"brk":84.4,"x":66.88,"y":-81.0,"tcs":11.2,"sec":3,"mt":43.4,"bt":29.7,"ce":263.56,"soc":0.9769,"td":1.0,"pf":1.0},{"d":479.6,"t":36.116,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.74,"lng":-1.55,"thr":0.0,"brk":88.9,"x":65.67,"y":-81.43,"tcs":5.5,"sec":3,"mt":43.5,"bt":29.7,"ce":263.56,"soc":0.9768,"td":1.0,"pf":1.0},{"d":482.2,"t":36.268,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.675,"lng":-1.567,"thr":0.0,"brk":90.6,"x":64.47,"y":-81.83,"tcs":5.1,"sec":3,"mt":43.5,"bt":29.8,"ce":263.56,"soc":0.9766,"td":1.0,"pf":1.0},{"d":484.9,"t":36.427,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.753,"lng":-1.517,"thr":0.0,"brk":88.0,"x":63.23,"y":-82.23,"tcs":30.3,"sec":3,"mt":43.6,"bt":29.8,"ce":263.56,"soc":0.9765,"td":1.0,"pf":1.0},{"d":487.6,"t":36.594,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.882,"lng":-1.427,"thr":0.0,"brk":83.0,"x":61.94,"y":-82.6,"tcs":0.0,"sec":3,"mt":43.7,"bt":29.8,"ce":263.56,"soc":0.9764,"td":1.0,"pf":1.0},{"d":490.3,"t":36.77,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-1.012,"lng":-1.325,"thr":0.0,"brk":77.1,"x":60.61,"y":-82.95,"tcs":0.0,"sec":3,"mt":43.8,"bt":29.9,"ce":263.56,"soc":0.9763,"td":1.0,"pf":1.0},{"d":492.9,"t":36.956,"v":64.92,"rpm":3008.2,"tq":100.0,"pwr":0.0,"latg":-1.145,"lng":-1.189,"thr":0.0,"brk":69.1,"x":59.23,"y":-83.25,"tcs":0.0,"sec":3,"mt":43.8,"bt":29.9,"ce":263.56,"soc":0.9761,"td":1.0,"pf":1.0},{"d":495.6,"t":37.152,"v":61.67,"rpm":2857.2,"tq":100.0,"pwr":0.0,"latg":-1.298,"lng":-1.012,"thr":0.0,"brk":58.4,"x":57.82,"y":-83.49,"tcs":0.0,"sec":3,"mt":43.9,"bt":30.0,"ce":263.56,"soc":0.976,"td":1.0,"pf":1.0},{"d":498.3,"t":37.358,"v":58.48,"rpm":2709.6,"tq":100.0,"pwr":0.0,"latg":-1.309,"lng":-0.989,"thr":0.0,"brk":57.4,"x":56.4,"y":-83.65,"tcs":0.0,"sec":3,"mt":44.0,"bt":30.0,"ce":263.56,"soc":0.9759,"td":1.0,"pf":1.0},{"d":501.0,"t":37.577,"v":55.21,"rpm":2557.8,"tq":100.0,"pwr":0.0,"latg":-1.33,"lng":-0.948,"thr":0.0,"brk":55.2,"x":54.95,"y":-83.7,"tcs":0.0,"sec":3,"mt":44.1,"bt":30.0,"ce":263.56,"soc":0.9757,"td":1.0,"pf":1.0},{"d":503.7,"t":37.808,"v":52.03,"rpm":2410.9,"tq":100.0,"pwr":0.0,"latg":-1.41,"lng":-0.801,"thr":0.0,"brk":46.4,"x":53.5,"y":-83.64,"tcs":0.0,"sec":3,"mt":44.1,"bt":30.1,"ce":263.56,"soc":0.9756,"td":1.0,"pf":1.0},{"d":506.3,"t":38.053,"v":49.8,"rpm":2307.3,"tq":100.0,"pwr":16.91,"latg":-1.6,"lng":0.0,"thr":8.6,"brk":0.0,"x":52.06,"y":-83.44,"tcs":0.0,"sec":3,"mt":54.8,"bt":33.2,"ce":264.95,"soc":0.9755,"td":0.7,"pf":1.0},{"d":509.0,"t":38.3,"v":49.93,"rpm":2313.3,"tq":100.0,"pwr":16.96,"latg":-1.588,"lng":0.043,"thr":93.9,"brk":0.0,"x":50.64,"y":-83.08,"tcs":84.0,"sec":3,"mt":54.9,"bt":33.2,"ce":266.34,"soc":0.9753,"td":0.7,"pf":1.0},{"d":511.7,"t":38.547,"v":49.57,"rpm":2296.7,"tq":100.0,"pwr":0.0,"latg":-1.576,"lng":-0.335,"thr":0.0,"brk":17.5,"x":49.28,"y":-82.55,"tcs":0.0,"sec":3,"mt":44.4,"bt":30.2,"ce":266.34,"soc":0.9752,"td":1.0,"pf":1.0},{"d":514.4,"t":38.801,"v":48.17,"rpm":2232.0,"tq":100.0,"pwr":0.0,"latg":-1.564,"lng":-0.396,"thr":0.0,"brk":21.4,"x":48.0,"y":-81.86,"tcs":0.0,"sec":3,"mt":44.4,"bt":30.2,"ce":266.34,"soc":0.9751,"td":1.0,"pf":1.0},{"d":517.1,"t":39.062,"v":46.4,"rpm":2149.7,"tq":100.0,"pwr":0.0,"latg":-1.55,"lng":-0.445,"thr":0.0,"brk":24.7,"x":46.81,"y":-81.02,"tcs":0.0,"sec":3,"mt":44.5,"bt":30.3,"ce":266.34,"soc":0.975,"td":1.0,"pf":1.0},{"d":519.7,"t":39.334,"v":44.78,"rpm":2074.6,"tq":100.0,"pwr":0.0,"latg":-1.583,"lng":-0.238,"thr":0.0,"brk":11.8,"x":45.74,"y":-80.03,"tcs":0.0,"sec":3,"mt":44.6,"bt":30.3,"ce":266.34,"soc":0.9748,"td":1.0,"pf":1.0},{"d":522.4,"t":39.61,"v":44.74,"rpm":2072.9,"tq":100.0,"pwr":15.2,"latg":-1.586,"lng":0.054,"thr":95.1,"brk":0.0,"x":44.84,"y":-78.89,"tcs":83.6,"sec":3,"mt":54.2,"bt":32.8,"ce":267.58,"soc":0.9747,"td":0.7,"pf":1.0},{"d":525.1,"t":39.885,"v":45.05,"rpm":2087.4,"tq":100.0,"pwr":15.3,"latg":-1.537,"lng":0.148,"thr":95.0,"brk":0.0,"x":44.11,"y":-77.63,"tcs":68.3,"sec":3,"mt":54.3,"bt":32.9,"ce":268.84,"soc":0.9746,"td":0.7,"pf":1.0},{"d":527.8,"t":40.156,"v":46.21,"rpm":2141.0,"tq":100.0,"pwr":15.69,"latg":-1.383,"lng":0.345,"thr":94.7,"brk":0.0,"x":43.57,"y":-76.29,"tcs":36.2,"sec":3,"mt":54.6,"bt":33.1,"ce":270.12,"soc":0.9744,"td":0.7,"pf":1.0},{"d":530.4,"t":40.419,"v":47.72,"rpm":2210.9,"tq":100.0,"pwr":16.21,"latg":-1.366,"lng":0.366,"thr":94.4,"brk":0.0,"x":43.2,"y":-74.89,"tcs":32.6,"sec":3,"mt":55.0,"bt":33.3,"ce":271.45,"soc":0.9743,"td":0.7,"pf":1.0},{"d":533.1,"t":40.674,"v":49.1,"rpm":2274.8,"tq":100.0,"pwr":16.68,"latg":-1.401,"lng":0.336,"thr":94.1,"brk":0.0,"x":42.99,"y":-73.47,"tcs":37.0,"sec":3,"mt":55.4,"bt":33.5,"ce":272.82,"soc":0.9742,"td":0.7,"pf":1.0},{"d":535.8,"t":40.923,"v":50.23,"rpm":2327.5,"tq":100.0,"pwr":17.06,"latg":-1.473,"lng":0.261,"thr":93.8,"brk":0.0,"x":42.94,"y":-72.03,"tcs":48.9,"sec":3,"mt":55.7,"bt":33.7,"ce":274.22,"soc":0.9741,"td":0.7,"pf":1.0},{"d":538.5,"t":41.166,"v":51.14,"rpm":2369.3,"tq":100.0,"pwr":17.37,"latg":-1.44,"lng":0.28,"thr":93.6,"brk":0.0,"x":43.04,"y":-70.6,"tcs":45.6,"sec":3,"mt":56.0,"bt":33.8,"ce":275.64,"soc":0.9739,"td":0.7,"pf":1.0},{"d":541.2,"t":41.405,"v":52.41,"rpm":2428.3,"tq":100.0,"pwr":17.8,"latg":-1.319,"lng":0.388,"thr":93.2,"brk":0.0,"x":43.29,"y":-69.19,"tcs":27.7,"sec":3,"mt":56.3,"bt":34.0,"ce":277.1,"soc":0.9738,"td":0.7,"pf":1.0},{"d":543.8,"t":41.637,"v":53.89,"rpm":2496.9,"tq":100.0,"pwr":18.3,"latg":-1.274,"lng":0.421,"thr":92.9,"brk":0.0,"x":43.67,"y":-67.82,"tcs":22.1,"sec":3,"mt":56.7,"bt":34.2,"ce":278.61,"soc":0.9737,"td":0.7,"pf":1.0},{"d":546.5,"t":41.863,"v":55.38,"rpm":2565.9,"tq":100.0,"pwr":18.81,"latg":-1.257,"lng":0.43,"thr":92.5,"brk":0.0,"x":44.15,"y":-66.48,"tcs":20.3,"sec":3,"mt":57.1,"bt":34.5,"ce":280.15,"soc":0.9735,"td":0.7,"pf":1.0},{"d":549.2,"t":42.084,"v":56.75,"rpm":2629.6,"tq":100.0,"pwr":19.28,"latg":-1.371,"lng":0.354,"thr":92.1,"brk":0.0,"x":44.74,"y":-65.19,"tcs":32.0,"sec":3,"mt":57.5,"bt":34.7,"ce":281.73,"soc":0.9734,"td":0.7,"pf":1.0},{"d":551.9,"t":42.299,"v":57.65,"rpm":2671.3,"tq":100.0,"pwr":19.58,"latg":-1.53,"lng":0.181,"thr":91.8,"brk":0.0,"x":45.43,"y":-63.94,"tcs":59.7,"sec":3,"mt":57.7,"bt":34.9,"ce":283.33,"soc":0.9733,"td":0.7,"pf":1.0},{"d":554.5,"t":42.512,"v":58.02,"rpm":2688.2,"tq":100.0,"pwr":19.71,"latg":-1.565,"lng":0.097,"thr":91.7,"brk":0.0,"x":46.22,"y":-62.75,"tcs":73.1,"sec":3,"mt":57.9,"bt":35.0,"ce":284.95,"soc":0.9731,"td":0.7,"pf":1.0},{"d":557.2,"t":42.724,"v":58.32,"rpm":2701.9,"tq":100.0,"pwr":19.81,"latg":-1.57,"lng":0.086,"thr":91.6,"brk":0.0,"x":47.12,"y":-61.64,"tcs":74.8,"sec":3,"mt":58.0,"bt":35.1,"ce":286.58,"soc":0.973,"td":0.7,"pf":1.0},{"d":559.9,"t":42.935,"v":58.77,"rpm":2722.9,"tq":100.0,"pwr":19.96,"latg":-1.497,"lng":0.204,"thr":91.5,"brk":0.0,"x":48.1,"y":-60.61,"tcs":55.5,"sec":3,"mt":58.2,"bt":35.2,"ce":288.21,"soc":0.9729,"td":0.7,"pf":1.0},{"d":562.6,"t":43.144,"v":59.57,"rpm":2760.2,"tq":100.0,"pwr":20.23,"latg":-1.431,"lng":0.281,"thr":91.3,"brk":0.0,"x":49.16,"y":-59.66,"tcs":43.0,"sec":3,"mt":58.4,"bt":35.3,"ce":289.87,"soc":0.9728,"td":0.7,"pf":1.0},{"d":565.3,"t":43.35,"v":60.48,"rpm":2802.0,"tq":100.0,"pwr":20.54,"latg":-1.448,"lng":0.268,"thr":91.0,"brk":0.0,"x":50.29,"y":-58.79,"tcs":44.7,"sec":3,"mt":58.7,"bt":35.5,"ce":291.56,"soc":0.9726,"td":0.7,"pf":1.0},{"d":567.9,"t":43.552,"v":61.25,"rpm":2837.8,"tq":100.0,"pwr":20.8,"latg":-1.483,"lng":0.227,"thr":90.8,"brk":0.0,"x":51.48,"y":-58.01,"tcs":51.1,"sec":3,"mt":58.9,"bt":35.6,"ce":293.26,"soc":0.9725,"td":0.7,"pf":1.0},{"d":570.6,"t":43.753,"v":61.85,"rpm":2865.5,"tq":100.0,"pwr":21.01,"latg":-1.54,"lng":0.147,"thr":90.6,"brk":0.0,"x":52.72,"y":-57.32,"tcs":63.8,"sec":3,"mt":59.1,"bt":35.8,"ce":294.98,"soc":0.9724,"td":0.7,"pf":1.0},{"d":573.3,"t":43.952,"v":61.94,"rpm":2870.0,"tq":100.0,"pwr":0.0,"latg":-1.592,"lng":-0.236,"thr":0.0,"brk":9.9,"x":54.02,"y":-56.72,"tcs":89.7,"sec":3,"mt":46.1,"bt":31.0,"ce":294.98,"soc":0.9722,"td":1.0,"pf":1.0},{"d":576.0,"t":44.152,"v":61.56,"rpm":2852.3,"tq":100.0,"pwr":20.91,"latg":-1.6,"lng":-0.07,"thr":90.7,"brk":0.0,"x":55.36,"y":-56.23,"tcs":98.9,"sec":3,"mt":59.2,"bt":35.8,"ce":296.7,"soc":0.9721,"td":0.7,"pf":1.0},{"d":578.6,"t":44.353,"v":61.34,"rpm":2842.2,"tq":100.0,"pwr":20.83,"latg":-1.6,"lng":-0.071,"thr":90.7,"brk":0.0,"x":56.73,"y":-55.83,"tcs":99.0,"sec":3,"mt":59.3,"bt":35.8,"ce":298.41,"soc":0.972,"td":0.7,"pf":1.0},{"d":581.3,"t":44.554,"v":61.22,"rpm":2836.4,"tq":100.0,"pwr":20.79,"latg":-1.577,"lng":0.05,"thr":90.8,"brk":0.0,"x":58.13,"y":-55.55,"tcs":79.6,"sec":3,"mt":59.3,"bt":35.8,"ce":300.11,"soc":0.9718,"td":0.7,"pf":1.0},{"d":584.0,"t":44.755,"v":61.55,"rpm":2852.0,"tq":100.0,"pwr":20.91,"latg":-1.535,"lng":0.145,"thr":90.7,"brk":0.0,"x":59.55,"y":-55.37,"tcs":64.3,"sec":3,"mt":59.5,"bt":35.9,"ce":301.83,"soc":0.9717,"td":0.7,"pf":1.0},{"d":586.7,"t":44.955,"v":62.07,"rpm":2875.9,"tq":100.0,"pwr":21.08,"latg":-1.528,"lng":0.166,"thr":90.5,"brk":0.0,"x":60.98,"y":-55.3,"tcs":60.8,"sec":3,"mt":59.6,"bt":36.0,"ce":303.56,"soc":0.9716,"td":0.7,"pf":1.0},{"d":589.4,"t":45.153,"v":62.43,"rpm":2892.8,"tq":100.0,"pwr":21.21,"latg":-1.573,"lng":0.075,"thr":90.4,"brk":0.0,"x":62.42,"y":-55.34,"tcs":75.3,"sec":3,"mt":59.8,"bt":36.1,"ce":305.3,"soc":0.9715,"td":0.7,"pf":1.0},{"d":592.0,"t":45.35,"v":62.48,"rpm":2895.1,"tq":100.0,"pwr":21.22,"latg":-1.544,"lng":0.073,"thr":90.4,"brk":0.0,"x":63.84,"y":-55.48,"tcs":75.6,"sec":3,"mt":59.9,"bt":36.2,"ce":307.04,"soc":0.9713,"td":0.7,"pf":1.0},{"d":594.7,"t":45.547,"v":63.39,"rpm":2937.1,"tq":100.0,"pwr":7.69,"latg":-1.26,"lng":0.403,"thr":90.1,"brk":0.0,"x":65.25,"y":-55.72,"tcs":22.0,"sec":3,"mt":60.1,"bt":36.4,"ce":307.67,"soc":0.9712,"td":0.25,"pf":1.0},{"d":597.4,"t":45.739,"v":64.76,"rpm":3000.6,"tq":100.0,"pwr":7.86,"latg":-1.089,"lng":0.498,"thr":89.7,"brk":0.0,"x":66.62,"y":-56.04,"tcs":6.2,"sec":3,"mt":60.5,"bt":36.6,"ce":308.31,"soc":0.9711,"td":0.25,"pf":1.0},{"d":600.1,"t":45.931,"v":63.43,"rpm":2938.8,"tq":100.0,"pwr":0.0,"latg":-1.037,"lng":-1.306,"thr":0.0,"brk":76.6,"x":67.97,"y":-56.42,"tcs":8.4,"sec":3,"mt":46.8,"bt":31.4,"ce":308.31,"soc":0.9709,"td":1.0,"pf":1.0},{"d":602.8,"t":46.133,"v":59.22,"rpm":2743.7,"tq":100.0,"pwr":0.0,"latg":-0.904,"lng":-1.398,"thr":0.0,"brk":82.9,"x":69.31,"y":-56.86,"tcs":12.2,"sec":3,"mt":46.9,"bt":31.5,"ce":308.31,"soc":0.9708,"td":1.0,"pf":1.0},{"d":605.4,"t":46.352,"v":54.3,"rpm":2515.8,"tq":100.0,"pwr":0.0,"latg":0.852,"lng":-1.406,"thr":0.0,"brk":83.9,"x":70.79,"y":-57.38,"tcs":27.5,"sec":3,"mt":47.0,"bt":31.5,"ce":308.31,"soc":0.9707,"td":1.0,"pf":1.0},{"d":608.1,"t":46.592,"v":49.83,"rpm":2308.8,"tq":100.0,"pwr":0.0,"latg":1.408,"lng":-0.627,"thr":0.0,"brk":35.7,"x":72.3,"y":-57.81,"tcs":0.0,"sec":3,"mt":47.1,"bt":31.5,"ce":308.31,"soc":0.9705,"td":1.0,"pf":1.0},{"d":610.8,"t":46.848,"v":47.11,"rpm":2182.7,"tq":100.0,"pwr":0.0,"latg":1.48,"lng":-0.653,"thr":0.0,"brk":37.6,"x":73.81,"y":-58.08,"tcs":0.0,"sec":3,"mt":47.1,"bt":31.6,"ce":308.31,"soc":0.9704,"td":1.0,"pf":1.0},{"d":613.5,"t":47.119,"v":44.72,"rpm":2072.0,"tq":100.0,"pwr":0.0,"latg":1.536,"lng":-0.494,"thr":0.0,"brk":27.9,"x":75.34,"y":-58.15,"tcs":0.0,"sec":3,"mt":47.2,"bt":31.6,"ce":308.31,"soc":0.9703,"td":1.0,"pf":1.0},{"d":616.1,"t":47.402,"v":42.76,"rpm":1981.1,"tq":100.0,"pwr":0.0,"latg":1.566,"lng":-0.353,"thr":0.0,"brk":19.2,"x":76.85,"y":-57.99,"tcs":0.0,"sec":3,"mt":47.3,"bt":31.6,"ce":308.31,"soc":0.9702,"td":1.0,"pf":1.0},{"d":618.8,"t":47.693,"v":42.48,"rpm":1968.5,"tq":100.0,"pwr":14.43,"latg":1.581,"lng":0.074,"thr":95.6,"brk":0.0,"x":78.31,"y":-57.59,"tcs":80.9,"sec":3,"mt":56.4,"bt":33.9,"ce":309.49,"soc":0.97,"td":0.7,"pf":1.0},{"d":621.5,"t":47.982,"v":42.91,"rpm":1988.2,"tq":100.0,"pwr":14.57,"latg":1.574,"lng":0.108,"thr":95.5,"brk":0.0,"x":79.68,"y":-56.94,"tcs":75.2,"sec":3,"mt":56.6,"bt":34.0,"ce":310.69,"soc":0.9699,"td":0.7,"pf":1.0},{"d":624.2,"t":48.269,"v":43.21,"rpm":2002.2,"tq":100.0,"pwr":14.68,"latg":1.59,"lng":0.044,"thr":95.4,"brk":0.0,"x":80.92,"y":-56.08,"tcs":85.5,"sec":3,"mt":56.7,"bt":34.1,"ce":311.89,"soc":0.9698,"td":0.7,"pf":1.0},{"d":626.9,"t":48.554,"v":43.5,"rpm":2015.3,"tq":100.0,"pwr":14.77,"latg":1.563,"lng":0.118,"thr":95.3,"brk":0.0,"x":82.0,"y":-55.02,"tcs":73.5,"sec":3,"mt":56.8,"bt":34.2,"ce":313.1,"soc":0.9696,"td":0.7,"pf":1.0},{"d":629.5,"t":48.835,"v":44.15,"rpm":2045.6,"tq":100.0,"pwr":15.0,"latg":1.506,"lng":0.17,"thr":95.2,"brk":0.0,"x":82.89,"y":-53.8,"tcs":65.0,"sec":3,"mt":57.0,"bt":34.3,"ce":314.33,"soc":0.9695,"td":0.7,"pf":1.0},{"d":632.2,"t":49.11,"v":45.8,"rpm":2122.0,"tq":100.0,"pwr":15.56,"latg":1.174,"lng":0.486,"thr":94.8,"brk":0.0,"x":83.6,"y":-52.46,"tcs":13.7,"sec":3,"mt":57.5,"bt":34.5,"ce":315.61,"soc":0.9694,"td":0.7,"pf":1.0},{"d":634.9,"t":49.374,"v":47.91,"rpm":2219.8,"tq":100.0,"pwr":16.27,"latg":1.145,"lng":0.509,"thr":94.4,"brk":0.0,"x":84.15,"y":-51.03,"tcs":9.4,"sec":3,"mt":58.0,"bt":34.8,"ce":316.95,"soc":0.9693,"td":0.7,"pf":1.0},{"d":637.6,"t":49.627,"v":49.79,"rpm":2306.9,"tq":100.0,"pwr":16.91,"latg":1.237,"lng":0.455,"thr":93.9,"brk":0.0,"x":84.56,"y":-49.56,"tcs":17.6,"sec":3,"mt":58.5,"bt":35.0,"ce":318.33,"soc":0.9691,"td":0.7,"pf":1.0},{"d":640.2,"t":49.87,"v":51.88,"rpm":2403.6,"tq":100.0,"pwr":17.62,"latg":0.0,"lng":0.561,"thr":100.0,"brk":0.0,"x":84.86,"y":-48.1,"tcs":0.0,"sec":3,"mt":59.0,"bt":35.3,"ce":319.78,"soc":0.969,"td":0.7,"pf":1.0},{"d":642.9,"t":50.104,"v":53.9,"rpm":2497.2,"tq":100.0,"pwr":18.31,"latg":0.137,"lng":0.558,"thr":92.9,"brk":0.0,"x":85.19,"y":-46.55,"tcs":0.0,"sec":3,"mt":59.5,"bt":35.6,"ce":321.28,"soc":0.9689,"td":0.7,"pf":1.0},{"d":645.6,"t":50.329,"v":55.83,"rpm":2586.8,"tq":100.0,"pwr":18.96,"latg":0.253,"lng":0.554,"thr":92.3,"brk":0.0,"x":85.56,"y":-44.69,"tcs":0.0,"sec":3,"mt":60.0,"bt":35.9,"ce":322.83,"soc":0.9687,"td":0.7,"pf":1.0},{"d":648.3,"t":50.546,"v":57.69,"rpm":2672.9,"tq":100.0,"pwr":7.0,"latg":0.603,"lng":0.551,"thr":91.8,"brk":0.0,"x":85.86,"y":-43.04,"tcs":0.0,"sec":3,"mt":60.4,"bt":36.2,"ce":323.41,"soc":0.9686,"td":0.25,"pf":1.0},{"d":651.0,"t":50.757,"v":59.48,"rpm":2755.9,"tq":100.0,"pwr":7.21,"latg":0.998,"lng":0.548,"thr":91.3,"brk":0.0,"x":86.08,"y":-41.47,"tcs":0.0,"sec":3,"mt":60.9,"bt":36.5,"ce":324.0,"soc":0.9685,"td":0.25,"pf":1.0},{"d":653.6,"t":50.967,"v":57.87,"rpm":2681.2,"tq":100.0,"pwr":0.0,"latg":1.441,"lng":-0.757,"thr":0.0,"brk":43.0,"x":86.21,"y":-39.92,"tcs":71.9,"sec":3,"mt":48.3,"bt":32.2,"ce":324.0,"soc":0.9683,"td":1.0,"pf":1.0},{"d":656.3,"t":51.185,"v":55.59,"rpm":2575.7,"tq":100.0,"pwr":0.0,"latg":1.52,"lng":-0.542,"thr":0.0,"brk":29.8,"x":86.2,"y":-38.39,"tcs":0.0,"sec":3,"mt":48.4,"bt":32.2,"ce":324.0,"soc":0.9682,"td":1.0,"pf":1.0},{"d":659.0,"t":51.41,"v":54.73,"rpm":2535.8,"tq":100.0,"pwr":0.0,"latg":1.6,"lng":-0.093,"thr":0.0,"brk":1.8,"x":86.05,"y":-36.87,"tcs":0.0,"sec":3,"mt":48.5,"bt":32.2,"ce":324.0,"soc":0.9681,"td":1.0,"pf":1.0},{"d":661.7,"t":51.636,"v":54.4,"rpm":2520.7,"tq":100.0,"pwr":0.0,"latg":1.6,"lng":-0.093,"thr":0.0,"brk":1.9,"x":85.73,"y":-35.37,"tcs":0.0,"sec":3,"mt":48.6,"bt":32.3,"ce":324.0,"soc":0.968,"td":1.0,"pf":1.0},{"d":664.3,"t":51.863,"v":54.27,"rpm":2514.7,"tq":100.0,"pwr":6.58,"latg":1.593,"lng":0.008,"thr":92.8,"brk":0.0,"x":85.26,"y":-33.92,"tcs":88.5,"sec":3,"mt":60.2,"bt":36.0,"ce":324.54,"soc":0.9678,"td":0.25,"pf":1.0},{"d":667.0,"t":52.091,"v":54.08,"rpm":2505.7,"tq":100.0,"pwr":0.0,"latg":1.575,"lng":-0.375,"thr":0.0,"brk":19.5,"x":84.63,"y":-32.52,"tcs":85.7,"sec":3,"mt":48.7,"bt":32.4,"ce":324.54,"soc":0.9677,"td":1.0,"pf":1.0},{"d":669.7,"t":52.323,"v":52.58,"rpm":2436.3,"tq":100.0,"pwr":0.0,"latg":1.554,"lng":-0.446,"thr":0.0,"brk":24.1,"x":83.86,"y":-31.2,"tcs":0.0,"sec":3,"mt":48.8,"bt":32.4,"ce":324.54,"soc":0.9676,"td":1.0,"pf":1.0},{"d":672.4,"t":52.562,"v":50.79,"rpm":2353.3,"tq":100.0,"pwr":0.0,"latg":1.53,"lng":-0.523,"thr":0.0,"brk":29.1,"x":82.95,"y":-29.97,"tcs":0.0,"sec":3,"mt":48.9,"bt":32.4,"ce":324.54,"soc":0.9674,"td":1.0,"pf":1.0},{"d":675.1,"t":52.811,"v":48.9,"rpm":2265.5,"tq":100.0,"pwr":0.0,"latg":1.549,"lng":-0.448,"thr":0.0,"brk":24.6,"x":81.9,"y":-28.86,"tcs":0.0,"sec":3,"mt":48.9,"bt":32.5,"ce":324.54,"soc":0.9673,"td":1.0,"pf":1.0},{"d":677.7,"t":53.068,"v":47.5,"rpm":2201.0,"tq":100.0,"pwr":0.0,"latg":1.583,"lng":-0.284,"thr":0.0,"brk":14.5,"x":80.71,"y":-27.89,"tcs":0.0,"sec":3,"mt":49.0,"bt":32.5,"ce":324.54,"soc":0.9672,"td":1.0,"pf":1.0},{"d":680.4,"t":53.331,"v":46.4,"rpm":2149.9,"tq":100.0,"pwr":0.0,"latg":1.588,"lng":-0.239,"thr":0.0,"brk":11.8,"x":79.41,"y":-27.1,"tcs":0.0,"sec":3,"mt":49.1,"bt":32.5,"ce":324.54,"soc":0.967,"td":1.0,"pf":1.0},{"d":683.1,"t":53.598,"v":46.53,"rpm":2155.9,"tq":100.0,"pwr":15.8,"latg":1.443,"lng":0.28,"thr":94.7,"brk":0.0,"x":78.0,"y":-26.49,"tcs":46.6,"sec":3,"mt":59.1,"bt":35.3,"ce":325.83,"soc":0.9669,"td":0.7,"pf":1.0},{"d":685.8,"t":53.86,"v":48.0,"rpm":2223.9,"tq":100.0,"pwr":16.3,"latg":1.291,"lng":0.414,"thr":94.3,"brk":0.0,"x":76.52,"y":-26.07,"tcs":24.7,"sec":3,"mt":59.4,"bt":35.5,"ce":327.17,"soc":0.9668,"td":0.7,"pf":1.0},{"d":688.5,"t":54.112,"v":49.76,"rpm":2305.6,"tq":100.0,"pwr":16.9,"latg":1.193,"lng":0.475,"thr":93.9,"brk":0.0,"x":74.99,"y":-25.82,"tcs":14.5,"sec":3,"mt":59.9,"bt":35.7,"ce":328.56,"soc":0.9667,"td":0.7,"pf":1.0},{"d":691.1,"t":54.356,"v":51.63,"rpm":2392.3,"tq":100.0,"pwr":6.26,"latg":1.046,"lng":0.536,"thr":93.4,"brk":0.0,"x":73.44,"y":-25.72,"tcs":4.1,"sec":3,"mt":60.4,"bt":36.0,"ce":329.07,"soc":0.9665,"td":0.25,"pf":1.0},{"d":693.8,"t":54.591,"v":53.66,"rpm":2486.2,"tq":100.0,"pwr":6.51,"latg":0.802,"lng":0.558,"thr":92.9,"brk":0.0,"x":71.85,"y":-25.73,"tcs":0.0,"sec":3,"mt":60.9,"bt":36.3,"ce":329.6,"soc":0.9664,"td":0.25,"pf":1.0},{"d":696.5,"t":54.817,"v":55.6,"rpm":2576.3,"tq":100.0,"pwr":6.74,"latg":0.747,"lng":0.555,"thr":92.4,"brk":0.0,"x":70.25,"y":-25.84,"tcs":0.0,"sec":3,"mt":61.4,"bt":36.6,"ce":330.16,"soc":0.9663,"td":0.25,"pf":1.0},{"d":699.2,"t":55.035,"v":57.47,"rpm":2662.8,"tq":100.0,"pwr":6.97,"latg":0.798,"lng":0.551,"thr":91.9,"brk":0.0,"x":68.65,"y":-26.03,"tcs":0.0,"sec":3,"mt":61.8,"bt":36.9,"ce":330.73,"soc":0.9661,"td":0.25,"pf":1.0},{"d":701.8,"t":55.247,"v":59.27,"rpm":2746.1,"tq":100.0,"pwr":7.19,"latg":-0.531,"lng":0.548,"thr":91.4,"brk":0.0,"x":67.21,"y":-26.26,"tcs":0.0,"sec":3,"mt":62.3,"bt":37.2,"ce":331.32,"soc":0.966,"td":0.25,"pf":1.0},{"d":704.5,"t":55.452,"v":61.0,"rpm":2826.4,"tq":100.0,"pwr":7.4,"latg":-0.831,"lng":0.545,"thr":90.8,"brk":0.0,"x":65.85,"y":-26.45,"tcs":0.0,"sec":3,"mt":62.7,"bt":37.5,"ce":331.93,"soc":0.9659,"td":0.25,"pf":1.0},{"d":707.2,"t":55.652,"v":62.52,"rpm":2896.9,"tq":100.0,"pwr":7.58,"latg":-1.241,"lng":0.43,"thr":90.4,"brk":0.0,"x":64.44,"y":-26.6,"tcs":17.9,"sec":3,"mt":63.1,"bt":37.8,"ce":332.55,"soc":0.9658,"td":0.25,"pf":1.0},{"d":709.9,"t":55.848,"v":63.72,"rpm":2952.6,"tq":100.0,"pwr":7.73,"latg":-1.331,"lng":0.367,"thr":90.0,"brk":0.0,"x":63.01,"y":-26.67,"tcs":27.7,"sec":3,"mt":63.5,"bt":38.0,"ce":333.18,"soc":0.9656,"td":0.25,"pf":1.0},{"d":712.6,"t":56.04,"v":64.7,"rpm":2997.8,"tq":100.0,"pwr":7.85,"latg":-1.414,"lng":0.294,"thr":89.7,"brk":0.0,"x":61.58,"y":-26.65,"tcs":39.3,"sec":4,"mt":63.7,"bt":38.2,"ce":333.82,"soc":0.9655,"td":0.25,"pf":1.0},{"d":715.2,"t":56.23,"v":64.67,"rpm":2996.6,"tq":100.0,"pwr":0.0,"latg":-1.413,"lng":-0.847,"thr":0.0,"brk":47.8,"x":60.16,"y":-26.55,"tcs":45.0,"sec":4,"mt":50.1,"bt":33.0,"ce":333.82,"soc":0.9654,"td":0.7,"pf":1.0},{"d":717.9,"t":56.425,"v":61.85,"rpm":2865.7,"tq":100.0,"pwr":0.0,"latg":-1.292,"lng":-1.492,"thr":0.0,"brk":88.5,"x":58.74,"y":-26.36,"tcs":50.6,"sec":4,"mt":50.2,"bt":33.1,"ce":333.82,"soc":0.9652,"td":0.7,"pf":1.0},{"d":720.6,"t":56.634,"v":57.21,"rpm":2650.6,"tq":100.0,"pwr":0.0,"latg":0.915,"lng":-1.368,"thr":0.0,"brk":81.2,"x":57.15,"y":-26.11,"tcs":18.1,"sec":4,"mt":50.2,"bt":33.1,"ce":333.82,"soc":0.9651,"td":0.7,"pf":1.0},{"d":723.3,"t":56.86,"v":53.16,"rpm":2462.9,"tq":100.0,"pwr":0.0,"latg":1.434,"lng":-0.594,"thr":0.0,"brk":33.3,"x":55.59,"y":-25.97,"tcs":0.0,"sec":4,"mt":50.3,"bt":33.2,"ce":333.82,"soc":0.965,"td":0.7,"pf":1.0},{"d":725.9,"t":57.092,"v":53.54,"rpm":2480.6,"tq":100.0,"pwr":6.49,"latg":1.516,"lng":0.194,"thr":92.9,"brk":0.0,"x":54.03,"y":-25.97,"tcs":58.8,"sec":4,"mt":61.7,"bt":36.8,"ce":334.36,"soc":0.9648,"td":0.25,"pf":1.0},{"d":728.6,"t":57.321,"v":54.23,"rpm":2512.5,"tq":100.0,"pwr":6.58,"latg":1.515,"lng":0.195,"thr":92.8,"brk":0.0,"x":52.49,"y":-26.13,"tcs":58.5,"sec":4,"mt":62.0,"bt":36.9,"ce":334.9,"soc":0.9647,"td":0.25,"pf":1.0},{"d":731.3,"t":57.547,"v":55.03,"rpm":2549.8,"tq":100.0,"pwr":6.68,"latg":1.456,"lng":0.263,"thr":92.6,"brk":0.0,"x":50.96,"y":-26.44,"tcs":47.2,"sec":4,"mt":62.2,"bt":37.0,"ce":335.44,"soc":0.9646,"td":0.25,"pf":1.0},{"d":734.0,"t":57.77,"v":56.02,"rpm":2595.7,"tq":100.0,"pwr":6.8,"latg":1.419,"lng":0.307,"thr":92.3,"brk":0.0,"x":49.47,"y":-26.9,"tcs":39.8,"sec":4,"mt":62.5,"bt":37.2,"ce":336.0,"soc":0.9645,"td":0.25,"pf":1.0},{"d":736.7,"t":57.992,"v":54.53,"rpm":2526.7,"tq":100.0,"pwr":0.0,"latg":1.344,"lng":-0.948,"thr":0.0,"brk":55.3,"x":48.02,"y":-27.5,"tcs":48.0,"sec":4,"mt":50.7,"bt":33.3,"ce":336.0,"soc":0.9643,"td":0.7,"pf":1.0},{"d":739.3,"t":58.228,"v":50.5,"rpm":2339.6,"tq":100.0,"pwr":0.0,"latg":-0.975,"lng":-1.316,"thr":0.0,"brk":78.7,"x":46.65,"y":-28.2,"tcs":19.1,"sec":4,"mt":50.8,"bt":33.4,"ce":336.0,"soc":0.9642,"td":0.7,"pf":1.0},{"d":742.0,"t":58.487,"v":45.73,"rpm":2118.6,"tq":100.0,"pwr":0.0,"latg":-1.279,"lng":-0.959,"thr":0.0,"brk":56.9,"x":45.34,"y":-28.83,"tcs":0.0,"sec":4,"mt":50.8,"bt":33.4,"ce":336.0,"soc":0.9641,"td":0.7,"pf":1.0},{"d":744.7,"t":58.764,"v":44.41,"rpm":2057.7,"tq":100.0,"pwr":0.0,"latg":-1.594,"lng":-0.186,"thr":0.0,"brk":8.6,"x":43.94,"y":-29.32,"tcs":0.0,"sec":4,"mt":50.9,"bt":33.5,"ce":336.0,"soc":0.9639,"td":0.7,"pf":1.0},{"d":747.4,"t":59.044,"v":43.72,"rpm":2025.9,"tq":100.0,"pwr":5.3,"latg":-1.547,"lng":-0.047,"thr":95.3,"brk":0.0,"x":42.49,"y":-29.6,"tcs":100.0,"sec":4,"mt":60.3,"bt":35.9,"ce":336.44,"soc":0.9638,"td":0.25,"pf":1.0},{"d":750.0,"t":59.322,"v":45.44,"rpm":2105.2,"tq":100.0,"pwr":5.51,"latg":-1.106,"lng":0.521,"thr":94.9,"brk":0.0,"x":41.03,"y":-29.67,"tcs":8.2,"sec":4,"mt":60.7,"bt":36.1,"ce":336.89,"soc":0.9637,"td":0.25,"pf":1.0},{"d":752.7,"t":59.588,"v":47.73,"rpm":2211.6,"tq":100.0,"pwr":5.79,"latg":-0.315,"lng":0.568,"thr":94.4,"brk":0.0,"x":39.62,"y":-29.6,"tcs":0.0,"sec":4,"mt":61.3,"bt":36.4,"ce":337.36,"soc":0.9635,"td":0.25,"pf":1.0},{"d":755.4,"t":59.841,"v":49.95,"rpm":2314.2,"tq":100.0,"pwr":6.06,"latg":-0.149,"lng":0.564,"thr":93.9,"brk":0.0,"x":38.42,"y":-29.5,"tcs":0.0,"sec":4,"mt":61.8,"bt":36.7,"ce":337.86,"soc":0.9634,"td":0.25,"pf":1.0},{"d":758.1,"t":60.083,"v":52.05,"rpm":2411.8,"tq":100.0,"pwr":6.31,"latg":-0.154,"lng":0.561,"thr":93.3,"brk":0.0,"x":37.36,"y":-29.4,"tcs":0.0,"sec":4,"mt":62.3,"bt":37.0,"ce":338.38,"soc":0.9633,"td":0.25,"pf":1.0},{"d":760.8,"t":60.316,"v":54.06,"rpm":2505.0,"tq":100.0,"pwr":6.56,"latg":1.212,"lng":0.558,"thr":92.8,"brk":0.0,"x":36.27,"y":-29.29,"tcs":0.0,"sec":4,"mt":62.8,"bt":37.3,"ce":338.92,"soc":0.9632,"td":0.25,"pf":1.0},{"d":763.4,"t":60.541,"v":55.45,"rpm":2569.3,"tq":100.0,"pwr":6.73,"latg":1.409,"lng":0.326,"thr":92.4,"brk":0.0,"x":34.71,"y":-29.19,"tcs":36.9,"sec":4,"mt":63.2,"bt":37.5,"ce":339.47,"soc":0.963,"td":0.25,"pf":1.0},{"d":766.1,"t":60.762,"v":56.09,"rpm":2599.0,"tq":100.0,"pwr":6.8,"latg":1.59,"lng":0.017,"thr":92.3,"brk":0.0,"x":33.16,"y":-29.22,"tcs":86.5,"sec":4,"mt":63.4,"bt":37.7,"ce":340.03,"soc":0.9629,"td":0.25,"pf":1.0},{"d":768.8,"t":60.981,"v":56.27,"rpm":2607.2,"tq":100.0,"pwr":6.83,"latg":1.575,"lng":0.072,"thr":92.2,"brk":0.0,"x":31.61,"y":-29.41,"tcs":77.6,"sec":4,"mt":63.5,"bt":37.7,"ce":340.59,"soc":0.9628,"td":0.25,"pf":1.0},{"d":771.5,"t":61.2,"v":56.56,"rpm":2620.6,"tq":100.0,"pwr":6.86,"latg":1.557,"lng":0.105,"thr":92.1,"brk":0.0,"x":30.09,"y":-29.75,"tcs":72.2,"sec":4,"mt":63.7,"bt":37.8,"ce":341.15,"soc":0.9626,"td":0.25,"pf":1.0},{"d":774.1,"t":61.417,"v":57.13,"rpm":2646.9,"tq":100.0,"pwr":6.93,"latg":1.497,"lng":0.209,"thr":92.0,"brk":0.0,"x":28.6,"y":-30.23,"tcs":55.2,"sec":4,"mt":63.9,"bt":37.9,"ce":341.72,"soc":0.9625,"td":0.25,"pf":1.0},{"d":776.8,"t":61.632,"v":57.92,"rpm":2683.4,"tq":100.0,"pwr":7.03,"latg":1.478,"lng":0.246,"thr":91.7,"brk":0.0,"x":27.16,"y":-30.85,"tcs":49.0,"sec":4,"mt":64.1,"bt":38.1,"ce":342.29,"soc":0.9624,"td":0.25,"pf":1.0},{"d":779.5,"t":61.844,"v":57.93,"rpm":2683.9,"tq":100.0,"pwr":0.0,"latg":1.565,"lng":-0.398,"thr":0.0,"brk":20.5,"x":25.78,"y":-31.59,"tcs":81.9,"sec":4,"mt":51.9,"bt":33.9,"ce":342.29,"soc":0.9622,"td":0.7,"pf":1.0},{"d":782.2,"t":62.06,"v":56.95,"rpm":2638.7,"tq":100.0,"pwr":6.91,"latg":1.578,"lng":-0.068,"thr":92.0,"brk":0.0,"x":24.47,"y":-32.45,"tcs":100.0,"sec":4,"mt":64.0,"bt":38.0,"ce":342.86,"soc":0.9621,"td":0.25,"pf":1.0},{"d":784.9,"t":62.275,"v":57.67,"rpm":2672.1,"tq":100.0,"pwr":7.0,"latg":1.399,"lng":0.31,"thr":91.8,"brk":0.0,"x":23.25,"y":-33.44,"tcs":38.8,"sec":4,"mt":64.3,"bt":38.2,"ce":343.43,"soc":0.962,"td":0.25,"pf":1.0},{"d":787.5,"t":62.487,"v":58.86,"rpm":2727.3,"tq":100.0,"pwr":7.14,"latg":1.284,"lng":0.402,"thr":91.5,"brk":0.0,"x":22.1,"y":-34.52,"tcs":23.7,"sec":4,"mt":64.6,"bt":38.4,"ce":344.02,"soc":0.9619,"td":0.25,"pf":1.0},{"d":790.2,"t":62.695,"v":60.19,"rpm":2788.8,"tq":100.0,"pwr":7.3,"latg":1.255,"lng":0.421,"thr":91.1,"brk":0.0,"x":21.03,"y":-35.7,"tcs":20.2,"sec":4,"mt":65.0,"bt":38.6,"ce":344.62,"soc":0.9617,"td":0.25,"pf":1.0},{"d":792.9,"t":62.898,"v":61.53,"rpm":2851.0,"tq":100.0,"pwr":7.46,"latg":1.231,"lng":0.434,"thr":90.7,"brk":0.0,"x":20.04,"y":-36.95,"tcs":17.7,"sec":4,"mt":65.3,"bt":38.8,"ce":345.23,"soc":0.9616,"td":0.25,"pf":1.0},{"d":795.6,"t":63.096,"v":62.96,"rpm":2917.1,"tq":100.0,"pwr":7.64,"latg":1.116,"lng":0.491,"thr":90.2,"brk":0.0,"x":19.13,"y":-38.26,"tcs":8.1,"sec":4,"mt":65.7,"bt":39.1,"ce":345.86,"soc":0.9615,"td":0.25,"pf":1.0},{"d":798.3,"t":63.29,"v":64.49,"rpm":2988.0,"tq":100.0,"pwr":7.82,"latg":1.034,"lng":0.526,"thr":89.8,"brk":0.0,"x":18.29,"y":-39.64,"tcs":1.9,"sec":4,"mt":66.1,"bt":39.4,"ce":346.5,"soc":0.9613,"td":0.25,"pf":1.0},{"d":800.9,"t":63.479,"v":66.01,"rpm":3058.4,"tq":100.0,"pwr":8.01,"latg":1.107,"lng":0.496,"thr":89.3,"brk":0.0,"x":17.52,"y":-41.06,"tcs":6.2,"sec":4,"mt":66.5,"bt":39.7,"ce":347.15,"soc":0.9612,"td":0.25,"pf":1.0},{"d":803.6,"t":63.664,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":1.235,"lng":0.425,"thr":88.9,"brk":0.0,"x":16.82,"y":-42.52,"tcs":17.2,"sec":4,"mt":66.8,"bt":39.9,"ce":347.82,"soc":0.9611,"td":0.25,"pf":1.0},{"d":806.3,"t":63.846,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":1.294,"lng":0.376,"thr":88.5,"brk":0.0,"x":16.2,"y":-44.0,"tcs":24.7,"sec":4,"mt":66.8,"bt":39.9,"ce":348.49,"soc":0.961,"td":0.25,"pf":1.0},{"d":809.0,"t":64.025,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":1.215,"lng":0.424,"thr":88.1,"brk":0.0,"x":15.67,"y":-45.53,"tcs":16.5,"sec":4,"mt":66.9,"bt":39.9,"ce":349.15,"soc":0.9608,"td":0.25,"pf":1.0},{"d":811.6,"t":64.201,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":1.154,"lng":0.456,"thr":87.7,"brk":0.0,"x":15.21,"y":-47.08,"tcs":10.9,"sec":4,"mt":67.0,"bt":40.0,"ce":349.82,"soc":0.9607,"td":0.25,"pf":1.0},{"d":814.3,"t":64.374,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":1.187,"lng":0.439,"thr":87.3,"brk":0.0,"x":14.82,"y":-48.66,"tcs":13.2,"sec":4,"mt":67.1,"bt":40.0,"ce":350.48,"soc":0.9606,"td":0.25,"pf":1.0},{"d":817.0,"t":64.544,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":1.236,"lng":0.408,"thr":86.9,"brk":0.0,"x":14.51,"y":-50.26,"tcs":17.8,"sec":4,"mt":67.1,"bt":40.0,"ce":351.15,"soc":0.9604,"td":0.25,"pf":1.0},{"d":819.7,"t":64.712,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":1.233,"lng":0.398,"thr":86.5,"brk":0.0,"x":14.27,"y":-51.87,"tcs":19.1,"sec":4,"mt":67.2,"bt":40.1,"ce":351.82,"soc":0.9603,"td":0.25,"pf":1.0},{"d":822.4,"t":64.877,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":1.072,"lng":0.483,"thr":86.1,"brk":0.0,"x":14.1,"y":-53.5,"tcs":4.9,"sec":4,"mt":67.3,"bt":40.1,"ce":352.48,"soc":0.9602,"td":0.25,"pf":1.0},{"d":825.0,"t":65.04,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":0.958,"lng":0.51,"thr":85.6,"brk":0.0,"x":14.0,"y":-55.16,"tcs":0.0,"sec":4,"mt":67.4,"bt":40.2,"ce":353.15,"soc":0.96,"td":0.25,"pf":1.0},{"d":827.7,"t":65.2,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":0.194,"lng":0.507,"thr":85.1,"brk":0.0,"x":13.95,"y":-57.0,"tcs":0.0,"sec":4,"mt":67.4,"bt":40.2,"ce":353.81,"soc":0.9599,"td":0.25,"pf":1.0},{"d":830.4,"t":65.358,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":0.074,"lng":0.504,"thr":84.7,"brk":0.0,"x":13.9,"y":-60.0,"tcs":0.0,"sec":4,"mt":67.5,"bt":40.2,"ce":354.48,"soc":0.9598,"td":0.25,"pf":1.0},{"d":833.1,"t":65.515,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.043,"lng":-1.71,"thr":0.0,"brk":100.0,"x":13.87,"y":-64.32,"tcs":0.0,"sec":4,"mt":53.4,"bt":34.7,"ce":354.48,"soc":0.9597,"td":0.7,"pf":1.0},{"d":835.7,"t":65.681,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.036,"lng":-1.7,"thr":0.0,"brk":100.0,"x":13.85,"y":-69.47,"tcs":0.0,"sec":4,"mt":53.5,"bt":34.7,"ce":354.48,"soc":0.9595,"td":0.7,"pf":1.0},{"d":838.4,"t":65.858,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.032,"lng":-1.689,"thr":0.0,"brk":100.0,"x":13.86,"y":-74.62,"tcs":0.0,"sec":4,"mt":53.5,"bt":34.8,"ce":354.48,"soc":0.9594,"td":0.7,"pf":1.0},{"d":841.1,"t":66.047,"v":63.15,"rpm":2925.8,"tq":100.0,"pwr":0.0,"latg":-0.206,"lng":-1.665,"thr":0.0,"brk":99.1,"x":13.87,"y":-77.83,"tcs":0.0,"sec":4,"mt":53.6,"bt":34.8,"ce":354.48,"soc":0.9593,"td":0.7,"pf":1.0},{"d":843.8,"t":66.253,"v":57.94,"rpm":2684.4,"tq":100.0,"pwr":0.0,"latg":-0.384,"lng":-1.615,"thr":0.0,"brk":96.6,"x":13.87,"y":-79.01,"tcs":0.0,"sec":4,"mt":53.7,"bt":34.8,"ce":354.48,"soc":0.9591,"td":0.7,"pf":1.0},{"d":846.5,"t":66.477,"v":53.27,"rpm":2468.3,"tq":100.0,"pwr":0.0,"latg":-1.16,"lng":-1.157,"thr":0.0,"brk":68.5,"x":13.83,"y":-80.42,"tcs":67.1,"sec":4,"mt":53.8,"bt":34.9,"ce":354.48,"soc":0.959,"td":0.7,"pf":1.0},{"d":849.1,"t":66.72,"v":49.2,"rpm":2279.7,"tq":100.0,"pwr":0.0,"latg":-1.289,"lng":-0.984,"thr":0.0,"brk":58.1,"x":13.68,"y":-81.88,"tcs":0.0,"sec":4,"mt":53.8,"bt":34.9,"ce":354.48,"soc":0.9589,"td":0.7,"pf":1.0},{"d":851.8,"t":66.982,"v":45.72,"rpm":2118.5,"tq":100.0,"pwr":0.0,"latg":-1.41,"lng":-0.801,"thr":0.0,"brk":47.0,"x":13.4,"y":-83.33,"tcs":0.0,"sec":4,"mt":53.9,"bt":35.0,"ce":354.48,"soc":0.9587,"td":0.7,"pf":1.0},{"d":854.5,"t":67.264,"v":42.5,"rpm":1969.0,"tq":100.0,"pwr":0.0,"latg":-1.475,"lng":-0.647,"thr":0.0,"brk":37.6,"x":12.93,"y":-84.74,"tcs":0.0,"sec":4,"mt":54.0,"bt":35.0,"ce":354.48,"soc":0.9586,"td":0.7,"pf":1.0},{"d":857.2,"t":67.567,"v":39.67,"rpm":1838.0,"tq":100.0,"pwr":0.0,"latg":-1.499,"lng":-0.599,"thr":0.0,"brk":34.9,"x":12.26,"y":-86.07,"tcs":0.0,"sec":4,"mt":54.1,"bt":35.0,"ce":354.48,"soc":0.9585,"td":0.7,"pf":1.0},{"d":859.8,"t":67.892,"v":36.73,"rpm":1701.6,"tq":100.0,"pwr":0.0,"latg":-1.508,"lng":-0.567,"thr":0.0,"brk":33.1,"x":11.37,"y":-87.27,"tcs":0.0,"sec":4,"mt":54.1,"bt":35.1,"ce":354.48,"soc":0.9584,"td":0.7,"pf":1.0},{"d":862.5,"t":68.244,"v":34.11,"rpm":1580.4,"tq":100.0,"pwr":0.0,"latg":-1.578,"lng":-0.035,"thr":0.0,"brk":0.0,"x":10.25,"y":-88.25,"tcs":0.0,"sec":4,"mt":54.2,"bt":35.1,"ce":354.48,"soc":0.9582,"td":0.7,"pf":1.0},{"d":865.2,"t":68.606,"v":34.1,"rpm":1580.0,"tq":100.0,"pwr":4.14,"latg":-1.599,"lng":-0.011,"thr":97.1,"brk":0.0,"x":8.92,"y":-88.93,"tcs":96.2,"sec":4,"mt":61.5,"bt":36.6,"ce":354.82,"soc":0.9581,"td":0.25,"pf":1.0},{"d":867.9,"t":68.969,"v":33.79,"rpm":1565.8,"tq":100.0,"pwr":0.0,"latg":-1.599,"lng":-0.084,"thr":0.0,"brk":3.1,"x":7.47,"y":-89.26,"tcs":0.0,"sec":4,"mt":54.4,"bt":35.2,"ce":354.82,"soc":0.958,"td":0.7,"pf":1.0},{"d":870.6,"t":69.336,"v":33.88,"rpm":1569.8,"tq":100.0,"pwr":4.11,"latg":-1.472,"lng":0.26,"thr":97.2,"brk":0.0,"x":5.99,"y":-89.19,"tcs":52.6,"sec":4,"mt":61.6,"bt":36.6,"ce":355.16,"soc":0.9578,"td":0.25,"pf":1.0},{"d":873.2,"t":69.691,"v":35.89,"rpm":1662.9,"tq":100.0,"pwr":4.35,"latg":-1.163,"lng":0.484,"thr":96.8,"brk":0.0,"x":4.57,"y":-88.77,"tcs":16.0,"sec":4,"mt":62.1,"bt":36.9,"ce":355.51,"soc":0.9577,"td":0.25,"pf":1.0},{"d":875.9,"t":70.023,"v":38.81,"rpm":1798.4,"tq":100.0,"pwr":4.71,"latg":-0.767,"lng":0.58,"thr":96.3,"brk":0.0,"x":3.27,"y":-88.13,"tcs":0.0,"sec":4,"mt":62.8,"bt":37.2,"ce":355.9,"soc":0.9576,"td":0.25,"pf":1.0},{"d":878.6,"t":70.33,"v":41.56,"rpm":1925.5,"tq":100.0,"pwr":5.04,"latg":-1.078,"lng":0.56,"thr":95.8,"brk":0.0,"x":2.05,"y":-87.35,"tcs":2.7,"sec":4,"mt":63.5,"bt":37.5,"ce":356.31,"soc":0.9574,"td":0.25,"pf":1.0},{"d":881.3,"t":70.62,"v":43.67,"rpm":2023.5,"tq":100.0,"pwr":5.3,"latg":-1.216,"lng":0.468,"thr":95.3,"brk":0.0,"x":0.91,"y":-86.44,"tcs":17.0,"sec":4,"mt":64.0,"bt":37.7,"ce":356.75,"soc":0.9573,"td":0.25,"pf":1.0},{"d":884.0,"t":70.896,"v":45.81,"rpm":2122.7,"tq":100.0,"pwr":5.56,"latg":-1.109,"lng":0.525,"thr":94.8,"brk":0.0,"x":-0.09,"y":-85.4,"tcs":7.4,"sec":4,"mt":64.5,"bt":38.0,"ce":357.2,"soc":0.9572,"td":0.25,"pf":1.0},{"d":886.6,"t":71.16,"v":47.98,"rpm":2223.1,"tq":100.0,"pwr":5.82,"latg":-1.087,"lng":0.534,"thr":94.3,"brk":0.0,"x":-0.99,"y":-84.28,"tcs":5.4,"sec":4,"mt":65.1,"bt":38.3,"ce":357.68,"soc":0.9571,"td":0.25,"pf":1.0},{"d":889.3,"t":71.412,"v":50.07,"rpm":2320.0,"tq":100.0,"pwr":6.07,"latg":-1.017,"lng":0.553,"thr":93.8,"brk":0.0,"x":-1.78,"y":-83.08,"tcs":1.7,"sec":4,"mt":65.6,"bt":38.6,"ce":358.18,"soc":0.9569,"td":0.25,"pf":1.0},{"d":892.0,"t":71.653,"v":52.17,"rpm":2417.3,"tq":100.0,"pwr":6.33,"latg":-0.804,"lng":0.561,"thr":93.3,"brk":0.0,"x":-2.47,"y":-81.85,"tcs":0.0,"sec":4,"mt":66.1,"bt":38.9,"ce":358.7,"soc":0.9568,"td":0.25,"pf":1.0},{"d":894.7,"t":71.886,"v":54.18,"rpm":2510.3,"tq":100.0,"pwr":6.57,"latg":-0.463,"lng":0.557,"thr":92.8,"brk":0.0,"x":-3.07,"y":-80.61,"tcs":0.0,"sec":4,"mt":66.6,"bt":39.2,"ce":359.24,"soc":0.9567,"td":0.25,"pf":1.0},{"d":897.3,"t":72.11,"v":56.1,"rpm":2599.4,"tq":100.0,"pwr":6.81,"latg":-0.258,"lng":0.554,"thr":92.3,"brk":0.0,"x":-3.59,"y":-79.48,"tcs":0.0,"sec":4,"mt":67.1,"bt":39.5,"ce":359.79,"soc":0.9565,"td":0.25,"pf":1.0},{"d":900.0,"t":72.326,"v":57.95,"rpm":2685.1,"tq":100.0,"pwr":7.03,"latg":-0.228,"lng":0.551,"thr":91.7,"brk":0.0,"x":-4.03,"y":-78.45,"tcs":0.0,"sec":4,"mt":67.6,"bt":39.8,"ce":360.37,"soc":0.9564,"td":0.25,"pf":1.0},{"d":902.7,"t":72.536,"v":59.73,"rpm":2767.6,"tq":100.0,"pwr":7.25,"latg":-0.296,"lng":0.547,"thr":91.2,"brk":0.0,"x":-4.49,"y":-77.39,"tcs":0.0,"sec":4,"mt":68.0,"bt":40.1,"ce":360.97,"soc":0.9563,"td":0.25,"pf":1.0},{"d":905.4,"t":72.74,"v":61.45,"rpm":2847.2,"tq":100.0,"pwr":7.45,"latg":-0.377,"lng":0.544,"thr":90.7,"brk":0.0,"x":-4.95,"y":-76.26,"tcs":0.0,"sec":4,"mt":68.5,"bt":40.4,"ce":361.58,"soc":0.9562,"td":0.25,"pf":1.0},{"d":908.1,"t":72.938,"v":63.11,"rpm":2924.1,"tq":100.0,"pwr":7.66,"latg":-0.361,"lng":0.54,"thr":90.2,"brk":0.0,"x":-5.39,"y":-75.12,"tcs":0.0,"sec":4,"mt":68.9,"bt":40.7,"ce":362.2,"soc":0.956,"td":0.25,"pf":1.0},{"d":910.7,"t":73.131,"v":64.72,"rpm":2998.7,"tq":100.0,"pwr":7.85,"latg":-0.347,"lng":0.537,"thr":89.7,"brk":0.0,"x":-5.81,"y":-74.01,"tcs":0.0,"sec":4,"mt":69.3,"bt":41.0,"ce":362.85,"soc":0.9559,"td":0.25,"pf":1.0},{"d":913.4,"t":73.32,"v":66.28,"rpm":3071.0,"tq":100.0,"pwr":8.04,"latg":-0.318,"lng":0.534,"thr":89.2,"brk":0.0,"x":-6.21,"y":-72.91,"tcs":0.0,"sec":4,"mt":69.7,"bt":41.3,"ce":363.51,"soc":0.9558,"td":0.25,"pf":1.0},{"d":916.1,"t":73.504,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":-0.293,"lng":0.531,"thr":88.7,"brk":0.0,"x":-6.57,"y":-71.86,"tcs":0.0,"sec":4,"mt":69.9,"bt":41.4,"ce":364.17,"soc":0.9556,"td":0.25,"pf":1.0},{"d":918.8,"t":73.684,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":8.12,"latg":-0.315,"lng":0.527,"thr":88.2,"brk":0.0,"x":-6.92,"y":-70.84,"tcs":0.0,"sec":4,"mt":70.0,"bt":41.5,"ce":364.84,"soc":0.9555,"td":0.25,"pf":1.0},{"d":921.4,"t":73.86,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.44,"lng":0.524,"thr":87.7,"brk":0.0,"x":-7.28,"y":-69.74,"tcs":0.0,"sec":4,"mt":70.1,"bt":41.5,"ce":365.11,"soc":0.9554,"td":0.1,"pf":1.0},{"d":924.1,"t":74.033,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.692,"lng":0.521,"thr":87.2,"brk":0.0,"x":-7.65,"y":-68.55,"tcs":0.0,"sec":4,"mt":70.1,"bt":41.5,"ce":365.37,"soc":0.9552,"td":0.1,"pf":1.0},{"d":926.8,"t":74.203,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.859,"lng":0.518,"thr":86.7,"brk":0.0,"x":-8.02,"y":-67.28,"tcs":0.0,"sec":4,"mt":70.2,"bt":41.6,"ce":365.64,"soc":0.9551,"td":0.1,"pf":1.0},{"d":929.5,"t":74.369,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-1.079,"lng":0.493,"thr":86.2,"brk":0.0,"x":-8.35,"y":-65.98,"tcs":3.5,"sec":4,"mt":70.3,"bt":41.6,"ce":365.91,"soc":0.955,"td":0.1,"pf":1.0},{"d":932.2,"t":74.535,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-1.19,"lng":-1.179,"thr":0.0,"brk":67.3,"x":-8.65,"y":-64.65,"tcs":20.8,"sec":4,"mt":56.2,"bt":36.1,"ce":365.91,"soc":0.9549,"td":0.7,"pf":1.0},{"d":934.8,"t":74.707,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-1.091,"lng":-1.272,"thr":0.0,"brk":73.6,"x":-8.89,"y":-63.31,"tcs":24.7,"sec":4,"mt":56.2,"bt":36.1,"ce":365.91,"soc":0.9547,"td":0.7,"pf":1.0},{"d":937.5,"t":74.888,"v":66.64,"rpm":3087.6,"tq":100.0,"pwr":0.0,"latg":-0.995,"lng":-1.337,"thr":0.0,"brk":78.1,"x":-9.08,"y":-61.95,"tcs":28.6,"sec":4,"mt":56.3,"bt":36.2,"ce":365.91,"soc":0.9546,"td":0.7,"pf":1.0},{"d":940.2,"t":75.08,"v":62.78,"rpm":2909.0,"tq":100.0,"pwr":0.0,"latg":-1.07,"lng":-1.263,"thr":0.0,"brk":74.0,"x":-9.22,"y":-60.58,"tcs":0.0,"sec":4,"mt":56.4,"bt":36.2,"ce":365.91,"soc":0.9545,"td":0.7,"pf":1.0},{"d":942.9,"t":75.284,"v":59.0,"rpm":2733.8,"tq":100.0,"pwr":0.0,"latg":-1.198,"lng":-1.118,"thr":0.0,"brk":65.4,"x":-9.29,"y":-59.18,"tcs":0.0,"sec":4,"mt":56.5,"bt":36.2,"ce":365.91,"soc":0.9543,"td":0.7,"pf":1.0},{"d":945.5,"t":75.501,"v":55.46,"rpm":2569.7,"tq":100.0,"pwr":0.0,"latg":-1.304,"lng":-0.981,"thr":0.0,"brk":57.2,"x":-9.27,"y":-57.76,"tcs":0.0,"sec":4,"mt":56.5,"bt":36.3,"ce":365.91,"soc":0.9542,"td":0.7,"pf":1.0},{"d":948.2,"t":75.731,"v":52.49,"rpm":2432.2,"tq":100.0,"pwr":0.0,"latg":-1.499,"lng":-0.559,"thr":0.0,"brk":31.2,"x":-9.14,"y":-56.34,"tcs":0.0,"sec":4,"mt":56.6,"bt":36.3,"ce":365.91,"soc":0.9541,"td":0.7,"pf":1.0},{"d":950.9,"t":75.968,"v":51.97,"rpm":2407.8,"tq":100.0,"pwr":0.0,"latg":-1.6,"lng":-0.075,"thr":0.0,"brk":0.9,"x":-8.87,"y":-54.93,"tcs":0.0,"sec":5,"mt":56.7,"bt":36.3,"ce":365.91,"soc":0.9539,"td":0.7,"pf":1.0},{"d":953.6,"t":76.207,"v":51.69,"rpm":2395.1,"tq":100.0,"pwr":0.0,"latg":-1.6,"lng":-0.073,"thr":0.0,"brk":0.9,"x":-8.44,"y":-53.56,"tcs":0.0,"sec":5,"mt":56.8,"bt":36.4,"ce":365.91,"soc":0.9538,"td":0.7,"pf":1.0},{"d":956.3,"t":76.446,"v":51.41,"rpm":2382.1,"tq":100.0,"pwr":0.0,"latg":-1.6,"lng":-0.074,"thr":0.0,"brk":1.0,"x":-7.86,"y":-52.24,"tcs":0.0,"sec":5,"mt":56.8,"bt":36.4,"ce":365.91,"soc":0.9537,"td":0.7,"pf":1.0},{"d":958.9,"t":76.687,"v":51.14,"rpm":2369.3,"tq":100.0,"pwr":0.0,"latg":-1.6,"lng":-0.058,"thr":0.0,"brk":0.0,"x":-7.13,"y":-51.0,"tcs":0.0,"sec":5,"mt":56.9,"bt":36.5,"ce":365.91,"soc":0.9536,"td":0.7,"pf":1.0},{"d":961.6,"t":76.926,"v":52.38,"rpm":2427.2,"tq":100.0,"pwr":6.35,"latg":-1.072,"lng":0.523,"thr":93.3,"brk":0.0,"x":-6.28,"y":-49.85,"tcs":6.0,"sec":5,"mt":68.1,"bt":39.9,"ce":366.43,"soc":0.9534,"td":0.25,"pf":1.0},{"d":964.3,"t":77.157,"v":54.37,"rpm":2519.2,"tq":100.0,"pwr":6.6,"latg":-0.879,"lng":0.557,"thr":92.7,"brk":0.0,"x":-5.36,"y":-48.78,"tcs":0.0,"sec":5,"mt":68.6,"bt":40.2,"ce":366.97,"soc":0.9533,"td":0.25,"pf":1.0},{"d":967.0,"t":77.388,"v":51.88,"rpm":2403.9,"tq":100.0,"pwr":0.0,"latg":-0.801,"lng":-1.45,"thr":0.0,"brk":87.0,"x":-4.39,"y":-47.78,"tcs":0.0,"sec":5,"mt":57.1,"bt":36.6,"ce":366.97,"soc":0.9532,"td":0.7,"pf":1.0},{"d":969.7,"t":77.64,"v":47.35,"rpm":2193.7,"tq":100.0,"pwr":0.0,"latg":1.404,"lng":-0.809,"thr":0.0,"brk":47.4,"x":-3.33,"y":-46.77,"tcs":0.0,"sec":5,"mt":57.2,"bt":36.6,"ce":366.97,"soc":0.953,"td":0.7,"pf":1.0},{"d":972.3,"t":77.911,"v":44.42,"rpm":2058.3,"tq":100.0,"pwr":0.0,"latg":1.526,"lng":-0.481,"thr":0.0,"brk":27.1,"x":-2.34,"y":-45.63,"tcs":0.0,"sec":5,"mt":57.3,"bt":36.6,"ce":366.97,"soc":0.9529,"td":0.7,"pf":1.0},{"d":975.0,"t":78.192,"v":43.98,"rpm":2037.9,"tq":100.0,"pwr":5.34,"latg":1.598,"lng":-0.007,"thr":95.2,"brk":0.0,"x":-1.53,"y":-44.35,"tcs":93.5,"sec":5,"mt":66.7,"bt":39.1,"ce":367.41,"soc":0.9528,"td":0.25,"pf":1.0},{"d":977.7,"t":78.472,"v":43.98,"rpm":2037.6,"tq":100.0,"pwr":5.33,"latg":1.58,"lng":0.049,"thr":95.2,"brk":0.0,"x":-0.94,"y":-42.96,"tcs":84.5,"sec":5,"mt":66.8,"bt":39.1,"ce":367.84,"soc":0.9527,"td":0.25,"pf":1.0},{"d":980.4,"t":78.751,"v":44.69,"rpm":2070.8,"tq":100.0,"pwr":5.42,"latg":1.502,"lng":0.222,"thr":95.1,"brk":0.0,"x":-0.58,"y":-41.5,"tcs":56.4,"sec":5,"mt":67.0,"bt":39.2,"ce":368.29,"soc":0.9525,"td":0.25,"pf":1.0},{"d":983.0,"t":79.04,"v":41.18,"rpm":1908.0,"tq":100.0,"pwr":0.0,"latg":1.415,"lng":-0.778,"thr":0.0,"brk":46.0,"x":-0.44,"y":-39.99,"tcs":0.0,"sec":5,"mt":57.6,"bt":36.8,"ce":368.29,"soc":0.9524,"td":0.7,"pf":1.0},{"d":985.7,"t":79.354,"v":38.52,"rpm":1784.9,"tq":100.0,"pwr":4.67,"latg":1.57,"lng":-0.04,"thr":96.3,"brk":0.0,"x":-0.55,"y":-38.49,"tcs":100.0,"sec":5,"mt":65.8,"bt":38.7,"ce":368.67,"soc":0.9523,"td":0.25,"pf":1.0},{"d":988.4,"t":79.671,"v":39.46,"rpm":1828.3,"tq":100.0,"pwr":4.79,"latg":1.495,"lng":0.239,"thr":96.2,"brk":0.0,"x":-0.96,"y":-37.04,"tcs":54.8,"sec":5,"mt":66.1,"bt":38.8,"ce":369.06,"soc":0.9521,"td":0.25,"pf":1.0},{"d":991.1,"t":79.979,"v":40.95,"rpm":1897.6,"tq":100.0,"pwr":4.97,"latg":1.307,"lng":0.409,"thr":95.9,"brk":0.0,"x":-1.63,"y":-35.68,"tcs":27.2,"sec":5,"mt":66.5,"bt":39.0,"ce":369.47,"soc":0.952,"td":0.25,"pf":1.0},{"d":993.8,"t":80.273,"v":43.03,"rpm":1993.9,"tq":100.0,"pwr":5.22,"latg":1.268,"lng":0.451,"thr":95.4,"brk":0.0,"x":-2.5,"y":-34.44,"tcs":19.9,"sec":5,"mt":67.0,"bt":39.3,"ce":369.9,"soc":0.9519,"td":0.25,"pf":1.0},{"d":996.4,"t":80.555,"v":44.63,"rpm":2068.0,"tq":100.0,"pwr":5.41,"latg":1.471,"lng":0.281,"thr":95.1,"brk":0.0,"x":-3.55,"y":-33.33,"tcs":46.9,"sec":5,"mt":67.4,"bt":39.5,"ce":370.34,"soc":0.9517,"td":0.25,"pf":1.0},{"d":999.1,"t":80.828,"v":45.7,"rpm":2117.2,"tq":100.0,"pwr":5.54,"latg":1.468,"lng":0.266,"thr":94.9,"brk":0.0,"x":-4.73,"y":-32.37,"tcs":49.1,"sec":5,"mt":67.7,"bt":39.6,"ce":370.8,"soc":0.9516,"td":0.25,"pf":1.0},{"d":1001.8,"t":81.095,"v":46.84,"rpm":2170.4,"tq":100.0,"pwr":5.68,"latg":1.467,"lng":0.272,"thr":94.6,"brk":0.0,"x":-6.05,"y":-31.59,"tcs":47.9,"sec":5,"mt":68.1,"bt":39.8,"ce":371.26,"soc":0.9515,"td":0.25,"pf":1.0},{"d":1004.5,"t":81.356,"v":47.82,"rpm":2215.9,"tq":100.0,"pwr":5.8,"latg":1.507,"lng":0.22,"thr":94.4,"brk":0.0,"x":-7.46,"y":-30.98,"tcs":56.1,"sec":5,"mt":68.3,"bt":39.9,"ce":371.74,"soc":0.9514,"td":0.25,"pf":1.0},{"d":1007.1,"t":81.611,"v":48.65,"rpm":2254.0,"tq":100.0,"pwr":5.9,"latg":1.508,"lng":0.212,"thr":94.2,"brk":0.0,"x":-8.94,"y":-30.56,"tcs":57.1,"sec":5,"mt":68.6,"bt":40.1,"ce":372.22,"soc":0.9512,"td":0.25,"pf":1.0},{"d":1009.8,"t":81.863,"v":49.5,"rpm":2293.4,"tq":100.0,"pwr":6.0,"latg":1.499,"lng":0.223,"thr":94.0,"brk":0.0,"x":-10.46,"y":-30.32,"tcs":55.1,"sec":5,"mt":68.9,"bt":40.2,"ce":372.71,"soc":0.9511,"td":0.25,"pf":1.0},{"d":1012.5,"t":82.11,"v":50.22,"rpm":2327.0,"tq":100.0,"pwr":6.09,"latg":1.546,"lng":0.155,"thr":93.8,"brk":0.0,"x":-12.0,"y":-30.27,"tcs":65.9,"sec":5,"mt":69.1,"bt":40.4,"ce":373.21,"soc":0.951,"td":0.25,"pf":1.0},{"d":1015.2,"t":82.355,"v":50.69,"rpm":2348.7,"tq":100.0,"pwr":6.15,"latg":1.55,"lng":0.133,"thr":93.7,"brk":0.0,"x":-13.54,"y":-30.41,"tcs":69.3,"sec":5,"mt":69.3,"bt":40.4,"ce":373.72,"soc":0.9508,"td":0.25,"pf":1.0},{"d":1017.9,"t":82.597,"v":51.39,"rpm":2381.0,"tq":100.0,"pwr":6.23,"latg":1.497,"lng":0.221,"thr":93.5,"brk":0.0,"x":-15.06,"y":-30.72,"tcs":55.0,"sec":5,"mt":69.5,"bt":40.6,"ce":374.23,"soc":0.9507,"td":0.25,"pf":1.0},{"d":1020.5,"t":82.835,"v":52.43,"rpm":2429.3,"tq":100.0,"pwr":6.36,"latg":1.304,"lng":0.39,"thr":93.2,"brk":0.0,"x":-16.54,"y":-31.2,"tcs":27.4,"sec":5,"mt":69.8,"bt":40.7,"ce":374.75,"soc":0.9506,"td":0.25,"pf":1.0},{"d":1023.2,"t":83.067,"v":54.1,"rpm":2506.7,"tq":100.0,"pwr":2.62,"latg":1.101,"lng":0.513,"thr":92.8,"brk":0.0,"x":-17.98,"y":-31.83,"tcs":7.2,"sec":5,"mt":70.2,"bt":41.0,"ce":374.96,"soc":0.9504,"td":0.1,"pf":1.0},{"d":1025.9,"t":83.291,"v":55.89,"rpm":2589.5,"tq":100.0,"pwr":2.71,"latg":1.163,"lng":0.488,"thr":92.3,"brk":0.0,"x":-19.38,"y":-32.56,"tcs":10.6,"sec":5,"mt":70.7,"bt":41.3,"ce":375.19,"soc":0.9503,"td":0.1,"pf":1.0},{"d":1028.6,"t":83.509,"v":57.38,"rpm":2658.8,"tq":100.0,"pwr":2.78,"latg":1.307,"lng":0.4,"thr":91.9,"brk":0.0,"x":-20.72,"y":-33.4,"tcs":24.5,"sec":5,"mt":71.1,"bt":41.5,"ce":375.42,"soc":0.9502,"td":0.1,"pf":1.0},{"d":1031.2,"t":83.722,"v":58.74,"rpm":2721.5,"tq":100.0,"pwr":2.85,"latg":1.211,"lng":0.447,"thr":91.5,"brk":0.0,"x":-22.0,"y":-34.34,"tcs":16.4,"sec":5,"mt":71.4,"bt":41.8,"ce":375.65,"soc":0.9501,"td":0.1,"pf":1.0},{"d":1033.9,"t":83.93,"v":60.27,"rpm":2792.3,"tq":100.0,"pwr":2.92,"latg":1.115,"lng":0.497,"thr":91.1,"brk":0.0,"x":-23.21,"y":-35.37,"tcs":7.9,"sec":5,"mt":71.8,"bt":42.0,"ce":375.89,"soc":0.9499,"td":0.1,"pf":1.0},{"d":1036.6,"t":84.132,"v":61.78,"rpm":2862.6,"tq":100.0,"pwr":3.0,"latg":1.203,"lng":0.455,"thr":90.6,"brk":0.0,"x":-24.36,"y":-36.48,"tcs":14.2,"sec":5,"mt":72.2,"bt":42.3,"ce":376.13,"soc":0.9498,"td":0.1,"pf":1.0},{"d":1039.3,"t":84.33,"v":63.04,"rpm":2920.9,"tq":100.0,"pwr":3.06,"latg":1.332,"lng":0.37,"thr":90.2,"brk":0.0,"x":-25.44,"y":-37.65,"tcs":27.5,"sec":5,"mt":72.6,"bt":42.5,"ce":376.39,"soc":0.9497,"td":0.1,"pf":1.0},{"d":1042.0,"t":84.524,"v":64.18,"rpm":2973.9,"tq":100.0,"pwr":3.11,"latg":1.139,"lng":0.468,"thr":89.9,"brk":0.0,"x":-26.44,"y":-38.9,"tcs":11.3,"sec":5,"mt":72.9,"bt":42.8,"ce":376.64,"soc":0.9495,"td":0.1,"pf":1.0},{"d":1044.6,"t":84.714,"v":65.72,"rpm":3045.0,"tq":100.0,"pwr":3.19,"latg":0.9,"lng":0.535,"thr":89.4,"brk":0.0,"x":-27.38,"y":-40.22,"tcs":0.0,"sec":5,"mt":73.3,"bt":43.0,"ce":376.9,"soc":0.9494,"td":0.1,"pf":1.0},{"d":1047.3,"t":84.9,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.689,"lng":0.532,"thr":88.9,"brk":0.0,"x":-28.28,"y":-41.61,"tcs":0.0,"sec":5,"mt":73.6,"bt":43.3,"ce":377.17,"soc":0.9493,"td":0.1,"pf":1.0},{"d":1050.0,"t":85.081,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.48,"lng":0.529,"thr":88.4,"brk":0.0,"x":-29.18,"y":-43.08,"tcs":0.0,"sec":5,"mt":73.7,"bt":43.3,"ce":377.44,"soc":0.9491,"td":0.1,"pf":1.0},{"d":1052.7,"t":85.259,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.375,"lng":0.525,"thr":87.9,"brk":0.0,"x":-30.08,"y":-44.65,"tcs":0.0,"sec":5,"mt":73.8,"bt":43.4,"ce":377.7,"soc":0.949,"td":0.1,"pf":1.0},{"d":1055.3,"t":85.433,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.377,"lng":0.522,"thr":87.4,"brk":0.0,"x":-30.97,"y":-46.28,"tcs":0.0,"sec":5,"mt":73.8,"bt":43.4,"ce":377.97,"soc":0.9489,"td":0.1,"pf":1.0},{"d":1058.0,"t":85.604,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.392,"lng":0.519,"thr":86.9,"brk":0.0,"x":-31.84,"y":-47.92,"tcs":0.0,"sec":5,"mt":73.9,"bt":43.4,"ce":378.23,"soc":0.9488,"td":0.1,"pf":1.0},{"d":1060.7,"t":85.771,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.039,"lng":0.516,"thr":86.4,"brk":0.0,"x":-32.22,"y":-48.66,"tcs":0.0,"sec":5,"mt":74.0,"bt":43.5,"ce":378.5,"soc":0.9486,"td":0.1,"pf":1.0},{"d":1063.4,"t":85.936,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.041,"lng":0.513,"thr":85.9,"brk":0.0,"x":-31.33,"y":-46.9,"tcs":0.0,"sec":5,"mt":74.1,"bt":43.5,"ce":378.77,"soc":0.9485,"td":0.1,"pf":1.0},{"d":1066.1,"t":86.098,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.042,"lng":0.509,"thr":85.5,"brk":0.0,"x":-30.44,"y":-45.13,"tcs":0.0,"sec":5,"mt":74.1,"bt":43.5,"ce":379.03,"soc":0.9484,"td":0.1,"pf":1.0},{"d":1068.7,"t":86.257,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.114,"lng":0.468,"thr":85.0,"brk":0.0,"x":-30.42,"y":-45.1,"tcs":6.2,"sec":5,"mt":74.2,"bt":43.6,"ce":379.3,"soc":0.9482,"td":0.1,"pf":1.0},{"d":1071.4,"t":86.418,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":1.271,"lng":-1.063,"thr":0.0,"brk":59.7,"x":-31.09,"y":-46.6,"tcs":32.9,"sec":5,"mt":60.1,"bt":38.0,"ce":379.3,"soc":0.9481,"td":0.25,"pf":1.0},{"d":1074.1,"t":86.584,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":1.526,"lng":-0.495,"thr":0.0,"brk":24.5,"x":-31.69,"y":-48.1,"tcs":0.0,"sec":5,"mt":60.2,"bt":38.1,"ce":379.3,"soc":0.948,"td":0.25,"pf":1.0},{"d":1076.8,"t":86.752,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.546,"lng":0.096,"thr":86.8,"brk":0.0,"x":-32.2,"y":-49.62,"tcs":68.1,"sec":5,"mt":74.4,"bt":43.7,"ce":379.57,"soc":0.9479,"td":0.1,"pf":1.0},{"d":1079.5,"t":86.92,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.496,"lng":0.176,"thr":86.6,"brk":0.0,"x":-32.62,"y":-51.18,"tcs":54.9,"sec":5,"mt":74.5,"bt":43.7,"ce":379.83,"soc":0.9477,"td":0.1,"pf":1.0},{"d":1082.1,"t":87.087,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.475,"lng":0.209,"thr":86.5,"brk":0.0,"x":-32.95,"y":-52.75,"tcs":49.5,"sec":5,"mt":74.6,"bt":43.8,"ce":380.1,"soc":0.9476,"td":0.1,"pf":1.0},{"d":1084.8,"t":87.253,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.503,"lng":0.171,"thr":86.3,"brk":0.0,"x":-33.21,"y":-54.34,"tcs":55.4,"sec":5,"mt":74.7,"bt":43.8,"ce":380.37,"soc":0.9475,"td":0.1,"pf":1.0},{"d":1087.5,"t":87.418,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.528,"lng":0.134,"thr":86.1,"brk":0.0,"x":-33.37,"y":-55.95,"tcs":61.3,"sec":5,"mt":74.7,"bt":43.8,"ce":380.63,"soc":0.9473,"td":0.1,"pf":1.0},{"d":1090.2,"t":87.582,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.513,"lng":0.15,"thr":86.0,"brk":0.0,"x":-33.45,"y":-57.56,"tcs":58.4,"sec":5,"mt":74.8,"bt":43.9,"ce":380.9,"soc":0.9472,"td":0.1,"pf":1.0},{"d":1092.8,"t":87.745,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.494,"lng":0.177,"thr":85.9,"brk":0.0,"x":-33.44,"y":-59.17,"tcs":54.0,"sec":5,"mt":74.9,"bt":43.9,"ce":381.17,"soc":0.9471,"td":0.1,"pf":1.0},{"d":1095.5,"t":87.907,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.446,"lng":0.229,"thr":85.7,"brk":0.0,"x":-33.35,"y":-60.78,"tcs":45.5,"sec":5,"mt":75.0,"bt":44.0,"ce":381.43,"soc":0.9469,"td":0.1,"pf":1.0},{"d":1098.2,"t":88.068,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":1.391,"lng":0.282,"thr":85.4,"brk":0.0,"x":-33.17,"y":-62.4,"tcs":36.7,"sec":5,"mt":75.0,"bt":44.0,"ce":381.7,"soc":0.9468,"td":0.1,"pf":1.0},{"d":1100.9,"t":88.229,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":1.122,"lng":-1.282,"thr":0.0,"brk":73.4,"x":-32.92,"y":-64.01,"tcs":16.5,"sec":5,"mt":60.9,"bt":38.5,"ce":381.7,"soc":0.9467,"td":0.25,"pf":1.0},{"d":1103.6,"t":88.397,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.723,"lng":-1.535,"thr":0.0,"brk":89.8,"x":-32.6,"y":-65.65,"tcs":0.0,"sec":5,"mt":61.0,"bt":38.5,"ce":381.7,"soc":0.9466,"td":0.25,"pf":1.0},{"d":1106.2,"t":88.576,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.528,"lng":-1.601,"thr":0.0,"brk":94.5,"x":-32.21,"y":-67.32,"tcs":0.0,"sec":5,"mt":61.1,"bt":38.5,"ce":381.7,"soc":0.9464,"td":0.25,"pf":1.0},{"d":1108.9,"t":88.766,"v":62.79,"rpm":2909.2,"tq":100.0,"pwr":0.0,"latg":0.457,"lng":-1.614,"thr":0.0,"brk":95.9,"x":-31.78,"y":-69.0,"tcs":0.0,"sec":5,"mt":61.1,"bt":38.6,"ce":381.7,"soc":0.9463,"td":0.25,"pf":1.0},{"d":1111.6,"t":88.973,"v":57.84,"rpm":2679.8,"tq":100.0,"pwr":0.0,"latg":-0.828,"lng":-1.431,"thr":0.0,"brk":85.1,"x":-31.34,"y":-70.57,"tcs":0.0,"sec":5,"mt":61.2,"bt":38.6,"ce":381.7,"soc":0.9462,"td":0.25,"pf":1.0},{"d":1114.3,"t":89.197,"v":53.18,"rpm":2463.8,"tq":100.0,"pwr":0.0,"latg":-1.085,"lng":-1.209,"thr":0.0,"brk":71.8,"x":-31.0,"y":-71.96,"tcs":0.0,"sec":5,"mt":61.3,"bt":38.6,"ce":381.7,"soc":0.946,"td":0.25,"pf":1.0},{"d":1116.9,"t":89.439,"v":49.88,"rpm":2311.3,"tq":100.0,"pwr":0.0,"latg":-1.462,"lng":-0.701,"thr":0.0,"brk":40.3,"x":-30.74,"y":-73.4,"tcs":0.0,"sec":5,"mt":61.4,"bt":38.7,"ce":381.7,"soc":0.9459,"td":0.25,"pf":1.0},{"d":1119.6,"t":89.694,"v":47.4,"rpm":2196.1,"tq":100.0,"pwr":0.0,"latg":-1.526,"lng":-0.511,"thr":0.0,"brk":28.7,"x":-30.64,"y":-74.88,"tcs":0.0,"sec":5,"mt":61.4,"bt":38.7,"ce":381.7,"soc":0.9458,"td":0.25,"pf":1.0},{"d":1122.3,"t":89.959,"v":46.34,"rpm":2147.1,"tq":100.0,"pwr":0.0,"latg":-1.597,"lng":-0.152,"thr":0.0,"brk":6.4,"x":-30.72,"y":-76.36,"tcs":0.0,"sec":5,"mt":61.5,"bt":38.8,"ce":381.7,"soc":0.9456,"td":0.25,"pf":1.0},{"d":1125.0,"t":90.227,"v":45.72,"rpm":2118.3,"tq":100.0,"pwr":0.0,"latg":-1.597,"lng":-0.138,"thr":0.0,"brk":5.5,"x":-31.01,"y":-77.82,"tcs":0.0,"sec":5,"mt":61.6,"bt":38.8,"ce":381.7,"soc":0.9455,"td":0.25,"pf":1.0},{"d":1127.7,"t":90.497,"v":45.91,"rpm":2127.0,"tq":100.0,"pwr":2.23,"latg":-1.554,"lng":0.135,"thr":94.8,"brk":0.0,"x":-31.49,"y":-79.22,"tcs":70.2,"sec":5,"mt":71.4,"bt":41.5,"ce":381.88,"soc":0.9454,"td":0.1,"pf":1.0},{"d":1130.3,"t":90.764,"v":46.62,"rpm":2160.2,"tq":100.0,"pwr":2.26,"latg":-1.456,"lng":0.255,"thr":94.7,"brk":0.0,"x":-32.16,"y":-80.55,"tcs":50.7,"sec":5,"mt":71.6,"bt":41.6,"ce":382.07,"soc":0.9453,"td":0.1,"pf":1.0},{"d":1133.0,"t":91.025,"v":48.18,"rpm":2232.1,"tq":100.0,"pwr":2.34,"latg":-1.221,"lng":0.457,"thr":94.3,"brk":0.0,"x":-32.98,"y":-81.77,"tcs":17.7,"sec":5,"mt":72.0,"bt":41.8,"ce":382.26,"soc":0.9451,"td":0.1,"pf":1.0},{"d":1135.7,"t":91.276,"v":50.05,"rpm":2318.9,"tq":100.0,"pwr":2.43,"latg":-1.227,"lng":0.463,"thr":93.8,"brk":0.0,"x":-33.91,"y":-82.91,"tcs":16.3,"sec":5,"mt":72.5,"bt":42.1,"ce":382.46,"soc":0.945,"td":0.1,"pf":1.0},{"d":1138.4,"t":91.519,"v":51.61,"rpm":2391.2,"tq":100.0,"pwr":2.5,"latg":-1.359,"lng":0.371,"thr":93.4,"brk":0.0,"x":-34.94,"y":-83.95,"tcs":30.8,"sec":5,"mt":72.9,"bt":42.3,"ce":382.66,"soc":0.9449,"td":0.1,"pf":1.0},{"d":1141.0,"t":91.755,"v":53.23,"rpm":2466.4,"tq":100.0,"pwr":2.58,"latg":-1.088,"lng":0.518,"thr":93.0,"brk":0.0,"x":-36.05,"y":-84.9,"tcs":6.5,"sec":5,"mt":73.3,"bt":42.5,"ce":382.88,"soc":0.9447,"td":0.1,"pf":1.0},{"d":1143.7,"t":91.983,"v":55.17,"rpm":2556.1,"tq":100.0,"pwr":2.68,"latg":-0.965,"lng":0.556,"thr":92.5,"brk":0.0,"x":-37.21,"y":-85.75,"tcs":0.0,"sec":5,"mt":73.8,"bt":42.8,"ce":383.1,"soc":0.9446,"td":0.1,"pf":1.0},{"d":1146.4,"t":92.203,"v":56.98,"rpm":2640.2,"tq":100.0,"pwr":2.76,"latg":-1.154,"lng":0.493,"thr":92.0,"brk":0.0,"x":-38.42,"y":-86.53,"tcs":9.5,"sec":5,"mt":74.3,"bt":43.1,"ce":383.32,"soc":0.9445,"td":0.1,"pf":1.0},{"d":1149.1,"t":92.417,"v":58.39,"rpm":2705.6,"tq":100.0,"pwr":2.83,"latg":-1.319,"lng":0.379,"thr":91.6,"brk":0.0,"x":-39.68,"y":-87.24,"tcs":27.5,"sec":5,"mt":74.7,"bt":43.4,"ce":383.55,"soc":0.9443,"td":0.1,"pf":1.0},{"d":1151.8,"t":92.626,"v":59.69,"rpm":2765.7,"tq":100.0,"pwr":2.9,"latg":-1.26,"lng":0.418,"thr":91.2,"brk":0.0,"x":-40.98,"y":-87.86,"tcs":20.9,"sec":5,"mt":75.0,"bt":43.6,"ce":383.79,"soc":0.9442,"td":0.1,"pf":1.0},{"d":1154.4,"t":92.831,"v":61.05,"rpm":2828.9,"tq":100.0,"pwr":2.96,"latg":-1.249,"lng":0.433,"thr":90.8,"brk":0.0,"x":-42.32,"y":-88.39,"tcs":18.0,"sec":5,"mt":75.4,"bt":43.8,"ce":384.03,"soc":0.9441,"td":0.1,"pf":1.0},{"d":1157.1,"t":93.031,"v":62.14,"rpm":2879.1,"tq":100.0,"pwr":3.02,"latg":-1.467,"lng":0.259,"thr":90.5,"brk":0.0,"x":-43.69,"y":-88.84,"tcs":45.7,"sec":5,"mt":75.7,"bt":44.1,"ce":384.28,"soc":0.944,"td":0.1,"pf":1.0},{"d":1159.8,"t":93.232,"v":60.91,"rpm":2822.4,"tq":100.0,"pwr":0.0,"latg":-1.6,"lng":-0.101,"thr":0.0,"brk":1.6,"x":-45.09,"y":-89.2,"tcs":0.0,"sec":5,"mt":62.6,"bt":39.3,"ce":384.28,"soc":0.9438,"td":0.25,"pf":1.0},{"d":1162.5,"t":93.435,"v":60.6,"rpm":2807.7,"tq":100.0,"pwr":0.0,"latg":-1.6,"lng":-0.101,"thr":0.0,"brk":1.6,"x":-46.52,"y":-89.45,"tcs":0.0,"sec":5,"mt":62.6,"bt":39.3,"ce":384.28,"soc":0.9437,"td":0.25,"pf":1.0},{"d":1165.2,"t":93.639,"v":60.29,"rpm":2793.4,"tq":100.0,"pwr":2.93,"latg":-1.593,"lng":-0.074,"thr":91.1,"brk":0.0,"x":-47.96,"y":-89.58,"tcs":100.0,"sec":5,"mt":75.5,"bt":43.9,"ce":384.52,"soc":0.9436,"td":0.1,"pf":1.0},{"d":1167.8,"t":93.844,"v":60.61,"rpm":2808.2,"tq":100.0,"pwr":2.94,"latg":-1.524,"lng":0.163,"thr":91.0,"brk":0.0,"x":-49.41,"y":-89.6,"tcs":61.6,"sec":5,"mt":75.6,"bt":44.0,"ce":384.76,"soc":0.9434,"td":0.1,"pf":1.0},{"d":1170.5,"t":94.046,"v":61.24,"rpm":2837.4,"tq":100.0,"pwr":2.97,"latg":-1.486,"lng":0.228,"thr":90.8,"brk":0.0,"x":-50.85,"y":-89.51,"tcs":50.9,"sec":5,"mt":75.9,"bt":44.1,"ce":385.01,"soc":0.9433,"td":0.1,"pf":1.0},{"d":1173.2,"t":94.25,"v":59.84,"rpm":2772.5,"tq":100.0,"pwr":0.0,"latg":-1.523,"lng":-0.558,"thr":0.0,"brk":30.3,"x":-52.28,"y":-89.31,"tcs":0.0,"sec":5,"mt":62.9,"bt":39.5,"ce":385.01,"soc":0.9432,"td":0.25,"pf":1.0},{"d":1175.9,"t":94.46,"v":58.19,"rpm":2696.2,"tq":100.0,"pwr":0.0,"latg":-1.556,"lng":-0.443,"thr":0.0,"brk":23.3,"x":-53.69,"y":-89.0,"tcs":0.0,"sec":5,"mt":63.0,"bt":39.5,"ce":385.01,"soc":0.9431,"td":0.25,"pf":1.0},{"d":1178.5,"t":94.675,"v":56.78,"rpm":2630.8,"tq":100.0,"pwr":0.0,"latg":-1.565,"lng":-0.396,"thr":0.0,"brk":20.5,"x":-55.07,"y":-88.58,"tcs":0.0,"sec":5,"mt":63.1,"bt":39.5,"ce":385.01,"soc":0.9429,"td":0.25,"pf":1.0},{"d":1181.2,"t":94.895,"v":55.66,"rpm":2579.1,"tq":100.0,"pwr":0.0,"latg":-1.595,"lng":-0.066,"thr":0.0,"brk":0.0,"x":-56.41,"y":-88.03,"tcs":0.0,"sec":5,"mt":63.2,"bt":39.6,"ce":385.01,"soc":0.9428,"td":0.25,"pf":1.0},{"d":1183.9,"t":95.117,"v":55.72,"rpm":2581.6,"tq":100.0,"pwr":2.7,"latg":-1.583,"lng":0.048,"thr":92.4,"brk":0.0,"x":-57.69,"y":-87.36,"tcs":81.7,"sec":5,"mt":75.1,"bt":43.5,"ce":385.23,"soc":0.9427,"td":0.1,"pf":1.0},{"d":1186.6,"t":95.338,"v":55.93,"rpm":2591.3,"tq":100.0,"pwr":2.71,"latg":-1.577,"lng":0.07,"thr":92.3,"brk":0.0,"x":-58.9,"y":-86.57,"tcs":78.1,"sec":6,"mt":75.2,"bt":43.6,"ce":385.45,"soc":0.9425,"td":0.1,"pf":1.0},{"d":1189.3,"t":95.558,"v":56.34,"rpm":2610.5,"tq":100.0,"pwr":2.73,"latg":-1.528,"lng":0.165,"thr":92.2,"brk":0.0,"x":-60.03,"y":-85.68,"tcs":62.5,"sec":6,"mt":75.3,"bt":43.6,"ce":385.67,"soc":0.9424,"td":0.1,"pf":1.0},{"d":1191.9,"t":95.777,"v":55.54,"rpm":2573.5,"tq":100.0,"pwr":0.0,"latg":-1.419,"lng":-0.831,"thr":0.0,"brk":47.9,"x":-61.08,"y":-84.69,"tcs":54.2,"sec":6,"mt":63.5,"bt":39.7,"ce":385.67,"soc":0.9423,"td":0.25,"pf":1.0},{"d":1194.6,"t":96.006,"v":52.68,"rpm":2441.1,"tq":100.0,"pwr":0.0,"latg":-1.443,"lng":-0.741,"thr":0.0,"brk":42.6,"x":-62.03,"y":-83.61,"tcs":0.0,"sec":6,"mt":63.5,"bt":39.8,"ce":385.67,"soc":0.9421,"td":0.25,"pf":1.0},{"d":1197.3,"t":96.247,"v":50.43,"rpm":2336.7,"tq":100.0,"pwr":0.0,"latg":-1.566,"lng":-0.303,"thr":0.0,"brk":15.4,"x":-62.88,"y":-82.44,"tcs":0.0,"sec":6,"mt":63.6,"bt":39.8,"ce":385.67,"soc":0.942,"td":0.25,"pf":1.0},{"d":1200.0,"t":96.492,"v":50.92,"rpm":2359.2,"tq":100.0,"pwr":2.47,"latg":-1.445,"lng":0.276,"thr":93.6,"brk":0.0,"x":-63.59,"y":-81.19,"tcs":46.2,"sec":6,"mt":74.5,"bt":43.1,"ce":385.88,"soc":0.9419,"td":0.1,"pf":1.0},{"d":1202.6,"t":96.731,"v":52.16,"rpm":2416.7,"tq":100.0,"pwr":2.53,"latg":-1.339,"lng":0.374,"thr":93.3,"brk":0.0,"x":-64.17,"y":-79.87,"tcs":30.1,"sec":6,"mt":74.8,"bt":43.3,"ce":386.08,"soc":0.9418,"td":0.1,"pf":1.0},{"d":1205.3,"t":96.965,"v":53.63,"rpm":2484.8,"tq":100.0,"pwr":2.6,"latg":-1.26,"lng":0.429,"thr":92.9,"brk":0.0,"x":-64.62,"y":-78.52,"tcs":20.9,"sec":6,"mt":75.2,"bt":43.5,"ce":386.3,"soc":0.9416,"td":0.1,"pf":1.0},{"d":1208.0,"t":97.192,"v":55.19,"rpm":2557.2,"tq":100.0,"pwr":2.68,"latg":-1.209,"lng":0.458,"thr":92.5,"brk":0.0,"x":-64.95,"y":-77.14,"tcs":15.7,"sec":6,"mt":75.6,"bt":43.8,"ce":386.52,"soc":0.9415,"td":0.1,"pf":1.0},{"d":1210.7,"t":97.412,"v":56.81,"rpm":2632.3,"tq":100.0,"pwr":2.76,"latg":-1.139,"lng":0.492,"thr":92.1,"brk":0.0,"x":-65.19,"y":-75.74,"tcs":9.8,"sec":6,"mt":76.0,"bt":44.0,"ce":386.74,"soc":0.9414,"td":0.1,"pf":1.0},{"d":1213.4,"t":97.626,"v":58.49,"rpm":2710.0,"tq":100.0,"pwr":2.84,"latg":-1.083,"lng":0.517,"thr":91.6,"brk":0.0,"x":-65.33,"y":-74.34,"tcs":5.3,"sec":6,"mt":76.5,"bt":44.3,"ce":386.98,"soc":0.9412,"td":0.1,"pf":1.0},{"d":1216.0,"t":97.835,"v":60.12,"rpm":2785.8,"tq":100.0,"pwr":2.92,"latg":-1.134,"lng":0.493,"thr":91.1,"brk":0.0,"x":-65.39,"y":-72.94,"tcs":8.6,"sec":6,"mt":76.9,"bt":44.6,"ce":387.22,"soc":0.9411,"td":0.1,"pf":1.0},{"d":1218.7,"t":98.037,"v":61.61,"rpm":2854.7,"tq":100.0,"pwr":2.99,"latg":-1.194,"lng":0.458,"thr":90.7,"brk":0.0,"x":-65.36,"y":-71.54,"tcs":13.8,"sec":6,"mt":77.3,"bt":44.8,"ce":387.46,"soc":0.941,"td":0.1,"pf":1.0},{"d":1221.4,"t":98.236,"v":62.99,"rpm":2918.6,"tq":100.0,"pwr":3.06,"latg":-1.183,"lng":0.458,"thr":90.2,"brk":0.0,"x":-65.26,"y":-70.14,"tcs":13.4,"sec":6,"mt":77.7,"bt":45.1,"ce":387.71,"soc":0.9408,"td":0.1,"pf":1.0},{"d":1224.1,"t":98.429,"v":64.4,"rpm":2983.6,"tq":100.0,"pwr":3.12,"latg":-1.143,"lng":0.476,"thr":89.8,"brk":0.0,"x":-65.08,"y":-68.76,"tcs":9.9,"sec":6,"mt":78.0,"bt":45.3,"ce":387.97,"soc":0.9407,"td":0.1,"pf":1.0},{"d":1226.7,"t":98.619,"v":65.85,"rpm":3051.1,"tq":100.0,"pwr":3.2,"latg":-0.884,"lng":0.535,"thr":89.3,"brk":0.0,"x":-64.84,"y":-67.4,"tcs":0.0,"sec":6,"mt":78.4,"bt":45.6,"ce":388.23,"soc":0.9406,"td":0.1,"pf":1.0},{"d":1229.4,"t":98.804,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.592,"lng":0.532,"thr":88.8,"brk":0.0,"x":-64.55,"y":-66.11,"tcs":0.0,"sec":6,"mt":78.7,"bt":45.8,"ce":388.5,"soc":0.9405,"td":0.1,"pf":1.0},{"d":1232.1,"t":98.986,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.455,"lng":0.528,"thr":88.3,"brk":0.0,"x":-64.26,"y":-64.89,"tcs":0.0,"sec":6,"mt":78.8,"bt":45.9,"ce":388.76,"soc":0.9403,"td":0.1,"pf":1.0},{"d":1234.8,"t":99.163,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.47,"lng":0.525,"thr":87.8,"brk":0.0,"x":-63.95,"y":-63.72,"tcs":0.0,"sec":6,"mt":78.9,"bt":45.9,"ce":389.03,"soc":0.9402,"td":0.1,"pf":1.0},{"d":1237.5,"t":99.337,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.489,"lng":0.522,"thr":87.3,"brk":0.0,"x":-63.62,"y":-62.54,"tcs":0.0,"sec":6,"mt":78.9,"bt":45.9,"ce":389.3,"soc":0.9401,"td":0.1,"pf":1.0},{"d":1240.1,"t":99.507,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.06,"lng":0.519,"thr":86.9,"brk":0.0,"x":-62.98,"y":-60.37,"tcs":0.0,"sec":6,"mt":79.0,"bt":46.0,"ce":389.56,"soc":0.9399,"td":0.1,"pf":1.0},{"d":1242.8,"t":99.675,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.093,"lng":0.515,"thr":86.4,"brk":0.0,"x":-62.06,"y":-57.19,"tcs":0.0,"sec":6,"mt":79.1,"bt":46.0,"ce":389.83,"soc":0.9398,"td":0.1,"pf":1.0},{"d":1245.5,"t":99.839,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.199,"lng":0.512,"thr":85.9,"brk":0.0,"x":-61.36,"y":-54.73,"tcs":0.0,"sec":6,"mt":79.2,"bt":46.1,"ce":390.1,"soc":0.9397,"td":0.1,"pf":1.0},{"d":1248.2,"t":100.001,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.099,"lng":0.509,"thr":85.4,"brk":0.0,"x":-60.73,"y":-52.45,"tcs":0.0,"sec":6,"mt":79.2,"bt":46.1,"ce":390.36,"soc":0.9395,"td":0.1,"pf":1.0},{"d":1250.9,"t":100.16,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.051,"lng":0.506,"thr":84.9,"brk":0.0,"x":-59.76,"y":-48.79,"tcs":0.0,"sec":6,"mt":79.3,"bt":46.1,"ce":390.63,"soc":0.9394,"td":0.1,"pf":1.0},{"d":1253.5,"t":100.316,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.035,"lng":0.503,"thr":84.5,"brk":0.0,"x":-58.43,"y":-43.68,"tcs":0.0,"sec":6,"mt":79.4,"bt":46.2,"ce":390.9,"soc":0.9393,"td":0.1,"pf":1.0},{"d":1256.2,"t":100.47,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.044,"lng":0.5,"thr":84.0,"brk":0.0,"x":-57.0,"y":-38.14,"tcs":0.0,"sec":6,"mt":79.5,"bt":46.2,"ce":391.16,"soc":0.9392,"td":0.1,"pf":1.0},{"d":1258.9,"t":100.622,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.072,"lng":0.497,"thr":83.5,"brk":0.0,"x":-55.92,"y":-33.85,"tcs":0.0,"sec":6,"mt":79.5,"bt":46.2,"ce":391.43,"soc":0.939,"td":0.1,"pf":1.0},{"d":1261.6,"t":100.772,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.169,"lng":0.494,"thr":83.1,"brk":0.0,"x":-55.18,"y":-30.83,"tcs":0.0,"sec":6,"mt":79.6,"bt":46.3,"ce":391.7,"soc":0.9389,"td":0.1,"pf":1.0},{"d":1264.2,"t":100.92,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.193,"lng":0.491,"thr":82.6,"brk":0.0,"x":-54.63,"y":-28.5,"tcs":0.0,"sec":6,"mt":79.7,"bt":46.3,"ce":391.96,"soc":0.9388,"td":0.1,"pf":1.0},{"d":1266.9,"t":101.066,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.198,"lng":0.488,"thr":82.1,"brk":0.0,"x":-54.09,"y":-26.17,"tcs":0.0,"sec":6,"mt":79.8,"bt":46.4,"ce":392.23,"soc":0.9386,"td":0.1,"pf":1.0},{"d":1269.6,"t":101.21,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.203,"lng":0.485,"thr":81.7,"brk":0.0,"x":-53.58,"y":-23.83,"tcs":0.0,"sec":6,"mt":79.8,"bt":46.4,"ce":392.5,"soc":0.9385,"td":0.1,"pf":1.0},{"d":1272.3,"t":101.352,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.136,"lng":0.482,"thr":81.2,"brk":0.0,"x":-53.46,"y":-23.28,"tcs":0.0,"sec":6,"mt":79.9,"bt":46.4,"ce":392.76,"soc":0.9384,"td":0.1,"pf":1.0},{"d":1275.0,"t":101.492,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.13,"lng":0.479,"thr":80.8,"brk":0.0,"x":-53.45,"y":-23.25,"tcs":0.0,"sec":6,"mt":80.0,"bt":46.5,"ce":393.03,"soc":0.9383,"td":0.1,"pf":1.0},{"d":1277.6,"t":101.631,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.126,"lng":0.476,"thr":80.3,"brk":0.0,"x":-53.47,"y":-23.31,"tcs":0.0,"sec":6,"mt":80.1,"bt":46.5,"ce":393.29,"soc":0.9381,"td":0.1,"pf":1.0},{"d":1280.3,"t":101.768,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.122,"lng":0.473,"thr":79.9,"brk":0.0,"x":-53.5,"y":-23.46,"tcs":0.0,"sec":6,"mt":80.1,"bt":46.5,"ce":393.56,"soc":0.938,"td":0.1,"pf":1.0},{"d":1283.0,"t":101.904,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.118,"lng":0.47,"thr":79.4,"brk":0.0,"x":-53.55,"y":-23.7,"tcs":0.0,"sec":6,"mt":80.2,"bt":46.6,"ce":393.83,"soc":0.9379,"td":0.1,"pf":1.0},{"d":1285.7,"t":102.038,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.115,"lng":0.467,"thr":79.0,"brk":0.0,"x":-53.62,"y":-24.03,"tcs":0.0,"sec":6,"mt":80.3,"bt":46.6,"ce":394.09,"soc":0.9377,"td":0.1,"pf":1.0},{"d":1288.3,"t":102.171,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.12,"lng":0.464,"thr":78.6,"brk":0.0,"x":-53.71,"y":-24.42,"tcs":0.0,"sec":6,"mt":80.4,"bt":46.7,"ce":394.36,"soc":0.9376,"td":0.1,"pf":1.0},{"d":1291.0,"t":102.303,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.15,"lng":0.462,"thr":78.1,"brk":0.0,"x":-53.74,"y":-24.57,"tcs":0.0,"sec":6,"mt":80.4,"bt":46.7,"ce":394.63,"soc":0.9375,"td":0.1,"pf":1.0},{"d":1293.7,"t":102.433,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.196,"lng":0.459,"thr":77.7,"brk":0.0,"x":-53.71,"y":-24.39,"tcs":0.0,"sec":6,"mt":80.5,"bt":46.7,"ce":394.89,"soc":0.9373,"td":0.1,"pf":1.0},{"d":1296.4,"t":102.562,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.279,"lng":0.456,"thr":77.3,"brk":0.0,"x":-53.6,"y":-23.9,"tcs":0.0,"sec":6,"mt":80.6,"bt":46.8,"ce":395.16,"soc":0.9372,"td":0.1,"pf":1.0},{"d":1299.1,"t":102.69,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.296,"lng":0.453,"thr":76.8,"brk":0.0,"x":-53.46,"y":-23.23,"tcs":0.0,"sec":6,"mt":80.7,"bt":46.8,"ce":395.43,"soc":0.9371,"td":0.1,"pf":1.0},{"d":1301.7,"t":102.816,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.302,"lng":0.45,"thr":76.4,"brk":0.0,"x":-53.31,"y":-22.56,"tcs":0.0,"sec":6,"mt":80.7,"bt":46.8,"ce":395.69,"soc":0.937,"td":0.1,"pf":1.0},{"d":1304.4,"t":102.942,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":-0.307,"lng":0.448,"thr":76.0,"brk":0.0,"x":-53.16,"y":-21.89,"tcs":0.0,"sec":6,"mt":80.8,"bt":46.9,"ce":395.96,"soc":0.9368,"td":0.1,"pf":1.0},{"d":1307.1,"t":103.066,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.0,"lng":0.445,"thr":100.0,"brk":0.0,"x":-52.93,"y":-20.85,"tcs":0.0,"sec":6,"mt":80.9,"bt":46.9,"ce":396.23,"soc":0.9367,"td":0.1,"pf":1.0},{"d":1309.8,"t":103.189,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.0,"lng":0.442,"thr":100.0,"brk":0.0,"x":-52.61,"y":-19.41,"tcs":0.0,"sec":6,"mt":81.0,"bt":47.0,"ce":396.49,"soc":0.9366,"td":0.1,"pf":1.0},{"d":1312.4,"t":103.312,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.0,"lng":0.44,"thr":100.0,"brk":0.0,"x":-52.29,"y":-17.96,"tcs":0.0,"sec":6,"mt":81.0,"bt":47.0,"ce":396.76,"soc":0.9364,"td":0.1,"pf":1.0},{"d":1315.1,"t":103.434,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.135,"lng":-1.77,"thr":0.0,"brk":99.6,"x":-51.91,"y":-16.28,"tcs":0.0,"sec":6,"mt":66.9,"bt":41.5,"ce":396.76,"soc":0.9363,"td":0.25,"pf":1.0},{"d":1317.8,"t":103.56,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.126,"lng":-1.76,"thr":0.0,"brk":99.7,"x":-51.19,"y":-13.05,"tcs":0.0,"sec":6,"mt":67.0,"bt":41.5,"ce":396.76,"soc":0.9362,"td":0.25,"pf":1.0},{"d":1320.5,"t":103.691,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":0.117,"lng":-1.749,"thr":0.0,"brk":99.7,"x":-50.5,"y":-9.81,"tcs":0.0,"sec":6,"mt":67.1,"bt":41.5,"ce":396.76,"soc":0.936,"td":0.25,"pf":1.0},{"d":1323.2,"t":103.828,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.308,"lng":-1.712,"thr":0.0,"brk":98.1,"x":-49.92,"y":-7.05,"tcs":0.0,"sec":6,"mt":67.1,"bt":41.6,"ce":396.76,"soc":0.9359,"td":0.25,"pf":1.0},{"d":1325.8,"t":103.97,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.401,"lng":-1.679,"thr":0.0,"brk":96.7,"x":-49.73,"y":-6.14,"tcs":0.0,"sec":6,"mt":67.2,"bt":41.6,"ce":396.76,"soc":0.9358,"td":0.25,"pf":1.0},{"d":1328.5,"t":104.118,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.632,"lng":-1.58,"thr":0.0,"brk":91.1,"x":-49.49,"y":-5.03,"tcs":0.5,"sec":6,"mt":67.3,"bt":41.6,"ce":396.76,"soc":0.9357,"td":0.25,"pf":1.0},{"d":1331.2,"t":104.273,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.872,"lng":-1.46,"thr":0.0,"brk":84.1,"x":-49.19,"y":-3.78,"tcs":79.8,"sec":6,"mt":67.4,"bt":41.7,"ce":396.76,"soc":0.9355,"td":0.25,"pf":1.0},{"d":1333.9,"t":104.436,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.77,"lng":-1.51,"thr":0.0,"brk":87.9,"x":-48.87,"y":-2.52,"tcs":64.5,"sec":6,"mt":67.4,"bt":41.7,"ce":396.76,"soc":0.9354,"td":0.25,"pf":1.0},{"d":1336.6,"t":104.607,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":0.0,"latg":-0.34,"lng":-1.672,"thr":0.0,"brk":98.6,"x":-48.51,"y":-1.28,"tcs":0.0,"sec":6,"mt":67.5,"bt":41.8,"ce":396.76,"soc":0.9353,"td":0.25,"pf":1.0},{"d":1339.2,"t":104.79,"v":65.56,"rpm":3037.4,"tq":100.0,"pwr":0.0,"latg":-0.063,"lng":-1.683,"thr":0.0,"brk":99.9,"x":-48.4,"y":-0.9,"tcs":0.0,"sec":6,"mt":67.6,"bt":41.8,"ce":396.76,"soc":0.9351,"td":0.25,"pf":1.0},{"d":1341.9,"t":104.988,"v":60.46,"rpm":2801.3,"tq":100.0,"pwr":0.0,"latg":-0.032,"lng":-1.674,"thr":0.0,"brk":100.0,"x":-48.67,"y":-1.79,"tcs":0.0,"sec":6,"mt":67.7,"bt":41.8,"ce":396.76,"soc":0.935,"td":0.25,"pf":1.0},{"d":1344.6,"t":105.203,"v":54.93,"rpm":2545.0,"tq":100.0,"pwr":0.0,"latg":-0.058,"lng":-1.663,"thr":0.0,"brk":99.9,"x":-48.82,"y":-2.32,"tcs":0.0,"sec":6,"mt":67.7,"bt":41.9,"ce":396.76,"soc":0.9349,"td":0.25,"pf":1.0},{"d":1347.3,"t":105.443,"v":49.63,"rpm":2299.4,"tq":100.0,"pwr":0.0,"latg":-1.288,"lng":-0.999,"thr":0.0,"brk":59.0,"x":-48.54,"y":-1.39,"tcs":34.2,"sec":6,"mt":67.8,"bt":41.9,"ce":396.76,"soc":0.9348,"td":0.25,"pf":1.0},{"d":1349.9,"t":105.704,"v":45.88,"rpm":2125.8,"tq":100.0,"pwr":0.0,"latg":-1.385,"lng":-0.833,"thr":0.0,"brk":49.0,"x":-48.02,"y":-0.05,"tcs":0.0,"sec":6,"mt":67.9,"bt":41.9,"ce":396.76,"soc":0.9346,"td":0.25,"pf":1.0},{"d":1352.6,"t":105.984,"v":43.02,"rpm":1993.1,"tq":100.0,"pwr":0.0,"latg":-1.508,"lng":-0.582,"thr":0.0,"brk":33.5,"x":-47.34,"y":1.23,"tcs":0.0,"sec":6,"mt":68.0,"bt":42.0,"ce":396.76,"soc":0.9345,"td":0.25,"pf":1.0},{"d":1355.3,"t":106.282,"v":40.28,"rpm":1866.5,"tq":100.0,"pwr":0.0,"latg":-1.494,"lng":-0.619,"thr":0.0,"brk":36.0,"x":-46.47,"y":2.39,"tcs":0.0,"sec":6,"mt":68.0,"bt":42.0,"ce":396.76,"soc":0.9344,"td":0.25,"pf":1.0},{"d":1358.0,"t":106.602,"v":37.34,"rpm":1730.2,"tq":100.0,"pwr":0.0,"latg":-1.516,"lng":-0.539,"thr":0.0,"brk":31.3,"x":-45.41,"y":3.38,"tcs":0.0,"sec":6,"mt":68.1,"bt":42.1,"ce":396.76,"soc":0.9342,"td":0.25,"pf":1.0},{"d":1360.7,"t":106.943,"v":36.02,"rpm":1669.0,"tq":100.0,"pwr":1.75,"latg":-1.579,"lng":0.088,"thr":96.8,"brk":0.0,"x":-44.16,"y":4.14,"tcs":79.8,"sec":6,"mt":75.8,"bt":43.7,"ce":396.9,"soc":0.9341,"td":0.1,"pf":1.0},{"d":1363.3,"t":107.283,"v":36.59,"rpm":1695.4,"tq":100.0,"pwr":1.78,"latg":-1.569,"lng":0.119,"thr":96.7,"brk":0.0,"x":-42.77,"y":4.6,"tcs":74.8,"sec":6,"mt":76.0,"bt":43.8,"ce":397.05,"soc":0.934,"td":0.1,"pf":1.0},{"d":1366.0,"t":107.615,"v":38.01,"rpm":1761.0,"tq":100.0,"pwr":1.84,"latg":-1.374,"lng":0.363,"thr":96.4,"brk":0.0,"x":-41.31,"y":4.75,"tcs":35.1,"sec":6,"mt":76.4,"bt":44.0,"ce":397.2,"soc":0.9338,"td":0.1,"pf":1.0},{"d":1368.7,"t":107.931,"v":40.43,"rpm":1873.4,"tq":100.0,"pwr":1.96,"latg":-0.76,"lng":0.578,"thr":96.0,"brk":0.0,"x":-39.85,"y":4.64,"tcs":0.0,"sec":6,"mt":77.0,"bt":44.2,"ce":397.36,"soc":0.9337,"td":0.1,"pf":1.0},{"d":1371.4,"t":108.228,"v":43.07,"rpm":1995.6,"tq":100.0,"pwr":2.09,"latg":-0.54,"lng":0.575,"thr":95.4,"brk":0.0,"x":-38.45,"y":4.4,"tcs":0.0,"sec":6,"mt":77.6,"bt":44.6,"ce":397.53,"soc":0.9336,"td":0.1,"pf":1.0},{"d":1374.0,"t":108.507,"v":45.54,"rpm":2110.1,"tq":100.0,"pwr":2.21,"latg":-0.46,"lng":0.571,"thr":94.9,"brk":0.0,"x":-37.08,"y":4.09,"tcs":0.0,"sec":6,"mt":78.2,"bt":44.9,"ce":397.71,"soc":0.9335,"td":0.1,"pf":1.0},{"d":1376.7,"t":108.771,"v":47.87,"rpm":2218.0,"tq":100.0,"pwr":2.32,"latg":-0.502,"lng":0.568,"thr":94.4,"brk":0.0,"x":-35.75,"y":3.73,"tcs":0.0,"sec":6,"mt":78.8,"bt":45.2,"ce":397.9,"soc":0.9333,"td":0.1,"pf":1.0},{"d":1379.4,"t":109.023,"v":50.08,"rpm":2320.2,"tq":100.0,"pwr":2.43,"latg":0.641,"lng":0.564,"thr":93.8,"brk":0.0,"x":-34.38,"y":3.31,"tcs":0.0,"sec":6,"mt":79.4,"bt":45.5,"ce":398.1,"soc":0.9332,"td":0.1,"pf":1.0},{"d":1382.1,"t":109.265,"v":52.18,"rpm":2417.5,"tq":100.0,"pwr":2.53,"latg":0.552,"lng":0.561,"thr":93.3,"brk":0.0,"x":-32.84,"y":2.85,"tcs":0.0,"sec":6,"mt":79.9,"bt":45.8,"ce":398.31,"soc":0.9331,"td":0.1,"pf":1.0},{"d":1384.8,"t":109.497,"v":54.18,"rpm":2510.5,"tq":100.0,"pwr":2.63,"latg":0.443,"lng":0.557,"thr":92.8,"brk":0.0,"x":-31.25,"y":2.46,"tcs":0.0,"sec":6,"mt":80.4,"bt":46.1,"ce":398.53,"soc":0.9329,"td":0.1,"pf":1.0},{"d":1387.4,"t":109.721,"v":56.11,"rpm":2599.6,"tq":100.0,"pwr":2.72,"latg":0.283,"lng":0.554,"thr":92.3,"brk":0.0,"x":-29.56,"y":2.11,"tcs":0.0,"sec":6,"mt":80.9,"bt":46.4,"ce":398.75,"soc":0.9328,"td":0.1,"pf":1.0},{"d":1390.1,"t":109.938,"v":57.96,"rpm":2685.3,"tq":100.0,"pwr":2.81,"latg":0.224,"lng":0.551,"thr":91.7,"brk":0.0,"x":-27.76,"y":1.77,"tcs":0.0,"sec":6,"mt":81.3,"bt":46.7,"ce":398.98,"soc":0.9327,"td":0.1,"pf":1.0},{"d":1392.8,"t":110.148,"v":59.74,"rpm":2767.7,"tq":100.0,"pwr":2.9,"latg":0.283,"lng":0.547,"thr":91.2,"brk":0.0,"x":-25.94,"y":1.46,"tcs":0.0,"sec":6,"mt":81.8,"bt":47.0,"ce":399.22,"soc":0.9325,"td":0.1,"pf":1.0},{"d":1395.5,"t":110.351,"v":61.45,"rpm":2847.3,"tq":100.0,"pwr":2.98,"latg":0.369,"lng":0.544,"thr":90.7,"brk":0.0,"x":-24.18,"y":1.19,"tcs":0.0,"sec":6,"mt":82.2,"bt":47.3,"ce":399.46,"soc":0.9324,"td":0.1,"pf":1.0},{"d":1398.1,"t":110.55,"v":63.11,"rpm":2924.3,"tq":100.0,"pwr":3.06,"latg":0.344,"lng":0.54,"thr":90.2,"brk":0.0,"x":-22.44,"y":0.96,"tcs":0.0,"sec":6,"mt":82.6,"bt":47.6,"ce":399.71,"soc":0.9323,"td":0.1,"pf":1.0},{"d":1400.8,"t":110.743,"v":64.72,"rpm":2998.8,"tq":100.0,"pwr":3.14,"latg":0.302,"lng":0.537,"thr":89.7,"brk":0.0,"x":-20.63,"y":0.76,"tcs":0.0,"sec":6,"mt":83.1,"bt":47.9,"ce":399.97,"soc":0.9322,"td":0.1,"pf":1.0},{"d":1403.5,"t":110.931,"v":66.28,"rpm":3071.1,"tq":100.0,"pwr":3.22,"latg":0.29,"lng":0.534,"thr":89.2,"brk":0.0,"x":-18.77,"y":0.59,"tcs":0.0,"sec":6,"mt":83.5,"bt":48.2,"ce":400.23,"soc":0.932,"td":0.1,"pf":1.0},{"d":1406.2,"t":111.115,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.315,"lng":0.531,"thr":88.7,"brk":0.0,"x":-16.91,"y":0.44,"tcs":0.0,"sec":6,"mt":83.7,"bt":48.3,"ce":400.5,"soc":0.9319,"td":0.1,"pf":1.0},{"d":1408.9,"t":111.296,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.34,"lng":0.527,"thr":88.2,"brk":0.0,"x":-15.06,"y":0.33,"tcs":0.0,"sec":6,"mt":83.8,"bt":48.4,"ce":400.77,"soc":0.9318,"td":0.1,"pf":1.0},{"d":1411.5,"t":111.472,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.173,"lng":0.524,"thr":87.7,"brk":0.0,"x":-13.06,"y":0.24,"tcs":0.0,"sec":6,"mt":83.8,"bt":48.4,"ce":401.03,"soc":0.9316,"td":0.1,"pf":1.0},{"d":1414.2,"t":111.645,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.109,"lng":0.521,"thr":87.2,"brk":0.0,"x":-10.59,"y":0.16,"tcs":0.0,"sec":6,"mt":83.9,"bt":48.4,"ce":401.3,"soc":0.9315,"td":0.1,"pf":1.0},{"d":1416.9,"t":111.814,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.084,"lng":0.518,"thr":86.7,"brk":0.0,"x":-7.66,"y":0.1,"tcs":0.0,"sec":6,"mt":84.0,"bt":48.5,"ce":401.57,"soc":0.9314,"td":0.1,"pf":1.0},{"d":1419.6,"t":111.981,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.087,"lng":0.515,"thr":86.2,"brk":0.0,"x":-4.56,"y":0.04,"tcs":0.0,"sec":6,"mt":84.1,"bt":48.5,"ce":401.83,"soc":0.9312,"td":0.1,"pf":1.0},{"d":1422.2,"t":112.145,"v":66.91,"rpm":3100.0,"tq":100.0,"pwr":3.25,"latg":0.09,"lng":0.511,"thr":85.8,"brk":0.0,"x":-1.45,"y":0.01,"tcs":0.0,"sec":6,"mt":84.1,"bt":48.5,"ce":402.1,"soc":0.9311,"td":0.1,"pf":1.0}],"lapTime":112.22,"trackLen":1423.5,"sectorTimes":[18.7,18.7,18.7,18.7,18.7,18.7],"packV":432.0,"packAh":13.5,"packWh":5832.0,"packS":120,"packP":3,"maxRPM":3100.0,"maxSpeedKmh":66.9,"maxPowerKw":80.0,"torqueCap":100.0,"numLaps":22,"socPerLap":[1.0,0.93106,0.86212,0.79317,0.73285,0.67252,0.6122,0.55187,0.49155,0.43984,0.38814,0.33643,0.28472,0.24163,0.19854,0.15546,0.11237,0.1,0.1,0.1,0.1,0.1,0.1],"finalSOC":10.0,"energyPerLap":402.1,"bmsPwrLimits":{"80pct":80,"50pct":70,"30pct":60,"10pct":50},"distScale":1.7854,"timeScale":2.2845};
+
+// ?? STATE ????????????????????????????????????????????????????????????????????
+const TD=RAW.trackData, N=TD.length;
+let idx=0, lap=1, playing=false, timer=null;
+const gTrail=[];
+
+// Pre-compute chart arrays
+const spd=TD.map(d=>d.v), rpm=TD.map(d=>d.rpm),
+      tq=TD.map(d=>d.tq), pwr=TD.map(d=>d.pwr),
+      mt=TD.map(d=>d.mt), bt=TD.map(d=>d.bt),
+      ce=TD.map(d=>d.ce), lat=TD.map(d=>Math.abs(d.latg)),
+      lng=TD.map(d=>Math.abs(d.lng));
+
+// Track XY bounds
+const allX=TD.map(d=>d.x), allY=TD.map(d=>d.y);
+const xMn=Math.min(...allX),xMx=Math.max(...allX),
+      yMn=Math.min(...allY),yMx=Math.max(...allY);
+
+// Sector colors
+const SC=['#00d4ff','#ffd700','#00ff9f','#ff5500','#bf5af2','#ff2d55'];
+
+// ?? LAP BUTTONS ???????????????????????????????????????????????????????????????
+const lapbtns=document.getElementById('lapbtns');
+for(let i=1;i<=22;i++){
+  const b=document.createElement('button');
+  b.className='lbtn'+(i===1?' on':''); b.textContent=i; b.dataset.l=i;
+  b.onclick=()=>setLap(i); lapbtns.appendChild(b);
+}
+function setLap(l){
+  lap=l;
+  document.querySelectorAll('.lbtn').forEach(b=>b.classList.toggle('on',+b.dataset.l===l));
+  document.getElementById('hLap').textContent=`LAP ${l}/22`;
+  buildSocLaps(); renderAll();
+}
+
+// ?? SECTOR GRID ???????????????????????????????????????????????????????????????
+const secgrid=document.getElementById('secgrid');
+for(let s=1;s<=6;s++){
+  const c=document.createElement('div'); c.className='sc'; c.id='sc'+s;
+  c.innerHTML=`<div class="sn" style="color:${SC[s-1]}">S${s}</div><div class="sv" id="sv${s}">${(RAW.lapTime/6).toFixed(2)}</div>`;
+  secgrid.appendChild(c);
+}
+document.getElementById('lapTot').textContent=RAW.lapTime.toFixed(2)+'s';
+const rs=RAW.lapTime*22;
+document.getElementById('raceTot').textContent=`${Math.floor(rs/60)}:${(rs%60).toFixed(1).padStart(4,'0')}`;
+
+// ?? SOC LAP GRID ??????????????????????????????????????????????????????????????
+const soclg=document.getElementById('soclg');
+function buildSocLaps(){
+  soclg.innerHTML='';
+  RAW.socPerLap.slice(0,22).forEach((s,i)=>{
+    const pct=Math.round(s*100);
+    const r2=Math.round(255*(1-s)),g2=Math.round(200*s);
+    const el=document.createElement('div'); el.className='slc'+(i+1===lap?' cur':'');
+    el.style.cssText=`background:rgba(${r2},${g2},0,.22);color:rgb(${r2},${g2},0);`;
+    el.title=`Lap ${i+1}: ${pct}%`; el.textContent=pct+'%';
+    el.onclick=()=>setLap(i+1); soclg.appendChild(el);
+  });
+}
+buildSocLaps();
+
+// ?? SLIDER / PLAY ?????????????????????????????????????????????????????????????
+const sld=document.getElementById('sld'); sld.max=N-1;
+sld.addEventListener('input',()=>{idx=+sld.value; renderAll();});
+const pbtn=document.getElementById('pbtn');
+pbtn.onclick=()=>{
+  playing=!playing; pbtn.textContent=playing?'?':'?';
+  if(playing) timer=setInterval(()=>{idx=(idx+2)%N;sld.value=idx;renderAll();},50);
+  else clearInterval(timer);
+};
+
+// ?? GAUGE ?????????????????????????????????????????????????????????????????????
+function drawGauge(cv,val,max,label,col){
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  const cx=W/2,cy=H*0.60,r=Math.min(W,H)*0.40;
+  ctx.clearRect(0,0,W,H);
+  const sa=Math.PI*0.75,ea=Math.PI*2.25;
+  const va=sa+Math.min(val/max,1)*(ea-sa);
+  // bg
+  ctx.beginPath();ctx.arc(cx,cy,r,sa,ea);ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=8;ctx.stroke();
+  // ticks
+  for(let i=0;i<=10;i++){
+    const a=sa+(i/10)*(ea-sa), ir=i%5===0?r-13:r-7;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*ir,cy+Math.sin(a)*ir);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    ctx.strokeStyle=i%5===0?'rgba(255,255,255,.35)':'rgba(255,255,255,.12)';ctx.lineWidth=i%5===0?1.5:1;ctx.stroke();
+  }
+  // value arc
+  ctx.beginPath();ctx.arc(cx,cy,r,sa,va);ctx.strokeStyle=col;ctx.lineWidth=8;ctx.shadowColor=col;ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
+  // needle
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(va)*(r-5),cy+Math.sin(va)*(r-5));
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+  // text
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(W*.18)}px monospace`;ctx.fillText(Math.round(val),cx,cy-4);
+  ctx.fillStyle='rgba(180,210,240,.5)';ctx.font=`${Math.round(W*.09)}px sans-serif`;ctx.fillText(label,cx,cy+14);
+  ctx.textBaseline='alphabetic';
+}
+
+// ?? TRACK MAP ?????????????????????????????????????????????????????????????????
+const cTrack=document.getElementById('cTrack');
+function drawTrack(i){
+  const p=cTrack.parentElement;
+  const W=p.offsetWidth||400, H=p.offsetHeight||190;
+  if(cTrack.width!==W||cTrack.height!==H){cTrack.width=W;cTrack.height=H;}
+  const ctx=cTrack.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  if(W<10||H<10) return;
+  const pad=20,tW=xMx-xMn,tH=yMx-yMn;
+  const sc=Math.min((W-pad*2)/tW,(H-pad*2)/tH);
+  const ox=pad+(W-pad*2-tW*sc)/2, oy=pad+(H-pad*2-tH*sc)/2;
+  const tx=x=>ox+(x-xMn)*sc, ty=y=>oy+(yMx-y)*sc;
+
+  // base track
+  ctx.beginPath(); TD.forEach((d,j)=>j===0?ctx.moveTo(tx(d.x),ty(d.y)):ctx.lineTo(tx(d.x),ty(d.y)));
+  ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=7;ctx.stroke();
+
+  // sector coloring
+  for(let j=1;j<TD.length;j++){
+    const d=TD[j],pp=TD[j-1];
+    ctx.beginPath();ctx.moveTo(tx(pp.x),ty(pp.y));ctx.lineTo(tx(d.x),ty(d.y));
+    ctx.strokeStyle=SC[d.sec-1]+'3a';ctx.lineWidth=7;ctx.lineCap='round';ctx.stroke();
+  }
+
+  // speed-colored trail
+  const tr=Math.min(45,i);
+  for(let j=i-tr;j<=i&&j<N;j++){
+    if(j<=0) continue;
+    const d=TD[j],pp=TD[j-1];
+    const vn=d.v/RAW.maxSpeedKmh;
+    const al=(j-(i-tr))/(tr+1);
+    ctx.beginPath();ctx.moveTo(tx(pp.x),ty(pp.y));ctx.lineTo(tx(d.x),ty(d.y));
+    ctx.strokeStyle=`rgba(${Math.round(255*(1-vn))},${Math.round(220*vn)},30,${al*.95})`;ctx.lineWidth=5;ctx.stroke();
+  }
+
+  // sector labels
+  SC.forEach((col,s)=>{
+    const bound=RAW.trackLen/6*(s+0.1); // midpoint of each sector
+    const pt=TD.find(d=>d.d>=bound)||TD[Math.floor(N/6*s)];
+    ctx.beginPath();ctx.arc(tx(pt.x),ty(pt.y),4,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.fillText('S'+(s+1),tx(pt.x),ty(pt.y)-8);
+  });
+
+  // S/F
+  ctx.beginPath();ctx.arc(tx(TD[0].x),ty(TD[0].y),5,0,Math.PI*2);
+  ctx.fillStyle='#fff';ctx.strokeStyle='#000';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='7px sans-serif';ctx.textAlign='center';ctx.fillText('S/F',tx(TD[0].x),ty(TD[0].y)+13);
+
+  // car dot
+  const cur=TD[i], cx2=tx(cur.x), cy2=ty(cur.y);
+  const grd=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,16);
+  grd.addColorStop(0,'rgba(0,212,255,.8)');grd.addColorStop(1,'rgba(0,212,255,0)');
+  ctx.beginPath();ctx.arc(cx2,cy2,16,0,Math.PI*2);ctx.fillStyle=grd;ctx.fill();
+  ctx.beginPath();ctx.arc(cx2,cy2,5,0,Math.PI*2);
+  ctx.fillStyle='#00d4ff';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.fill();ctx.stroke();
+}
+
+// ?? G-FORCE ???????????????????????????????????????????????????????????????????
+const cG=document.getElementById('cG');
+function drawG(latG,lngG){
+  const par=cG.parentElement;
+  const pw=par.offsetWidth||160, ph=par.offsetHeight||160;
+  const sz=Math.min(pw,ph)-6; if(sz<20)return;
+  cG.width=sz; cG.height=sz;
+  const ctx=cG.getContext('2d');
+  ctx.clearRect(0,0,sz,sz);
+  const cx=sz/2,cy=sz/2,r=sz/2-5;
+
+  [0.5,1,1.5].forEach(ring=>{
+    const rr=(ring/2)*r;
+    ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);
+    ctx.strokeStyle=ring===1?'rgba(255,255,255,.2)':'rgba(255,255,255,.07)';ctx.lineWidth=ring===1?1.5:1;ctx.stroke();
+    ctx.fillStyle='rgba(180,210,240,.3)';ctx.font='7.5px sans-serif';ctx.textAlign='center';ctx.fillText(ring+'G',cx,cy-rr-2);
+  });
+  ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx-r,cy);ctx.lineTo(cx+r,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx,cy+r);ctx.stroke();
+  ctx.fillStyle='rgba(180,210,240,.3)';ctx.font='7.5px sans-serif';ctx.textAlign='center';
+  ctx.fillText('BRAKE',cx,cy-r+9);ctx.fillText('ACCEL',cx,cy+r-2);
+  ctx.fillText('L',cx-r+4,cy+3);ctx.fillText('R',cx+r-4,cy+3);
+
+  gTrail.push({x:latG,y:lngG}); if(gTrail.length>80)gTrail.shift();
+  gTrail.forEach((pt,i)=>{
+    const a=i/gTrail.length;
+    ctx.beginPath();ctx.arc(cx+(pt.x/2)*r,cy-(pt.y/2)*r,1.5,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,212,255,${a*.45})`;ctx.fill();
+  });
+
+  const mag=Math.sqrt(latG*latG+lngG*lngG);
+  const dc=mag>1.4?'#ff2d55':mag>1?'#ffd700':'#00ff9f';
+  const dx=cx+(latG/2)*r, dy=cy-(lngG/2)*r;
+  ctx.beginPath();ctx.arc(dx,dy,6,0,Math.PI*2);
+  ctx.fillStyle=dc;ctx.shadowColor=dc;ctx.shadowBlur=10;ctx.fill();ctx.shadowBlur=0;
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+}
+
+// ?? GENERIC CHART ?????????????????????????????????????????????????????????????
+function chart(canvas,series,opts={}){
+  const par=canvas.parentElement;
+  const W=par.offsetWidth||350, H=par.offsetHeight||80;
+  canvas.width=W; canvas.height=H;
+  if(W<20||H<12)return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const P={t:5,b:16,l:32,r:5};
+  const cW=W-P.l-P.r, cH=H-P.t-P.b;
+  if(cW<10||cH<5)return;
+
+  let yMn=opts.yMin!==undefined?opts.yMin:Infinity;
+  let yMx=opts.yMax!==undefined?opts.yMax:-Infinity;
+  if(opts.yMin===undefined||opts.yMax===undefined)
+    series.forEach(s=>s.data.forEach(v=>{if(v<yMn)yMn=v;if(v>yMx)yMx=v;}));
+  const yR=yMx-yMn||1, n=series[0].data.length;
+  const px=i=>P.l+(i/(n-1))*cW;
+  const py=v=>P.t+cH-((v-yMn)/yR)*cH;
+
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){
+    const gy=P.t+(g/4)*cH;
+    ctx.beginPath();ctx.moveTo(P.l,gy);ctx.lineTo(W-P.r,gy);ctx.stroke();
+    ctx.fillStyle='rgba(185,205,235,.4)';ctx.font='8px monospace';ctx.textAlign='right';
+    ctx.fillText(Math.round(yMx-(g/4)*yR),P.l-3,gy+3);
+  }
+  // x labels
+  ctx.fillStyle='rgba(185,205,235,.3)';ctx.font='8px sans-serif';ctx.textAlign='center';
+  [0,.25,.5,.75,1].forEach(f=>{
+    const ii=Math.round(f*(n-1));
+    ctx.fillText(Math.round(TD[ii]?TD[ii].d:0)+'m',px(ii),H-3);
+  });
+
+  // series
+  series.forEach(s=>{
+    if(s.fill){
+      ctx.beginPath();ctx.moveTo(px(0),py(Math.max(yMn,0)));
+      s.data.forEach((v,i)=>ctx.lineTo(px(i),py(v)));
+      ctx.lineTo(px(n-1),py(Math.max(yMn,0)));ctx.closePath();
+      ctx.fillStyle=s.fill;ctx.fill();
+    }
+    ctx.beginPath();s.data.forEach((v,i)=>i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v)));
+    ctx.strokeStyle=s.col;ctx.lineWidth=s.lw||1.5;
+    if(s.glow){ctx.shadowColor=s.col;ctx.shadowBlur=5;}
+    ctx.stroke();ctx.shadowBlur=0;
+  });
+
+  // dashed horizontal limit lines
+  (opts.hlines||[]).forEach(hl=>{
+    ctx.beginPath();ctx.moveTo(P.l,py(hl.v));ctx.lineTo(W-P.r,py(hl.v));
+    ctx.strokeStyle=hl.col;ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=hl.col;ctx.font='7px sans-serif';ctx.textAlign='right';
+    ctx.fillText(hl.label,W-P.r-2,py(hl.v)-2);
+  });
+
+  // cursor
+  if(opts.cur!==undefined&&opts.cur>=0){
+    const cx2=px(opts.cur);
+    ctx.beginPath();ctx.moveTo(cx2,P.t);ctx.lineTo(cx2,P.t+cH);
+    ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+  }
+}
+
+// ?? SOC CHART ?????????????????????????????????????????????????????????????????
+const cSOC=document.getElementById('cSOC');
+function drawSOC(){
+  const W=cSOC.width=(cSOC.parentElement.offsetWidth||228)-16;
+  const H=cSOC.height=66;
+  const ctx=cSOC.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const data=RAW.socPerLap;
+  const P={t:5,b:13,l:26,r:4};
+  const cW=W-P.l-P.r,cH=H-P.t-P.b;
+  if(cW<10||cH<5)return;
+  const px=i=>P.l+(i/(data.length-1))*cW;
+  const py=v=>P.t+cH-v*cH;
+
+  // 10% line
+  ctx.beginPath();ctx.moveTo(P.l,py(0.1));ctx.lineTo(W-P.r,py(0.1));
+  ctx.strokeStyle='rgba(255,45,85,.5)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#ff2d55';ctx.font='7.5px monospace';ctx.textAlign='right';ctx.fillText('10%',P.l-2,py(0.1)+3);
+
+  // y labels
+  [.25,.5,.75,1].forEach(v=>{
+    ctx.fillStyle='rgba(185,205,235,.3)';ctx.font='7.5px monospace';ctx.textAlign='right';
+    ctx.fillText(Math.round(v*100)+'%',P.l-2,py(v)+3);
+    ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(P.l,py(v));ctx.lineTo(W-P.r,py(v));ctx.stroke();
+  });
+
+  // fill
+  ctx.beginPath();ctx.moveTo(px(0),py(0));
+  data.forEach((v,i)=>ctx.lineTo(px(i),py(v)));
+  ctx.lineTo(px(data.length-1),py(0));ctx.closePath();
+  const grd=ctx.createLinearGradient(0,P.t,0,P.t+cH);
+  grd.addColorStop(0,'rgba(0,255,159,.3)');grd.addColorStop(.6,'rgba(255,215,0,.2)');grd.addColorStop(1,'rgba(255,45,85,.15)');
+  ctx.fillStyle=grd;ctx.fill();
+
+  // line
+  ctx.beginPath();data.forEach((v,i)=>i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v)));
+  ctx.strokeStyle='#00ff9f';ctx.lineWidth=2;ctx.stroke();
+
+  // current lap dot
+  const li=Math.min(lap-1,data.length-1);
+  ctx.beginPath();ctx.arc(px(li),py(data[li]),4,0,Math.PI*2);
+  ctx.fillStyle='#ffd700';ctx.shadowColor='#ffd700';ctx.shadowBlur=6;ctx.fill();ctx.shadowBlur=0;
+
+  // x labels
+  ctx.fillStyle='rgba(185,205,235,.3)';ctx.font='7.5px monospace';ctx.textAlign='center';
+  [1,6,11,16,22].forEach(l=>ctx.fillText(l,px(l-1),H-2));
+}
+
+// ?? EFFICIENCY MAP ????????????????????????????????????????????????????????????
+const cEff=document.getElementById('cEff');
+function drawEff(curRpm,curTq){
+  const par=cEff.parentElement;
+  const W=par.offsetWidth||228,H=par.offsetHeight||100;
+  cEff.width=W;cEff.height=H;
+  if(W<20||H<20)return;
+  const ctx=cEff.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const P={t:6,b:16,l:24,r:6};
+  const cW=W-P.l-P.r,cH=H-P.t-P.b;
+  if(cW<10||cH<5)return;
+  const px=r=>P.l+(r/3200)*cW;
+  const py=t=>P.t+cH-(t/120)*cH;
+
+  // efficiency bands (from EMRAX datasheet)
+  [{mn:0,mx:500,col:'rgba(255,45,85,.1)',lbl:'86-90%'},
+   {mn:500,mx:1200,col:'rgba(255,215,0,.08)',lbl:'90-94%'},
+   {mn:1200,mx:2200,col:'rgba(0,255,159,.08)',lbl:'94-95%'},
+   {mn:2200,mx:3200,col:'rgba(0,212,255,.1)',lbl:'95-96%'}
+  ].forEach(b=>{
+    ctx.fillStyle=b.col;ctx.fillRect(px(b.mn),P.t,px(b.mx)-px(b.mn),cH);
+    ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='7.5px sans-serif';ctx.textAlign='center';
+    ctx.fillText(b.lbl,(px(b.mn)+px(b.mx))/2,H-3);
+  });
+
+  // grid
+  [0,800,1600,2400,3100].forEach(r=>{
+    ctx.beginPath();ctx.moveTo(px(r),P.t);ctx.lineTo(px(r),P.t+cH);
+    ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle='rgba(185,205,235,.3)';ctx.font='7.5px monospace';ctx.textAlign='center';ctx.fillText(r,px(r),H-3);
+  });
+  [0,25,50,75,100].forEach(t=>{
+    ctx.beginPath();ctx.moveTo(P.l,py(t));ctx.lineTo(W-P.r,py(t));
+    ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle='rgba(185,205,235,.3)';ctx.font='7.5px monospace';ctx.textAlign='right';ctx.fillText(t,P.l-2,py(t)+3);
+  });
+
+  // cont torque 100Nm line (capped in car params)
+  if(100<=120){
+    ctx.beginPath();ctx.moveTo(P.l,py(100));ctx.lineTo(W-P.r,py(100));
+    ctx.strokeStyle='rgba(255,85,0,.5)';ctx.lineWidth=1.5;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,85,0,.7)';ctx.font='7.5px sans-serif';ctx.textAlign='right';ctx.fillText('100Nm CAP',W-P.r-2,py(100)-2);
+  }
+  // RPM limit
+  ctx.beginPath();ctx.moveTo(px(3100),P.t);ctx.lineTo(px(3100),P.t+cH);
+  ctx.strokeStyle='rgba(255,215,0,.5)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+
+  // trail
+  const tr=Math.min(55,idx);
+  for(let j=idx-tr;j<idx;j++){
+    if(j<0)continue;
+    const d=TD[j],a=(j-(idx-tr))/tr;
+    ctx.beginPath();ctx.arc(px(d.rpm),py(d.tq),2,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,212,255,${a*.5})`;ctx.fill();
+  }
+
+  // current
+  ctx.beginPath();ctx.arc(px(curRpm),py(curTq),5,0,Math.PI*2);
+  ctx.fillStyle='#00d4ff';ctx.shadowColor='#00d4ff';ctx.shadowBlur=10;ctx.fill();ctx.shadowBlur=0;
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+}
+
+// ?? TEMP CHART ????????????????????????????????????????????????????????????????
+const cTemp=document.getElementById('cTemp');
+function drawTemp(){
+  const par=cTemp.parentElement;
+  const W=par.offsetWidth||230, H=par.offsetHeight||60;
+  cTemp.width=W; cTemp.height=H;
+  chart(cTemp,[
+    {data:mt,col:'#ff5500',lw:1.5,fill:'rgba(255,85,0,.07)'},
+    {data:bt,col:'#00d4ff',lw:1.5},
+  ],{yMin:20,yMax:110,cur:idx,
+     hlines:[{v:50,col:'rgba(255,215,0,.4)',label:'50?C'},{v:100,col:'rgba(255,45,85,.4)',label:'100?C'}]});
+}
+
+// ?? BMS INDICATOR ?????????????????????????????????????????????????????????????
+function updateBMS(soc,pf,td2){
+  const ids=['bms80','bms70','bms60','bms50'];
+  ids.forEach(id=>document.getElementById(id).classList.remove('act'));
+  let active='bms80', lbl='FULL POWER 80kW';
+  if(soc<0.30){active='bms50';lbl='50kW LIMITED';}
+  else if(soc<0.50){active='bms60';lbl='60kW LIMITED';}
+  else if(soc<0.80){active='bms70';lbl='70kW LIMITED';}
+  document.getElementById(active).classList.add('act');
+  const lblEl=document.getElementById('bmsLbl');
+  lblEl.textContent=lbl;
+  lblEl.style.color=active==='bms80'?'var(--gr)':active==='bms70'?'var(--yl)':active==='bms60'?'var(--or)':'var(--rd)';
+  // temp derate label
+  const twarn=document.getElementById('twarn');
+  twarn.classList.toggle('on',td2<1.0);
+  if(td2<0.3) twarn.textContent='? LIMP MODE';
+  else if(td2<0.5) twarn.textContent='? 25% DERATE';
+  else if(td2<0.8) twarn.textContent='? 70% DERATE';
+  else twarn.textContent='';
+}
+
+// ?? MAIN RENDER ???????????????????????????????????????????????????????????????
+function renderAll(){
+  const d=TD[idx];
+  sld.value=idx;
+  document.getElementById('stime').textContent=d.t.toFixed(2)+'s';
+  document.getElementById('dlbl').textContent=d.d.toFixed(0)+'m / '+RAW.trackLen+'m';
+
+  // Header
+  document.getElementById('hSpd').textContent=Math.round(d.v)+' km/h';
+  document.getElementById('hRpm').textContent=Math.round(d.rpm)+' RPM';
+  document.getElementById('hPwr').textContent=d.pwr.toFixed(1)+' kW';
+  const dg=1+(lap-1)*.001;
+  document.getElementById('hLapT').textContent=(RAW.lapTime*dg).toFixed(2);
+
+  // Gauges
+  drawGauge(document.getElementById('gSpd'),d.v,RAW.maxSpeedKmh*1.05,'km/h','#00ff9f');
+  drawGauge(document.getElementById('gRpm'),d.rpm,3500,'RPM','#ffd700');
+
+  // Metrics
+  document.getElementById('mTq').textContent=Math.round(d.tq);
+  document.getElementById('mPw').textContent=d.pwr.toFixed(1);
+
+  // Bars
+  const sb=(id,vid,v,mx)=>{
+    document.getElementById(id).style.width=Math.min(v/mx*100,100)+'%';
+    document.getElementById(vid).textContent=v.toFixed(0)+'%';
+  };
+  sb('bThr','vThr',d.thr,100); sb('bBrk','vBrk',d.brk,100);
+  const reg=d.brk>5?Math.min(d.brk*.25,100):0;
+  document.getElementById('bReg').style.width=reg+'%'; document.getElementById('vReg').textContent=reg.toFixed(0)+'%';
+  sb('bTcs','vTcs',Math.min(d.tcs,100),100);
+
+  // TCS
+  const tb=document.getElementById('tcsb');
+  tb.textContent=d.tcs>0?`TCS ${d.tcs.toFixed(0)}%`:'TCS OFF';
+  tb.className='tcsb '+(d.tcs>0?'tcson':'tcsof');
+
+  // Temps
+  document.getElementById('tMot').textContent=d.mt.toFixed(1)+'?C';
+  document.getElementById('tbMot').style.width=Math.min(d.mt/100*100,100)+'%';
+  document.getElementById('tBat').textContent=d.bt.toFixed(1)+'?C';
+  document.getElementById('tbBat').style.width=Math.min(d.bt/60*100,100)+'%';
+
+  // G-force
+  const alat=Math.abs(d.latg), alng=Math.abs(d.lng), tot=Math.sqrt(alat*alat+alng*alng);
+  document.getElementById('gLat').textContent=alat.toFixed(2);
+  document.getElementById('gLng').textContent=alng.toFixed(2);
+  document.getElementById('mLat').textContent=alat.toFixed(2);
+  document.getElementById('mLng').textContent=alng.toFixed(2);
+  const gb=(id,vid,v,mx)=>{document.getElementById(id).style.width=Math.min(v/mx*100,100)+'%';document.getElementById(vid).textContent=v.toFixed(2);};
+  gb('bLat','vLat',alat,1.8); gb('bLng2','vLng2',alng,1.8);
+  document.getElementById('bTotG').style.width=Math.min(tot/1.8*100,100)+'%';
+  document.getElementById('vTotG').textContent=tot.toFixed(2);
+
+  // SOC
+  const s0=RAW.socPerLap[lap-1], s1=RAW.socPerLap[Math.min(lap,RAW.socPerLap.length-1)];
+  const sfrac=d.d/RAW.trackLen;
+  const soc=Math.max(s0+(s1-s0)*sfrac,0.10);
+  const socPct=soc*100;
+  document.getElementById('socPct').textContent=socPct.toFixed(1)+'%';
+  document.getElementById('hSOC').textContent=socPct.toFixed(1)+'%';
+  document.getElementById('hSOC').style.color=socPct<20?'var(--rd)':socPct<40?'var(--yl)':'var(--gr)';
+  document.getElementById('socBar').style.width=socPct+'%';
+
+  // Pack metrics
+  const cellI=d.pwr>0?d.pwr*1000/RAW.packV/RAW.packP:0;
+  const packVnow=RAW.packV-d.pwr*0.05;
+  document.getElementById('mPkV').textContent=packVnow.toFixed(1);
+  document.getElementById('mCI').textContent=cellI.toFixed(1);
+  document.getElementById('mTD').textContent=Math.round(d.td*100)+'%';
+  const effPct=d.pwr>0?Math.min(98,88+8*(d.rpm/3100)).toFixed(0)+'%':'?';
+  document.getElementById('mEff').textContent=effPct;
+
+  // BMS
+  updateBMS(soc,d.pf,d.td);
+
+  // Sector highlight
+  for(let s=1;s<=6;s++) document.getElementById('sc'+s).classList.toggle('on',d.sec===s);
+
+  // Charts
+  drawTrack(idx);
+  drawG(d.latg,d.lng);
+  chart(document.getElementById('cTqRpm'),[
+    {data:tq,col:'#00d4ff',lw:2,glow:true,fill:'rgba(0,212,255,.06)'},
+    {data:rpm.map(v=>v/30),col:'#ffd700',lw:1.5},
+    {data:spd,col:'#00ff9f',lw:1.5},
+  ],{yMin:0,yMax:110,cur:idx,hlines:[{v:100,col:'rgba(255,85,0,.4)',label:'100Nm'}]});
+
+  chart(document.getElementById('cPwr'),[
+    {data:pwr,col:'#ff5500',lw:2,glow:true,fill:'rgba(255,85,0,.08)'},
+    {data:ce.map(v=>v/10),col:'#bf5af2',lw:1.5},
+  ],{yMin:0,yMax:85,cur:idx,hlines:[{v:80,col:'rgba(255,215,0,.35)',label:'80kW'}]});
+
+  chart(document.getElementById('cTrace'),[
+    {data:spd,col:'#00ff9f',lw:2,glow:true,fill:'rgba(0,255,159,.06)'},
+    {data:pwr,col:'#ff5500',lw:1.5},
+  ],{yMin:0,yMax:85,cur:idx});
+
+  drawTemp();
+  drawSOC();
+  drawEff(d.rpm,d.tq);
+}
+
+// ?? INIT ??????????????????????????????????????????????????????????????????????
+window.addEventListener('resize',renderAll);
+requestAnimationFrame(()=>requestAnimationFrame(()=>{ renderAll(); }));
+setTimeout(()=>document.getElementById('pbtn').click(),900);
+</script>
+</body>
+</html>
